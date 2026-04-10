@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/mds-proxy': {
-        target: 'https://mywealth.mds.sandbox.mywealthcare.io',
+        target: 'https://mywealth.mds.prod.mywealthcare.io',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/mds-proxy/, ''),
       },

@@ -22,18 +22,20 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
           paddingTop: noPadTop
             ? 'calc(env(safe-area-inset-top, 0px) + 12px)'
             : 'calc(env(safe-area-inset-top, 0px) + 20px)',
-          background: '#fff',
+          background: 'rgba(15, 23, 42, 0.96)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           position: 'sticky',
           top: 0,
           zIndex: 40,
-          borderBottom: '1px solid var(--border)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: -0.3 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#059669', lineHeight: 1, letterSpacing: -0.3 }}>
               {title}
             </h1>
             {subtitle && (
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3, fontWeight: 500 }}>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 3, fontWeight: 500 }}>
                 {subtitle}
               </p>
             )}

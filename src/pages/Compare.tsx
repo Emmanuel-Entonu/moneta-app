@@ -238,11 +238,13 @@ export default function Compare() {
       {selectedStocks.length >= 2 && (
         <div style={{
           position: 'sticky', top: 0, zIndex: 30,
-          background: '#fff',
-          borderBottom: '1px solid var(--border)',
+          background: 'rgba(15,23,42,0.96)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
           padding: '16px 20px 12px',
         }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>
             Intraday Performance
           </p>
 

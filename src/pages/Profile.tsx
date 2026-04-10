@@ -67,7 +67,7 @@ export default function Profile() {
     : user?.email?.[0]?.toUpperCase() ?? 'U'
 
   return (
-    <Layout title="Profile">
+    <Layout>
       {/* User hero */}
       <div style={{
         padding: '20px 20px 0',

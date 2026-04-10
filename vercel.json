@@ -1,3 +1,8 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/moneta-proxy/:path*", "destination": "https://api.moneta.ng/:path*" },
+    { "source": "/mds-proxy/:path*",    "destination": "https://mywealth.mds.prod.mywealthcare.io/:path*" },
+    { "source": "/broker-proxy/:path*", "destination": "https://mywealth.mds.sandbox.mywealthcare.io/:path*" },
+    { "source": "/(.*)",                "destination": "/index.html" }
+  ]
 }

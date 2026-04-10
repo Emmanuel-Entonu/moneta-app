@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import BottomNav from './BottomNav'
+import MonetaLogo from './MonetaLogo'
 
 interface LayoutProps {
   children: ReactNode
@@ -15,32 +16,61 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh', background: 'var(--bg)' }}>
       {title && (
         <header style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 20px 12px',
-          paddingTop: noPadTop
-            ? 'calc(env(safe-area-inset-top, 0px) + 12px)'
-            : 'calc(env(safe-area-inset-top, 0px) + 20px)',
-          background: 'rgba(15, 23, 42, 0.96)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
           position: 'sticky',
           top: 0,
           zIndex: 40,
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: 'linear-gradient(135deg, #0a1628 0%, #0f172a 60%, #064e3b22 100%)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(5,150,105,0.15)',
+          paddingTop: noPadTop
+            ? 'calc(env(safe-area-inset-top, 0px) + 10px)'
+            : 'calc(env(safe-area-inset-top, 0px) + 18px)',
+          paddingBottom: 14,
+          paddingLeft: 20,
+          paddingRight: 20,
         }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#059669', lineHeight: 1, letterSpacing: -0.3 }}>
-              {title}
-            </h1>
-            {subtitle && (
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 3, fontWeight: 500 }}>
-                {subtitle}
-              </p>
-            )}
+          {/* Top row — logo + right action */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: subtitle ? 10 : 8 }}>
+            <MonetaLogo size="sm" inverted />
+            {rightAction && <div>{rightAction}</div>}
           </div>
-          {rightAction && <div>{rightAction}</div>}
+
+          {/* Page title */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div>
+              <h1 style={{
+                fontSize: 26, fontWeight: 900, letterSpacing: -0.6, lineHeight: 1,
+                background: 'linear-gradient(90deg, #059669 0%, #34d399 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
+                {title}
+              </h1>
+              {subtitle && (
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4, fontWeight: 500 }}>
+                  {subtitle}
+                </p>
+              )}
+            </div>
+
+            {/* Decorative green dot */}
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#059669',
+              boxShadow: '0 0 8px rgba(5,150,105,0.8)',
+              marginBottom: 4,
+            }} />
+          </div>
+
+          {/* Green accent line */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 20, right: 20,
+            height: 1,
+            background: 'linear-gradient(90deg, #059669 0%, transparent 100%)',
+            opacity: 0.4,
+          }} />
         </header>
       )}
 

@@ -9,7 +9,14 @@
  * Hash: HMAC-SHA512(email + amount + payment_type + callback_url, mac_key)
  */
 
-const BASE       = '/moneta-proxy/api/v2'
+const IS_DEV = import.meta.env.DEV
+
+// Dev: Vite proxy → api.moneta.ng
+// Prod: Vercel serverless function (stable AWS IP, not edge)
+function monetaUrl(endpoint: string) {
+  if (IS_DEV) return `/moneta-proxy/api/v2${endpoint}`
+  return `/api/moneta?path=${endpoint.replace(/^\//, '')}`
+}
 const CLIENT_ID  = import.meta.env.VITE_MONETA_CLIENT_ID     as string
 const CLIENT_SEC = import.meta.env.VITE_MONETA_CLIENT_SECRET as string
 const SVC_KEY    = import.meta.env.VITE_MONETA_SERVICE_KEY   as string
@@ -25,7 +32,7 @@ async function getServiceToken(): Promise<string> {
   if (_token) return _token
 
   const creds = btoa(`${CLIENT_ID}:${CLIENT_SEC}:${SVC_KEY}`)
-  const res = await fetch(`${BASE}/generate-access-token`, {
+  const res = await fetch(monetaUrl('/generate-access-token'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -81,7 +88,7 @@ export async function initializePayment(
   const amount = Math.round(amountNaira * 100) // naira → kobo
   const hash   = await generateHash(email, amount, paymentType)
 
-  const res = await fetch(`${BASE}/transaction/initialize`, {
+  const res = await fetch(monetaUrl('/transaction/initialize'), {
     method: 'POST',
     headers: {
       'Content-Type':    'application/json',
@@ -136,7 +143,7 @@ export async function verifyPayment(reference: string): Promise<{
   message: string
 }> {
   const token = await getServiceToken()
-  const res = await fetch(`${BASE}/transaction/charge/verify/reference`, {
+  const res = await fetch(monetaUrl('/transaction/charge/verify/reference'), {
     method: 'POST',
     headers: {
       'Content-Type':    'application/json',

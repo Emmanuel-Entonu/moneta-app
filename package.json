@@ -16,6 +16,7 @@
     "@capacitor/ios": "^8.3.0",
     "@ionic/react": "^8.8.2",
     "@supabase/supabase-js": "^2.101.0",
+    "@vercel/node": "^5.7.3",
     "ionicons": "^8.0.13",
     "lightweight-charts": "^5.1.0",
     "react": "^19.2.4",

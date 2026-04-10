@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import BottomNav from './BottomNav'
-import MonetaLogo from './MonetaLogo'
 
 interface LayoutProps {
   children: ReactNode
@@ -30,12 +29,6 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
           paddingLeft: 20,
           paddingRight: 20,
         }}>
-          {/* Top row — logo + right action */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: subtitle ? 10 : 8 }}>
-            <MonetaLogo size="sm" inverted />
-            {rightAction && <div>{rightAction}</div>}
-          </div>
-
           {/* Page title */}
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
             <div>
@@ -55,13 +48,15 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
               )}
             </div>
 
-            {/* Decorative green dot */}
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: '#059669',
-              boxShadow: '0 0 8px rgba(5,150,105,0.8)',
-              marginBottom: 4,
-            }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {rightAction && <div>{rightAction}</div>}
+              {/* Decorative green dot */}
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#059669',
+                boxShadow: '0 0 8px rgba(5,150,105,0.8)',
+              }} />
+            </div>
           </div>
 
           {/* Green accent line */}

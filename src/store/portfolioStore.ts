@@ -13,7 +13,7 @@ import {
 } from '../lib/pacApi'
 
 // Flip to false once real API credentials are confirmed
-const USE_MOCK_MARKET = false
+const USE_MOCK_MARKET = true
 export const USE_MOCK_BROKER = true
 
 interface PortfolioState {

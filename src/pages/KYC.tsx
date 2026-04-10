@@ -1,0 +1,429 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../store/authStore'
+import { supabase } from '../lib/supabase'
+import { createBrokerAccount } from '../lib/pacApi'
+import { USE_MOCK_BROKER } from '../store/portfolioStore'
+import MonetaLogo from '../components/MonetaLogo'
+
+type Step = 1 | 2 | 3
+
+const ID_TYPES = [
+  'National ID (NIN)',
+  'International Passport',
+  "Driver's Licence",
+  "Voter's Card",
+]
+
+function StepIndicator({ current }: { current: Step }) {
+  const steps = [
+    { n: 1, label: 'Personal Info' },
+    { n: 2, label: 'Identity' },
+    { n: 3, label: 'Document' },
+  ]
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 28 }}>
+      {steps.map((s, i) => {
+        const done = current > s.n
+        const active = current === s.n
+        return (
+          <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 'none' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: done ? '#059669' : active ? 'linear-gradient(135deg,#059669,#047857)' : '#f1f5f9',
+                border: `2px solid ${done || active ? '#059669' : '#e2e8f0'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}>
+                {done
+                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  : <span style={{ fontSize: 12, fontWeight: 800, color: active ? '#fff' : '#94a3b8' }}>{s.n}</span>
+                }
+              </div>
+              <span style={{ fontSize: 9, fontWeight: 700, color: active ? '#059669' : done ? '#059669' : '#94a3b8', letterSpacing: 0.3, whiteSpace: 'nowrap' }}>
+                {s.label}
+              </span>
+            </div>
+            {i < 2 && (
+              <div style={{
+                flex: 1, height: 2, margin: '0 6px', marginBottom: 16,
+                background: done ? '#059669' : '#e2e8f0',
+                transition: 'background 0.3s',
+              }} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function Field({
+  label, value, onChange, placeholder, type = 'text', hint,
+}: {
+  label: string; value: string; onChange: (v: string) => void
+  placeholder?: string; type?: string; hint?: string
+}) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{
+        display: 'block', fontSize: 11, fontWeight: 700,
+        color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6,
+      }}>
+        {label}
+      </label>
+      <input
+        className="input-field"
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+      {hint && <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>{hint}</p>}
+    </div>
+  )
+}
+
+export default function KYC() {
+  const navigate = useNavigate()
+  const { user, loadProfile } = useAuthStore()
+
+  const [step, setStep] = useState<Step>(1)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [docFile, setDocFile] = useState<File | null>(null)
+
+  // Step 1
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [dob, setDob] = useState('')
+  const [address, setAddress] = useState('')
+
+  // Step 2
+  const [bvn, setBvn] = useState('')
+  const [nin, setNin] = useState('')
+  const [idType, setIdType] = useState('')
+  const [idNumber, setIdNumber] = useState('')
+
+  function skip() {
+    const dest = localStorage.getItem('moneta_onboarded') ? '/market' : '/onboarding'
+    navigate(dest)
+  }
+
+  function canProceedStep1() {
+    return fullName.trim().length > 1 && phone.trim().length > 8 && dob && address.trim().length > 4
+  }
+
+  function canProceedStep2() {
+    return bvn.trim().length === 11 && idType && idNumber.trim().length > 3
+  }
+
+  async function handleSubmit() {
+    if (!user) return
+    setSaving(true); setError(null)
+    try {
+      // 1. Save KYC data to Supabase
+      const { error: dbError } = await supabase.from('profiles').upsert({
+        id: user.id,
+        full_name: fullName,
+        phone,
+        date_of_birth: dob || null,
+        address,
+        bvn,
+        kyc_status: 'submitted',
+      })
+      if (dbError) throw new Error(dbError.message)
+
+      // 2. Provision a broker account (mock or real)
+      let pacAccountId: string
+      if (USE_MOCK_BROKER) {
+        // Deterministic fake ID so it's stable across sessions
+        pacAccountId = `PAC-${user.id.slice(0, 8).toUpperCase()}`
+      } else {
+        pacAccountId = await createBrokerAccount({
+          fullName,
+          email: user.email ?? '',
+          phone,
+          bvn,
+        })
+      }
+
+      // 3. Store the broker account ID in the user's profile
+      await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+
+      // 4. Refresh auth store so pacAccountId is available immediately
+      await loadProfile()
+
+      const dest = localStorage.getItem('moneta_onboarded') ? '/market' : '/onboarding'
+      navigate(dest)
+    } catch (e: unknown) {
+      setError((e as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100svh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Header */}
+      <div style={{
+        background: 'linear-gradient(160deg, #064e3b 0%, #059669 100%)',
+        padding: 'calc(env(safe-area-inset-top,0px) + 20px) 20px 24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <MonetaLogo size="sm" inverted />
+          <button
+            onClick={skip}
+            style={{
+              fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)',
+              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+              padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
+            }}
+          >
+            Skip for now
+          </button>
+        </div>
+
+        <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 4, letterSpacing: -0.5 }}>
+          Verify your identity
+        </h1>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, lineHeight: 1.5 }}>
+          Required by the SEC and CBN to enable trading on the NGX
+        </p>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex: 1, padding: '24px 20px 40px', overflowY: 'auto' }}>
+        <StepIndicator current={step} />
+
+        {/* Step 1 — Personal Info */}
+        {step === 1 && (
+          <div className="animate-in">
+            <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>Personal Information</p>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
+              Must match your government-issued ID exactly
+            </p>
+
+            <Field label="Full Legal Name" value={fullName} onChange={setFullName} placeholder="e.g. Adebayo Okafor" />
+            <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="+234 800 000 0000" type="tel" />
+            <Field label="Date of Birth" value={dob} onChange={setDob} type="date" />
+            <Field
+              label="Residential Address"
+              value={address}
+              onChange={setAddress}
+              placeholder="No. 12, Broad Street, Lagos Island"
+              hint="Must be a verifiable Nigerian address"
+            />
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <button onClick={skip} style={secondaryBtn}>Skip for now</button>
+              <button
+                onClick={() => setStep(2)}
+                disabled={!canProceedStep1()}
+                style={primaryBtn(!canProceedStep1())}
+              >
+                Continue
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2 — Identity */}
+        {step === 2 && (
+          <div className="animate-in">
+            <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>Identity Verification</p>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
+              Your BVN links your banking identity. It is never shared with third parties.
+            </p>
+
+            <Field
+              label="Bank Verification Number (BVN)"
+              value={bvn}
+              onChange={(v) => setBvn(v.replace(/\D/g, '').slice(0, 11))}
+              placeholder="11-digit BVN"
+              type="tel"
+              hint="Dial *565*0# on any Nigerian network to retrieve your BVN"
+            />
+            <Field
+              label="NIN (Optional)"
+              value={nin}
+              onChange={(v) => setNin(v.replace(/\D/g, '').slice(0, 11))}
+              placeholder="11-digit NIN"
+              type="tel"
+            />
+
+            {/* ID Type selector */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                ID Type
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {ID_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setIdType(t)}
+                    style={{
+                      padding: '10px 12px', borderRadius: 12, cursor: 'pointer',
+                      border: `2px solid ${idType === t ? '#059669' : '#e2e8f0'}`,
+                      background: idType === t ? '#f0fdf4' : '#f8fafc',
+                      color: idType === t ? '#065f46' : '#475569',
+                      fontSize: 12, fontWeight: 700, textAlign: 'left',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Field label="ID Number" value={idNumber} onChange={setIdNumber} placeholder="Enter ID number" />
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <button onClick={() => setStep(1)} style={secondaryBtn}>Back</button>
+              <button
+                onClick={() => setStep(3)}
+                disabled={!canProceedStep2()}
+                style={primaryBtn(!canProceedStep2())}
+              >
+                Continue
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3 — Document Upload */}
+        {step === 3 && (
+          <div className="animate-in">
+            <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>Upload Document</p>
+            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
+              Upload a clear photo or scan of your {idType || 'ID document'}
+            </p>
+
+            {/* Upload area */}
+            <label style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', gap: 12,
+              border: `2px dashed ${docFile ? '#059669' : '#e2e8f0'}`,
+              borderRadius: 16, padding: '32px 20px',
+              background: docFile ? '#f0fdf4' : '#f8fafc',
+              cursor: 'pointer', marginBottom: 16,
+              transition: 'all 0.2s',
+            }}>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                style={{ display: 'none' }}
+                onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+              />
+              {docFile ? (
+                <>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#065f46' }}>{docFile.name}</p>
+                    <p style={{ fontSize: 11, color: '#059669' }}>{(docFile.size / 1024).toFixed(0)} KB · Tap to change</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#475569' }}>Tap to upload document</p>
+                    <p style={{ fontSize: 11, color: '#94a3b8' }}>JPG, PNG or PDF · Max 5MB</p>
+                  </div>
+                </>
+              )}
+            </label>
+
+            {/* Security note */}
+            <div style={{
+              display: 'flex', gap: 10, padding: '12px 14px',
+              background: '#f0fdf4', borderRadius: 12,
+              border: '1px solid #a7f3d0', marginBottom: 20,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <p style={{ fontSize: 11, color: '#065f46', fontWeight: 500, lineHeight: 1.5 }}>
+                Your documents are encrypted and processed securely in compliance with SEC and NDPR regulations.
+              </p>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: '10px 14px', borderRadius: 10,
+                background: '#fff5f5', border: '1px solid #fecaca',
+                fontSize: 12, color: '#991b1b', fontWeight: 600, marginBottom: 14,
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setStep(2)} style={secondaryBtn}>Back</button>
+              <button
+                onClick={handleSubmit}
+                disabled={saving}
+                style={primaryBtn(saving)}
+              >
+                {saving ? 'Submitting…' : 'Submit KYC'}
+                {!saving && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+
+            <button
+              onClick={skip}
+              style={{ width: '100%', marginTop: 12, padding: '12px', borderRadius: 'var(--radius)', background: 'none', border: 'none', color: '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              I'll complete this later
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const primaryBtn = (disabled: boolean): React.CSSProperties => ({
+  flex: 2, padding: '14px', borderRadius: 'var(--radius)',
+  background: disabled ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
+  color: disabled ? '#94a3b8' : '#fff',
+  fontWeight: 800, fontSize: 15, cursor: disabled ? 'not-allowed' : 'pointer',
+  border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+  boxShadow: disabled ? 'none' : '0 4px 16px rgba(5,150,105,0.3)',
+  transition: 'all 0.2s',
+})
+
+const secondaryBtn: React.CSSProperties = {
+  flex: 1, padding: '14px', borderRadius: 'var(--radius)',
+  background: '#f8fafc', border: '1.5px solid #e2e8f0',
+  color: '#475569', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+}

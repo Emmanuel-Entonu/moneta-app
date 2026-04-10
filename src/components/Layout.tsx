@@ -18,8 +18,10 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: noPadTop ? '12px 20px 12px' : '20px 20px 12px',
-          paddingTop: noPadTop ? 12 : 'calc(env(safe-area-inset-top, 0px) + 20px)',
+          padding: '12px 20px 12px',
+          paddingTop: noPadTop
+            ? 'calc(env(safe-area-inset-top, 0px) + 12px)'
+            : 'calc(env(safe-area-inset-top, 0px) + 20px)',
           background: '#fff',
           position: 'sticky',
           top: 0,

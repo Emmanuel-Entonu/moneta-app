@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { verifyPayment } from '../lib/monetaApi'
 import { useAuthStore } from '../store/authStore'
+import { usePortfolioStore } from '../store/portfolioStore'
 import MonetaLogo from '../components/MonetaLogo'
+import type { PacOrderRequest } from '../lib/pacApi'
 
 export default function PaymentCallback() {
   const [params] = useSearchParams()
@@ -11,29 +13,56 @@ export default function PaymentCallback() {
   const [message, setMessage] = useState('')
   const [amount, setAmount] = useState(0)
   const creditWallet = useAuthStore((s) => s.creditWallet)
+  const debitWallet  = useAuthStore((s) => s.debitWallet)
+  const authLoading  = useAuthStore((s) => s.loading)
+  const ran = useRef(false)
 
   useEffect(() => {
+    // Wait until auth has restored the session — creditWallet needs user to be set
+    if (authLoading) return
+    // Guard against StrictMode double-fire
+    if (ran.current) return
+    ran.current = true
+
     const ref = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
     if (!ref) { setStatus('failed'); setMessage('No payment reference found.'); return }
 
     verifyPayment(ref)
       .then(async (result) => {
-        if (result.success) {
-          // Credit the real wallet balance in Supabase
-          await creditWallet(result.amountNaira)
-          setStatus('success')
-          setAmount(result.amountNaira)
-          setMessage(result.message)
-        } else {
+        if (!result.success) {
           setStatus('failed')
           setMessage(result.message)
+          return
         }
+
+        // Credit the real wallet balance in Supabase
+        await creditWallet(result.amountNaira)
+
+        // If this payment was for a specific stock order (from Trade page),
+        // execute and immediately debit that order now.
+        const pendingRaw = localStorage.getItem('moneta_pending_order')
+        if (pendingRaw) {
+          localStorage.removeItem('moneta_pending_order')
+          try {
+            const order = JSON.parse(pendingRaw) as PacOrderRequest
+            await usePortfolioStore.getState().placeOrder(order)
+            // Debit the wallet for the order — net wallet change is zero
+            await debitWallet(result.amountNaira)
+          } catch (e) {
+            // Order failed but money is safely in the wallet — user can retry from portfolio
+            console.error('[PaymentCallback] pending order failed:', e)
+          }
+        }
+
+        setStatus('success')
+        setAmount(result.amountNaira)
+        setMessage(result.message)
       })
       .catch((e: Error) => {
         setStatus('failed')
         setMessage(e.message)
       })
-  }, [])
+  }, [authLoading])
 
   return (
     <div style={{

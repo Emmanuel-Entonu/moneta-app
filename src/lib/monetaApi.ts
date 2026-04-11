@@ -152,7 +152,10 @@ export async function verifyPayment(reference: string): Promise<{
     body: JSON.stringify({ reference }),
   })
 
-  if (!res.ok) throw new Error(`Verify failed (${res.status})`)
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 422) _token = null
+    throw new Error(`Verify failed (${res.status})`)
+  }
 
   const data = await res.json() as {
     status: string | boolean

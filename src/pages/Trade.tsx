@@ -691,9 +691,19 @@ export default function Trade() {
                   if (side === 'BUY' && paySource === 'moneta') {
                     setMonetaLoading(true); setMonetaError(null)
                     try {
+                      // Store the pending order so PaymentCallback can execute it after payment
+                      localStorage.setItem('moneta_pending_order', JSON.stringify({
+                        accountId: pacAccountId ?? 'demo',
+                        symbol: stock.symbol,
+                        side: 'BUY',
+                        quantity: qty,
+                        orderType,
+                        limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined,
+                      }))
                       const { authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
                       window.location.href = authorizationUrl
                     } catch (e: unknown) {
+                      localStorage.removeItem('moneta_pending_order')
                       setMonetaError((e as Error).message)
                       setMonetaLoading(false)
                     }

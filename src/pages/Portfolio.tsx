@@ -286,17 +286,44 @@ export default function Portfolio() {
 
   return (
     <Layout title="Portfolio">
-      {/* Hero card */}
+      {/* Wallet card */}
+      <div style={{ margin: '16px 16px 0', position: 'relative', paddingBottom: 14 }}>
+        {/* Cards peeking from behind the wallet */}
+        <div style={{
+          position: 'absolute', bottom: 6, left: 10, right: 10, height: '92%',
+          background: 'linear-gradient(145deg, #047857, #065f46)',
+          borderRadius: 22, zIndex: 0,
+          boxShadow: '0 4px 16px rgba(2,44,34,0.3)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: 0, left: 20, right: 20, height: '90%',
+          background: 'linear-gradient(145deg, #065f46, #022c22)',
+          borderRadius: 20, zIndex: 0,
+        }} />
+
       <div style={{
-        margin: '16px 16px 0',
         background: 'linear-gradient(145deg, #022c22 0%, #064e3b 40%, #059669 100%)',
         borderRadius: 24, padding: '24px 22px 22px',
-        position: 'relative', overflow: 'hidden',
+        position: 'relative', overflow: 'hidden', zIndex: 1,
+        boxShadow: '0 8px 32px rgba(2,44,34,0.5), inset 0 0 0 1.5px rgba(255,255,255,0.09)',
       }}>
-        {/* Decorative rings */}
-        <div style={{ position: 'absolute', top: -50, right: -50, width: 180, height: 180, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)' }} />
-        <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)' }} />
-        <div style={{ position: 'absolute', bottom: -30, left: 100, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+        {/* Wallet icon top-right */}
+        <div style={{
+          position: 'absolute', top: 20, right: 20,
+          width: 38, height: 38, borderRadius: 12,
+          background: 'rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1" y="6" width="22" height="14" rx="3"/>
+            <path d="M16 14a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
+            <path d="M1 10h22"/>
+          </svg>
+        </div>
+        {/* Decorative shine */}
+        <div style={{ position: 'absolute', top: -40, left: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+        <div style={{ position: 'absolute', bottom: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
 
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>
           Total Portfolio Value
@@ -360,6 +387,7 @@ export default function Portfolio() {
             </div>
           ))}
         </div>
+      </div>
       </div>
 
       {/* Allocation preview (only when positions exist) */}

@@ -58,17 +58,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loadProfile: async () => {
     const { user } = get()
     if (!user) return
-    const { data } = await supabase
+
+    // Core profile — these columns always exist
+    const { data: profile } = await supabase
       .from('profiles')
-      .select('pac_account_id, kyc_status, wallet_balance')
+      .select('pac_account_id, kyc_status')
       .eq('id', user.id)
       .single()
-    if (data) {
+    if (profile) {
       set({
-        pacAccountId: data.pac_account_id,
-        kycStatus: data.kyc_status as AuthState['kycStatus'],
-        walletBalance: data.wallet_balance ?? 0,
+        pacAccountId: profile.pac_account_id,
+        kycStatus: profile.kyc_status as AuthState['kycStatus'],
       })
+    }
+
+    // Wallet balance — separate query so a missing column doesn't break the rest
+    const { data: walletRow } = await supabase
+      .from('profiles')
+      .select('wallet_balance')
+      .eq('id', user.id)
+      .single()
+    if (walletRow?.wallet_balance != null) {
+      set({ walletBalance: walletRow.wallet_balance })
     }
   },
 

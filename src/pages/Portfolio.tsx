@@ -265,7 +265,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 
 export default function Portfolio() {
   const { positions, account, loadingPortfolio, loadPositions, loadAccount } = usePortfolioStore()
-  const { pacAccountId, walletBalance } = useAuthStore()
+  const { pacAccountId, walletBalance, loadProfile } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')
   const [showFund, setShowFund] = useState(false)
@@ -277,6 +277,8 @@ export default function Portfolio() {
   const isUp = totalPnL >= 0
 
   useEffect(() => {
+    // Refresh wallet balance from Supabase every time this page is opened
+    loadProfile()
     const id = pacAccountId ?? 'demo-account'
     loadAccount(id)
     loadPositions(id)

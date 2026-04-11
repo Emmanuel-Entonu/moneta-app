@@ -286,148 +286,108 @@ export default function Portfolio() {
 
   return (
     <Layout title="Portfolio">
-      {/* Wallet */}
-      <div style={{ margin: '16px 16px 0' }}>
+      {/* Wallet card */}
+      <div style={{ margin: '16px 16px 0', position: 'relative', paddingBottom: 14 }}>
+        {/* Cards peeking from behind the wallet */}
         <div style={{
-          background: 'linear-gradient(160deg, #022c22 0%, #064e3b 55%, #059669 100%)',
-          borderRadius: 28,
-          position: 'relative', overflow: 'hidden',
-          boxShadow: '0 16px 48px rgba(2,44,34,0.55), 0 2px 0 rgba(255,255,255,0.06)',
+          position: 'absolute', bottom: 6, left: 10, right: 10, height: '92%',
+          background: 'linear-gradient(145deg, #047857, #065f46)',
+          borderRadius: 22, zIndex: 0,
+          boxShadow: '0 4px 16px rgba(2,44,34,0.3)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: 0, left: 20, right: 20, height: '90%',
+          background: 'linear-gradient(145deg, #065f46, #022c22)',
+          borderRadius: 20, zIndex: 0,
+        }} />
+
+      <div style={{
+        background: 'linear-gradient(145deg, #022c22 0%, #064e3b 40%, #059669 100%)',
+        borderRadius: 24, padding: '24px 22px 22px',
+        position: 'relative', overflow: 'hidden', zIndex: 1,
+        boxShadow: '0 8px 32px rgba(2,44,34,0.5), inset 0 0 0 1.5px rgba(255,255,255,0.09)',
+      }}>
+        {/* Wallet icon top-right */}
+        <div style={{
+          position: 'absolute', top: 20, right: 20,
+          width: 38, height: 38, borderRadius: 12,
+          background: 'rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(4px)',
         }}>
-
-          {/* Stitching border */}
-          <div style={{
-            position: 'absolute', inset: 7, borderRadius: 22,
-            border: '1.5px dashed rgba(255,255,255,0.12)',
-            pointerEvents: 'none', zIndex: 5,
-          }} />
-
-          {/* Ambient glow blobs */}
-          <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: 'rgba(5,150,105,0.15)' }} />
-          <div style={{ position: 'absolute', bottom: 40, left: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
-
-          {/* ── Header strip ── */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '18px 22px 14px',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {/* Bill lines */}
-              <div>
-                {[22, 16, 10].map((w, i) => (
-                  <div key={i} style={{ width: w, height: 2.5, borderRadius: 2, marginBottom: i < 2 ? 4 : 0, background: `rgba(255,255,255,${0.55 - i * 0.15})` }} />
-                ))}
-              </div>
-              <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.5)', letterSpacing: 2, textTransform: 'uppercase' }}>My Wallet</span>
-            </div>
-            {/* Clasp */}
-            <div style={{
-              width: 34, height: 34, borderRadius: '50%',
-              border: '1.5px solid rgba(255,255,255,0.2)',
-              background: 'rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              backdropFilter: 'blur(4px)',
-            }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.35)', boxShadow: '0 0 6px rgba(255,255,255,0.3)' }} />
-            </div>
-          </div>
-
-          {/* ── Balance & content ── */}
-          <div style={{ padding: '20px 22px 4px' }}>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>
-              Total Portfolio Value
-            </p>
-            <p style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 12 }}>
-              {fmt(totalValue)}
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: 12, fontWeight: 700,
-                background: 'rgba(255,255,255,0.14)',
-                color: '#fff', padding: '5px 12px', borderRadius: 20,
-                backdropFilter: 'blur(4px)',
-              }}>
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="#fff" style={{ marginRight: 4, verticalAlign: 'middle' }}>
-                  {isUp ? <polygon points="4,0 8,8 0,8" /> : <polygon points="0,0 8,0 4,8" />}
-                </svg>
-                {fmt(Math.abs(totalPnL))} ({isUp ? '+' : ''}{totalPnLPct.toFixed(2)}%)
-              </span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>Unrealized P&L</span>
-            </div>
-
-            <button
-              onClick={() => setShowFund(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 18px', borderRadius: 20, marginBottom: 18,
-                background: 'rgba(255,255,255,0.13)',
-                border: '1px solid rgba(255,255,255,0.22)',
-                color: '#fff', fontSize: 13, fontWeight: 700,
-                cursor: 'pointer', backdropFilter: 'blur(4px)',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Fund Account
-            </button>
-          </div>
-
-          {/* ── Stats ── */}
-          <div style={{
-            display: 'flex',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            padding: '14px 22px',
-          }}>
-            {[
-              { label: 'Cash Balance', val: fmt(walletBalance) },
-              { label: 'Holdings', val: String(positions.length) },
-              { label: 'Account', val: account?.accountNumber ?? '—' },
-            ].map(({ label, val }, i) => (
-              <div key={label} style={{
-                flex: 1,
-                borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                paddingLeft: i > 0 ? 14 : 0,
-                paddingRight: 14,
-              }}>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 3, fontWeight: 600 }}>{label}</p>
-                <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>{val}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* ── Card pocket ── */}
-          <div style={{
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            padding: '12px 22px 18px',
-            display: 'flex', gap: 8,
-          }}>
-            {[
-              { bg: 'linear-gradient(135deg,#1d4ed8,#3b82f6)', label: 'VISA' },
-              { bg: 'linear-gradient(135deg,#7c3aed,#a78bfa)', label: 'MC' },
-              { bg: 'linear-gradient(135deg,#059669,#34d399)', label: 'MONETA' },
-            ].map(({ bg, label }) => (
-              <div key={label} style={{
-                flex: 1, height: 32, borderRadius: 8,
-                background: bg,
-                border: '1px solid rgba(255,255,255,0.18)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0 10px',
-              }}>
-                <div style={{ display: 'flex', gap: 3 }}>
-                  {[0,1,2,3].map(i => (
-                    <div key={i} style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-                  ))}
-                </div>
-                <span style={{ fontSize: 7, fontWeight: 900, color: 'rgba(255,255,255,0.75)', letterSpacing: 0.8 }}>{label}</span>
-              </div>
-            ))}
-          </div>
-
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1" y="6" width="22" height="14" rx="3"/>
+            <path d="M16 14a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
+            <path d="M1 10h22"/>
+          </svg>
         </div>
+        {/* Decorative shine */}
+        <div style={{ position: 'absolute', top: -40, left: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+        <div style={{ position: 'absolute', bottom: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>
+          Total Portfolio Value
+        </p>
+        <p style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 10 }}>
+          {fmt(totalValue)}
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 12, fontWeight: 700,
+            background: 'rgba(255,255,255,0.16)',
+            color: '#fff', padding: '5px 12px', borderRadius: 20,
+            backdropFilter: 'blur(4px)',
+          }}>
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="#fff" style={{marginRight:4,verticalAlign:'middle'}}>
+              {isUp ? <polygon points="4,0 8,8 0,8" /> : <polygon points="0,0 8,0 4,8" />}
+            </svg>{fmt(Math.abs(totalPnL))} ({isUp ? '+' : ''}{totalPnLPct.toFixed(2)}%)
+          </span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Unrealized P&L</span>
+        </div>
+
+        {/* Fund button */}
+        <button
+          onClick={() => setShowFund(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 18px', borderRadius: 20, marginBottom: 16,
+            background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            color: '#fff', fontSize: 13, fontWeight: 700,
+            cursor: 'pointer', backdropFilter: 'blur(4px)',
+            transition: 'background 0.15s',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Fund Account
+        </button>
+
+        {/* Stats row */}
+        <div style={{
+          display: 'flex', gap: 0,
+          borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 16,
+        }}>
+          {[
+            { label: 'Cash Balance', val: fmt(walletBalance) },
+            { label: 'Holdings', val: String(positions.length) },
+            { label: 'Account', val: account?.accountNumber ?? '—' },
+          ].map(({ label, val }, i) => (
+            <div key={label} style={{
+              flex: 1,
+              borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.12)' : 'none',
+              paddingLeft: i > 0 ? 14 : 0,
+              paddingRight: 14,
+            }}>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 3, fontWeight: 600 }}>{label}</p>
+              <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>{val}</p>
+            </div>
+          ))}
+        </div>
+      </div>
       </div>
 
       {/* Allocation preview (only when positions exist) */}

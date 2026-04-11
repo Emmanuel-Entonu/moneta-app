@@ -154,7 +154,7 @@ export default function Trade() {
   const { symbol } = useParams<{ symbol: string }>()
   const navigate = useNavigate()
   const { marketData, positions, orderLoading, orderResult, placeOrder, clearOrderResult, loadMarketData } = usePortfolioStore()
-  const { pacAccountId, kycStatus } = useAuthStore()
+  const { pacAccountId } = useAuthStore()
 
   const [side, setSide] = useState<Side>('BUY')
   const [orderType, setOrderType] = useState<OrderType>('MARKET')
@@ -191,72 +191,6 @@ export default function Trade() {
     )
   }
 
-  // ── KYC gate ──────────────────────────────────────────────────────────────────
-  if (kycStatus === 'pending') {
-    return (
-      <div style={{ minHeight: '100svh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          padding: '18px 20px', paddingTop: 'calc(env(safe-area-inset-top,0px) + 18px)',
-          borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: '#fff', zIndex: 40,
-        }}>
-          <button onClick={() => navigate(-1)} style={{ width: 38, height: 38, borderRadius: 12, background: '#f8fafc', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <div>
-            <p style={{ fontWeight: 900, fontSize: 17, color: 'var(--text)' }}>{stock.symbol}</p>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{stock.name}</p>
-          </div>
-        </div>
-
-        {/* Gate */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', textAlign: 'center' }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: 24,
-            background: 'linear-gradient(135deg,#f0fdf4,#d1fae5)',
-            border: '2px solid #a7f3d0',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: 24,
-          }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', marginBottom: 10, letterSpacing: -0.5 }}>
-            KYC Verification Required
-          </h2>
-          <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, marginBottom: 32, maxWidth: 300 }}>
-            To comply with SEC regulations, you must complete identity verification before placing trades on the NGX.
-          </p>
-
-          <button
-            onClick={() => navigate('/kyc')}
-            style={{
-              width: '100%', maxWidth: 320, padding: '16px',
-              background: 'linear-gradient(135deg,#059669,#047857)',
-              color: '#fff', borderRadius: 'var(--radius)', border: 'none',
-              fontSize: 16, fontWeight: 800, cursor: 'pointer',
-              boxShadow: '0 6px 24px rgba(5,150,105,0.35)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            Verify My Identity
-          </button>
-          <button
-            onClick={() => navigate('/market')}
-            style={{ marginTop: 12, padding: '12px', background: 'none', border: 'none', color: '#94a3b8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-          >
-            Back to Market
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   const isUp = stock.changePercent >= 0
   const effectivePrice = orderType === 'LIMIT' && limitPrice ? parseFloat(limitPrice) : stock.price
@@ -515,29 +449,11 @@ export default function Trade() {
           </div>
         )}
 
-        {/* KYC submitted warning */}
-        {kycStatus === 'submitted' && (
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 10,
-            background: '#eff6ff', border: '1.5px solid #bfdbfe',
-            borderRadius: 12, padding: '12px 14px',
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <div>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#1e40af', marginBottom: 2 }}>KYC Under Review</p>
-              <p style={{ fontSize: 11, color: '#3b82f6', fontWeight: 500, lineHeight: 1.4 }}>
-                Your identity verification is being reviewed. Trading will be enabled once approved — typically 1–2 business days.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* CTA */}
         <button
           onClick={() => setShowConfirm(true)}
-          disabled={!qty || qty <= 0 || orderLoading || kycStatus === 'submitted'}
+          disabled={!qty || qty <= 0 || orderLoading}
           style={{
             padding: '16px', borderRadius: 'var(--radius)',
             fontWeight: 900, fontSize: 17, letterSpacing: 0.2,

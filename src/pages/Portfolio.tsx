@@ -265,7 +265,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 
 export default function Portfolio() {
   const { positions, account, loadingPortfolio, loadPositions, loadAccount } = usePortfolioStore()
-  const { pacAccountId } = useAuthStore()
+  const { pacAccountId, walletBalance } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')
   const [showFund, setShowFund] = useState(false)
@@ -345,7 +345,7 @@ export default function Portfolio() {
           borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 16,
         }}>
           {[
-            { label: 'Cash Balance', val: account ? fmt(account.balance) : '—' },
+            { label: 'Cash Balance', val: fmt(walletBalance) },
             { label: 'Holdings', val: String(positions.length) },
             { label: 'Account', val: account?.accountNumber ?? '—' },
           ].map(({ label, val }, i) => (

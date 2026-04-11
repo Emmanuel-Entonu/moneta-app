@@ -18,6 +18,7 @@ export type Database = {
           bvn: string | null
           kyc_status: 'pending' | 'submitted' | 'verified' | 'rejected'
           pac_account_id: string | null
+          wallet_balance: number
           created_at: string
         }
       }

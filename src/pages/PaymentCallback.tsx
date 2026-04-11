@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { verifyPayment } from '../lib/monetaApi'
-import { usePortfolioStore } from '../store/portfolioStore'
+import { useAuthStore } from '../store/authStore'
 import MonetaLogo from '../components/MonetaLogo'
 
 export default function PaymentCallback() {
@@ -10,16 +10,17 @@ export default function PaymentCallback() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying')
   const [message, setMessage] = useState('')
   const [amount, setAmount] = useState(0)
-  const fundWallet = usePortfolioStore((s) => s.fundWallet)
+  const creditWallet = useAuthStore((s) => s.creditWallet)
 
   useEffect(() => {
     const ref = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
     if (!ref) { setStatus('failed'); setMessage('No payment reference found.'); return }
 
     verifyPayment(ref)
-      .then((result) => {
+      .then(async (result) => {
         if (result.success) {
-          fundWallet(result.amountNaira)
+          // Credit the real wallet balance in Supabase
+          await creditWallet(result.amountNaira)
           setStatus('success')
           setAmount(result.amountNaira)
           setMessage(result.message)

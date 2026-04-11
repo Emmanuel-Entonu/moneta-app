@@ -164,8 +164,8 @@ export default function Trade() {
   const [paySource, setPaySource] = useState<'wallet' | 'moneta'>('wallet')
   const [monetaLoading, setMonetaLoading] = useState(false)
   const [monetaError, setMonetaError] = useState<string | null>(null)
-  const walletBalance = usePortfolioStore((s) => s.account?.balance ?? 0)
-  const deductBalance = usePortfolioStore((s) => s.deductBalance)
+  const walletBalance = useAuthStore((s) => s.walletBalance)
+  const debitWallet = useAuthStore((s) => s.debitWallet)
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
   useEffect(() => { if (marketData.length === 0) loadMarketData() }, [])
@@ -700,7 +700,12 @@ export default function Trade() {
                     return
                   }
                   if (side === 'BUY' && paySource === 'wallet') {
-                    deductBalance(estimatedTotal)
+                    try {
+                      await debitWallet(estimatedTotal)
+                    } catch (e: unknown) {
+                      setMonetaError((e as Error).message)
+                      return
+                    }
                   }
                   placeOrder({
                     accountId: pacAccountId ?? 'demo',

@@ -11,6 +11,7 @@ import {
   type PacAccount,
   type PacOrderRequest,
 } from '../lib/pacApi'
+import { useAuthStore } from './authStore'
 
 // Flip to false once real API credentials are confirmed
 const USE_MOCK_MARKET = true
@@ -31,8 +32,8 @@ interface PortfolioState {
   loadMarketData: () => Promise<void>
   placeOrder: (order: PacOrderRequest) => Promise<void>
   clearOrderResult: () => void
-  fundWallet: (amountNaira: number) => void
-  deductBalance: (amountNaira: number) => void
+  fundWallet: (amountNaira: number) => Promise<void>
+  deductBalance: (amountNaira: number) => Promise<void>
 
   get totalValue(): number
   get totalPnL(): number
@@ -68,8 +69,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     set({ loadingPortfolio: true })
     try {
       if (USE_MOCK_BROKER) {
-        const storedBalance = localStorage.getItem('moneta_wallet_balance')
-        const balance = storedBalance !== null ? parseFloat(storedBalance) : 250000
+        // Real wallet balance lives in Supabase — authStore loads it on sign-in
+        const balance = useAuthStore.getState().walletBalance
         set({
           account: {
             id: accountId,
@@ -156,21 +157,19 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
   clearOrderResult: () => set({ orderResult: null }),
 
-  fundWallet: (amountNaira) => {
+  fundWallet: async (amountNaira) => {
+    // Persist to Supabase via authStore, then sync local display balance
+    await useAuthStore.getState().creditWallet(amountNaira)
+    const newBalance = useAuthStore.getState().walletBalance
     const current = get().account
-    if (current) {
-      const newBalance = current.balance + amountNaira
-      localStorage.setItem('moneta_wallet_balance', String(newBalance))
-      set({ account: { ...current, balance: newBalance } })
-    }
+    if (current) set({ account: { ...current, balance: newBalance } })
   },
 
-  deductBalance: (amountNaira) => {
+  deductBalance: async (amountNaira) => {
+    // Persist to Supabase via authStore, then sync local display balance
+    await useAuthStore.getState().debitWallet(amountNaira)
+    const newBalance = useAuthStore.getState().walletBalance
     const current = get().account
-    if (current) {
-      const newBalance = Math.max(0, current.balance - amountNaira)
-      localStorage.setItem('moneta_wallet_balance', String(newBalance))
-      set({ account: { ...current, balance: newBalance } })
-    }
+    if (current) set({ account: { ...current, balance: newBalance } })
   },
 }))

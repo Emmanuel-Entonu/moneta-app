@@ -23,9 +23,9 @@ const tabs = [
         strokeWidth={active ? 2.5 : 2}
         strokeLinecap="round" strokeLinejoin="round"
       >
-        <rect x="2" y="3" width="20" height="14" rx="2" />
-        <line x1="8" y1="21" x2="16" y2="21" />
-        <line x1="12" y1="17" x2="12" y2="21" />
+        <rect x="1" y="6" width="22" height="14" rx="3" />
+        <path d="M16 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill={active ? '#fff' : '#94a3b8'} stroke="none" />
+        <path d="M1 10h22" />
       </svg>
     ),
   },

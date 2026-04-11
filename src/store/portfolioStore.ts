@@ -68,12 +68,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     set({ loadingPortfolio: true })
     try {
       if (USE_MOCK_BROKER) {
+        const storedBalance = localStorage.getItem('moneta_wallet_balance')
+        const balance = storedBalance !== null ? parseFloat(storedBalance) : 250000
         set({
           account: {
             id: accountId,
             accountNumber: 'PAC-001234',
             accountName: 'Test Account',
-            balance: 250000,
+            balance,
             currency: 'NGN',
             status: 'ACTIVE',
           },
@@ -156,11 +158,19 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
   fundWallet: (amountNaira) => {
     const current = get().account
-    if (current) set({ account: { ...current, balance: current.balance + amountNaira } })
+    if (current) {
+      const newBalance = current.balance + amountNaira
+      localStorage.setItem('moneta_wallet_balance', String(newBalance))
+      set({ account: { ...current, balance: newBalance } })
+    }
   },
 
   deductBalance: (amountNaira) => {
     const current = get().account
-    if (current) set({ account: { ...current, balance: Math.max(0, current.balance - amountNaira) } })
+    if (current) {
+      const newBalance = Math.max(0, current.balance - amountNaira)
+      localStorage.setItem('moneta_wallet_balance', String(newBalance))
+      set({ account: { ...current, balance: newBalance } })
+    }
   },
 }))

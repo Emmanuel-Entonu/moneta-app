@@ -4,44 +4,25 @@ import MonetaLogo from '../components/MonetaLogo'
 
 const SLIDES = [
   {
-    icon: (
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-      </svg>
-    ),
+    image: '/Track the nigerian stock exchange live.png',
     tag: 'Real-Time Market Data',
     title: 'Track the Nigerian Stock Exchange Live',
     body: 'Get real-time prices, charts, and market movements for all NGX-listed equities — right in your pocket.',
   },
   {
-    icon: (
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="3" width="20" height="14" rx="2" />
-        <line x1="8" y1="21" x2="16" y2="21" />
-        <line x1="12" y1="17" x2="12" y2="21" />
-      </svg>
-    ),
+    image: '/Your Investments, All in One Place.png',
     tag: 'Portfolio Management',
     title: 'Your Investments, All in One Place',
     body: 'Monitor your holdings, track unrealized gains and losses, and see exactly how your portfolio is performing.',
   },
   {
-    icon: (
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="1" x2="12" y2="23" />
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
+    image: '/Trade Nigerian Stocks Instantly.png',
     tag: 'Buy & Sell',
     title: 'Trade Nigerian Stocks Instantly',
     body: 'Place market and limit orders for any NGX-listed stock in seconds, powered by PAC Securities — a licensed Nigerian broker.',
   },
   {
-    icon: (
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
+    image: '/Safe, Secure & Fully Compliant.png',
     tag: 'SEC Regulated',
     title: 'Safe, Secure & Fully Compliant',
     body: 'Moneta operates under SEC Nigeria\'s Digital Sub-Broker framework. Your identity is verified through KYC and your funds are protected.',
@@ -106,20 +87,16 @@ export default function Onboarding() {
         textAlign: 'center',
       }}>
         {/* Illustration */}
-        <div style={{
-          width: 140,
-          height: 140,
-          borderRadius: 40,
-          background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-          border: '2px solid #bbf7d0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 36,
-          boxShadow: '0 8px 32px rgba(5,150,105,0.12)',
-        }}>
-          {slide.icon}
-        </div>
+        <img
+          src={slide.image}
+          alt={slide.title}
+          style={{
+            width: 220,
+            height: 220,
+            objectFit: 'contain',
+            marginBottom: 36,
+          }}
+        />
 
         {/* Tag */}
         <span style={{

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MonetaLogo from '../components/MonetaLogo'
 import { useAuthStore } from '../store/authStore'
@@ -34,6 +34,14 @@ export default function Onboarding() {
   const [current, setCurrent] = useState(0)
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+
+  // Preload all images on mount so slides switch instantly
+  useEffect(() => {
+    SLIDES.forEach((slide) => {
+      const img = new Image()
+      img.src = slide.image
+    })
+  }, [])
 
   function finish() {
     const key = user ? `moneta_onboarded_${user.id}` : 'moneta_onboarded'
@@ -91,6 +99,7 @@ export default function Onboarding() {
       }}>
         {/* Illustration */}
         <img
+          key={slide.image}
           src={slide.image}
           alt={slide.title}
           style={{

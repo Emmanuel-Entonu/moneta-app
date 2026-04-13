@@ -118,7 +118,7 @@ export default function KYC() {
     setBvnState('sending')
     setBvnError(null)
     try {
-      const ref = await initBvnVerification(bvn)
+      const ref = await initBvnVerification(bvn, phone || undefined)
       setBvnRef(ref)
       setBvnState('otp')
     } catch (e: unknown) {

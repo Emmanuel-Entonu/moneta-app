@@ -26,11 +26,16 @@ async function headers() {
 }
 
 /** Step 1 — Initiate BVN query. Returns customer_reference and triggers OTP to user's phone. */
-export async function initBvnVerification(bvn: string): Promise<string> {
+export async function initBvnVerification(bvn: string, phone?: string): Promise<string> {
   const res = await fetch(nibssUrl('/bvn/query'), {
     method: 'POST',
     headers: await headers(),
-    body: JSON.stringify({ scope: 'profile', bvn, channel_code: 'mobile_app' }),
+    body: JSON.stringify({
+      scope: 'profile',
+      bvn,
+      channel_code: 'mobile_app',
+      ...(phone && { otp_method: phone }),
+    }),
   })
   const data = await res.json() as {
     status: boolean

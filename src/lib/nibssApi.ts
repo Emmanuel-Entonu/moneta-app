@@ -8,18 +8,20 @@
  *   3. getBvnDetails(ref)        → profile data (waits 6s as required by API)
  */
 
-const NIBSS_TOKEN = (import.meta.env.VITE_MONETA_SERVICE_KEY as string | undefined) ?? ''
-const PROXY_URL   = (import.meta.env.VITE_MONETA_PROXY_URL   as string | undefined) ?? 'https://moneta-proxy.fly.dev'
+import { getServiceToken } from './monetaApi'
+
+const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) ?? 'https://moneta-proxy.fly.dev'
 
 function nibssUrl(path: string) {
   return `${PROXY_URL}/api/v2${path}`
 }
 
-function headers() {
+async function headers() {
+  const token = await getServiceToken()
   return {
     'Content-Type':    'application/json',
     'Accept':          'application/json',
-    'X-Service-Token': NIBSS_TOKEN,
+    'X-Service-Token': token,
   }
 }
 
@@ -27,7 +29,7 @@ function headers() {
 export async function initBvnVerification(bvn: string): Promise<string> {
   const res = await fetch(nibssUrl('/bvn/query'), {
     method: 'POST',
-    headers: headers(),
+    headers: await headers(),
     body: JSON.stringify({ scope: 'profile', bvn, channel_code: 'mobile_app' }),
   })
   const data = await res.json() as {
@@ -45,7 +47,7 @@ export async function initBvnVerification(bvn: string): Promise<string> {
 export async function verifyBvnOtp(customerReference: string, otp: string): Promise<void> {
   const res = await fetch(nibssUrl('/bvn/verify/otp'), {
     method: 'POST',
-    headers: headers(),
+    headers: await headers(),
     body: JSON.stringify({ customer_reference: customerReference, otp }),
   })
   const data = await res.json() as { status: boolean; message?: string }
@@ -65,7 +67,7 @@ export async function getBvnDetails(customerReference: string): Promise<BvnProfi
   await new Promise((r) => setTimeout(r, 6000))
   const res = await fetch(nibssUrl('/bvn/details'), {
     method: 'POST',
-    headers: headers(),
+    headers: await headers(),
     body: JSON.stringify({ scope: 'profile', customer_reference: customerReference }),
   })
   const data = await res.json() as {

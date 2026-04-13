@@ -26,7 +26,7 @@ const CALLBACK_URL = `${window.location.origin}/payment/callback`
 
 let _token: string | null = null
 
-async function getServiceToken(): Promise<string> {
+export async function getServiceToken(): Promise<string> {
   if (_token) return _token
 
   const creds = btoa(`${CLIENT_ID}:${CLIENT_SEC}:${SVC_KEY}`)

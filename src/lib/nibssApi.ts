@@ -8,7 +8,7 @@
  *   3. getBvnDetails(ref)        → profile data (waits 6s as required by API)
  */
 
-const NIBSS_TOKEN = (import.meta.env.VITE_MONETA_NIBSS_TOKEN as string | undefined) ?? ''
+const NIBSS_TOKEN = (import.meta.env.VITE_MONETA_SERVICE_KEY as string | undefined) ?? ''
 const PROXY_URL   = (import.meta.env.VITE_MONETA_PROXY_URL   as string | undefined) ?? 'https://moneta-proxy.fly.dev'
 
 function nibssUrl(path: string) {

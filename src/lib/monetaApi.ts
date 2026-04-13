@@ -10,7 +10,7 @@
  */
 
 const IS_DEV = import.meta.env.DEV
-const PROXY_URL = import.meta.env.VITE_MONETA_PROXY_URL as string | undefined
+const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) || 'https://moneta-proxy.fly.dev'
 
 // Dev: Vite proxy → api.moneta.ng
 // Prod: Fly.io static IP proxy → api.moneta.ng

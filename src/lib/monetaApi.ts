@@ -9,13 +9,10 @@
  * Hash: HMAC-SHA512(email + amount + payment_type + callback_url, mac_key)
  */
 
-const IS_DEV = import.meta.env.DEV
 const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) || 'https://moneta-proxy.fly.dev'
 
-// Dev: Vite proxy → api.moneta.ng
-// Prod: Fly.io static IP proxy → api.moneta.ng
+// All environments: route through Fly.io static IP proxy → api.moneta.ng
 function monetaUrl(endpoint: string) {
-  if (IS_DEV) return `/moneta-proxy/api/v2${endpoint}`
   return `${PROXY_URL}/api/v2${endpoint}`
 }
 const CLIENT_ID  = import.meta.env.VITE_MONETA_CLIENT_ID     as string

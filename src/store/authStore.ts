@@ -6,6 +6,7 @@ interface AuthState {
   user: User | null
   session: Session | null
   loading: boolean
+  profileReady: boolean
   pacAccountId: string | null
   kycStatus: 'pending' | 'submitted' | 'verified' | 'rejected'
   walletBalance: number
@@ -26,6 +27,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   loading: true,
+  profileReady: false,
   pacAccountId: null,
   kycStatus: 'pending',
   walletBalance: 0,
@@ -52,7 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     await supabase.auth.signOut()
-    set({ user: null, session: null, pacAccountId: null, kycStatus: 'pending', walletBalance: 0 })
+    set({ user: null, session: null, pacAccountId: null, kycStatus: 'pending', walletBalance: 0, profileReady: false })
   },
 
   loadProfile: async () => {
@@ -81,6 +83,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (walletRow?.wallet_balance != null) {
       set({ walletBalance: walletRow.wallet_balance })
     }
+
+    set({ profileReady: true })
   },
 
   creditWallet: async (amountNaira) => {

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
 
@@ -15,8 +15,10 @@ import KYC from './pages/KYC'
 import PaymentCallback from './pages/PaymentCallback'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuthStore()
-  if (loading) {
+  const { user, loading, profileReady, kycStatus } = useAuthStore()
+  const location = useLocation()
+
+  if (loading || (user && !profileReady)) {
     return (
       <div style={{
         minHeight: '100svh',
@@ -41,7 +43,19 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
       </div>
     )
   }
+
   if (!user) return <Navigate to="/login" replace />
+
+  // New user: KYC first (skip check if already on /kyc)
+  if ((!kycStatus || kycStatus === 'pending') && location.pathname !== '/kyc') {
+    return <Navigate to="/kyc" replace />
+  }
+
+  // After KYC: onboarding (skip check if on /kyc so KYC can navigate itself)
+  if (!localStorage.getItem('moneta_onboarded') && location.pathname !== '/kyc') {
+    return <Navigate to="/onboarding" replace />
+  }
+
   return <>{children}</>
 }
 

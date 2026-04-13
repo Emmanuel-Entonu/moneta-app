@@ -10,12 +10,13 @@
  */
 
 const IS_DEV = import.meta.env.DEV
+const PROXY_URL = import.meta.env.VITE_MONETA_PROXY_URL as string | undefined
 
 // Dev: Vite proxy → api.moneta.ng
-// Prod: Vercel serverless function (stable AWS IP, not edge)
+// Prod: Fly.io static IP proxy → api.moneta.ng
 function monetaUrl(endpoint: string) {
   if (IS_DEV) return `/moneta-proxy/api/v2${endpoint}`
-  return `/api/moneta?path=${endpoint.replace(/^\//, '')}`
+  return `${PROXY_URL}/api/v2${endpoint}`
 }
 const CLIENT_ID  = import.meta.env.VITE_MONETA_CLIENT_ID     as string
 const CLIENT_SEC = import.meta.env.VITE_MONETA_CLIENT_SECRET as string

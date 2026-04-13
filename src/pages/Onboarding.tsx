@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MonetaLogo from '../components/MonetaLogo'
+import { useAuthStore } from '../store/authStore'
 
 const SLIDES = [
   {
@@ -32,9 +33,11 @@ const SLIDES = [
 export default function Onboarding() {
   const [current, setCurrent] = useState(0)
   const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
 
   function finish() {
-    localStorage.setItem('moneta_onboarded', '1')
+    const key = user ? `moneta_onboarded_${user.id}` : 'moneta_onboarded'
+    localStorage.setItem(key, '1')
     navigate('/market')
   }
 

@@ -146,8 +146,8 @@ export default function KYC() {
   const [showSkipModal, setShowSkipModal] = useState(false)
 
   function confirmSkip() {
-    localStorage.setItem('moneta_kyc_skipped', '1')
-    const dest = localStorage.getItem('moneta_onboarded') ? '/market' : '/onboarding'
+    localStorage.setItem(`moneta_kyc_skipped_${user?.id}`, '1')
+    const dest = localStorage.getItem(`moneta_onboarded_${user?.id}`) ? '/market' : '/onboarding'
     navigate(dest)
   }
 
@@ -195,7 +195,7 @@ export default function KYC() {
       // 4. Refresh auth store so pacAccountId is available immediately
       await loadProfile()
 
-      const dest = localStorage.getItem('moneta_onboarded') ? '/market' : '/onboarding'
+      const dest = localStorage.getItem(`moneta_onboarded_${user?.id}`) ? '/market' : '/onboarding'
       navigate(dest)
     } catch (e: unknown) {
       setError((e as Error).message)

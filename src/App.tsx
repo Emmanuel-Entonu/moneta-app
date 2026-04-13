@@ -49,12 +49,12 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   // New user: KYC first (skip if already on /kyc or user explicitly skipped)
   if ((!kycStatus || kycStatus === 'pending')
     && location.pathname !== '/kyc'
-    && !localStorage.getItem('moneta_kyc_skipped')) {
+    && !localStorage.getItem(`moneta_kyc_skipped_${user.id}`)) {
     return <Navigate to="/kyc" replace />
   }
 
   // After KYC: onboarding (skip check if on /kyc so KYC can navigate itself)
-  if (!localStorage.getItem('moneta_onboarded') && location.pathname !== '/kyc') {
+  if (!localStorage.getItem(`moneta_onboarded_${user.id}`) && location.pathname !== '/kyc') {
     return <Navigate to="/onboarding" replace />
   }
 

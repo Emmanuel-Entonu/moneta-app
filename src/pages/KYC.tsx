@@ -136,7 +136,36 @@ export default function KYC() {
       // Pre-fill name and DOB from BVN if step 1 fields are empty
       if (!fullName.trim() && profile.firstName) setFullName(`${profile.firstName} ${profile.surname}`.trim())
       if (!dob && profile.dob) setDob(profile.dob)
+
+      // BVN verified — immediately mark KYC as verified and provision broker account
+      if (user) {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          full_name: fullName || `${profile.firstName} ${profile.surname}`.trim(),
+          kyc_status: 'verified',
+        })
+
+        // Provision broker account
+        let pacAccountId: string
+        if (USE_MOCK_BROKER) {
+          pacAccountId = `PAC-${user.id.slice(0, 8).toUpperCase()}`
+        } else {
+          pacAccountId = await createBrokerAccount({
+            fullName: fullName || `${profile.firstName} ${profile.surname}`.trim(),
+            email: user.email ?? '',
+            phone,
+            bvn,
+          })
+        }
+        await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+        await loadProfile()
+      }
+
       setBvnState('done')
+
+      // Navigate immediately — trading is now unlocked
+      const dest = localStorage.getItem(`moneta_onboarded_${user?.id}`) ? '/market' : '/onboarding'
+      navigate(dest)
     } catch (e: unknown) {
       setBvnError((e as Error).message)
       setBvnState('error')
@@ -171,7 +200,7 @@ export default function KYC() {
         date_of_birth: dob || null,
         address,
         bvn,
-        kyc_status: 'submitted',
+        kyc_status: bvnState === 'done' ? 'verified' : 'submitted',
       })
       if (dbError) throw new Error(dbError.message)
 

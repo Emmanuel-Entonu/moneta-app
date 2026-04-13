@@ -156,7 +156,7 @@ export default function KYC() {
   }
 
   function canProceedStep2() {
-    return bvn.trim().length === 11 && idType && idNumber.trim().length > 3
+    return bvnState === 'done' && idType && idNumber.trim().length > 3
   }
 
   async function handleSubmit() {

@@ -193,11 +193,22 @@ function VerifyPaymentSheet({ onClose, onCredited }: { onClose: () => void; onCr
     setLoading(true); setResult(null)
     try {
       const res = await verifyPayment(r)
-      if (res.success && res.amountNaira > 0) {
-        await creditWallet(res.amountNaira)
-        localStorage.removeItem('moneta_pending_ref')
-        onCredited(res.amountNaira)
-        setResult({ ok: true, msg: `₦${res.amountNaira.toLocaleString('en-NG', { minimumFractionDigits: 2 })} credited to your wallet!` })
+      if (res.success) {
+        // Use the amount WE sent to Moneta — same fix as PaymentCallback.
+        // Moneta's verify response may not return the correct naira amount,
+        // so always prefer the saved expected amount from localStorage.
+        const savedAmount = parseFloat(localStorage.getItem('moneta_pending_amount') ?? '0')
+        const amountToCredit = savedAmount > 0 ? savedAmount : res.amountNaira
+        if (amountToCredit > 0) {
+          await creditWallet(amountToCredit)
+          localStorage.removeItem('moneta_pending_ref')
+          localStorage.removeItem('moneta_pending_amount')
+          onCredited(amountToCredit)
+          setResult({ ok: true, msg: `₦${amountToCredit.toLocaleString('en-NG', { minimumFractionDigits: 2 })} credited to your wallet!` })
+        } else {
+          localStorage.removeItem('moneta_pending_ref')
+          setResult({ ok: false, msg: 'Payment verified but amount could not be determined.' })
+        }
       } else {
         localStorage.removeItem('moneta_pending_ref')
         setResult({ ok: false, msg: res.message || 'Payment not confirmed by Moneta — no charge was made' })

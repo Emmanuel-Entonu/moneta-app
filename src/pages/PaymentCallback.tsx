@@ -55,8 +55,8 @@ export default function PaymentCallback() {
           try {
             const order = JSON.parse(pendingRaw) as PacOrderRequest
             await usePortfolioStore.getState().placeOrder(order)
-            // Debit the wallet for the order — net wallet change is zero
-            await debitWallet(result.amountNaira)
+            // Debit the wallet for the order — use same amount we credited
+            await debitWallet(amountToCredit)
           } catch (e) {
             // Order failed but money is safely in the wallet — user can retry from portfolio
             console.error('[PaymentCallback] pending order failed:', e)

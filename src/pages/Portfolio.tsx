@@ -25,6 +25,7 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
     try {
       const { reference, authorizationUrl } = await initializePayment(userEmail, num, method)
       localStorage.setItem('moneta_pending_ref', reference)
+      localStorage.setItem('moneta_pending_amount', String(num))
       if (Capacitor.isNativePlatform()) {
         await Browser.open({ url: authorizationUrl })
       } else {

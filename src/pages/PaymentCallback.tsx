@@ -24,21 +24,24 @@ export default function PaymentCallback() {
     if (ran.current) return
     ran.current = true
 
-    const ref = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
+    const ref            = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
+    const expectedAmount = parseFloat(params.get('expected') ?? '0')
     if (!ref) { setStatus('failed'); setMessage('No payment reference found.'); return }
-    // Clear the pending reference so the visibility listener doesn't re-trigger
     localStorage.removeItem('moneta_pending_ref')
+    localStorage.removeItem('moneta_pending_amount')
 
     verifyPayment(ref)
       .then(async (result) => {
         if (!result.success) {
           setStatus('failed')
-          setMessage(result.message)
+          setMessage(result.message || 'Payment was not completed.')
           return
         }
 
-        // Credit the real wallet balance in Supabase
-        await creditWallet(result.amountNaira)
+        // Use the amount we sent to Moneta — their verify response amount
+        // can be in a different unit (naira vs kobo) depending on API version.
+        const amountToCredit = expectedAmount > 0 ? expectedAmount : result.amountNaira
+        await creditWallet(amountToCredit)
 
         // If this payment was for a specific stock order (from Trade page),
         // execute and immediately debit that order now.
@@ -57,7 +60,7 @@ export default function PaymentCallback() {
         }
 
         setStatus('success')
-        setAmount(result.amountNaira)
+        setAmount(amountToCredit)
         setMessage(result.message)
       })
       .catch((e: Error) => {

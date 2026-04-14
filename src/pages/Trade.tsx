@@ -620,6 +620,7 @@ export default function Trade() {
                       }))
                       const { reference, authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
                       localStorage.setItem('moneta_pending_ref', reference)
+                      localStorage.setItem('moneta_pending_amount', String(estimatedTotal))
                       if (Capacitor.isNativePlatform()) {
                         await Browser.open({ url: authorizationUrl })
                       } else {

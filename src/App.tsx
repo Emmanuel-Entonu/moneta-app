@@ -94,10 +94,12 @@ export default function App() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     const listener = Browser.addListener('browserFinished', () => {
-      const ref = localStorage.getItem('moneta_pending_ref')
+      const ref    = localStorage.getItem('moneta_pending_ref')
+      const amount = localStorage.getItem('moneta_pending_amount')
       if (!ref) return
       // Navigate within the WebView — auth session is alive here
-      window.location.href = `/payment/callback?reference=${encodeURIComponent(ref)}`
+      const extra = amount ? `&expected=${encodeURIComponent(amount)}` : ''
+      window.location.href = `/payment/callback?reference=${encodeURIComponent(ref)}${extra}`
     })
     return () => { listener.then((l) => l.remove()) }
   }, [])

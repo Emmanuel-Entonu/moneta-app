@@ -362,8 +362,13 @@ export default function Portfolio() {
   const { pacAccountId, walletBalance, loadProfile } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')
-  const [showFund, setShowFund]     = useState(false)
-  const [showVerify, setShowVerify] = useState(false)
+  const [showFund, setShowFund]         = useState(false)
+  const [showVerify, setShowVerify]     = useState(false)
+  const [creditBanner, setCreditBanner] = useState<number | null>(() => {
+    const v = localStorage.getItem('moneta_last_credit')
+    if (v) { localStorage.removeItem('moneta_last_credit'); return parseFloat(v) }
+    return null
+  })
 
   const totalValue = positions.reduce((s, p) => s + p.marketValue, 0)
   const totalPnL = positions.reduce((s, p) => s + p.unrealizedPnL, 0)
@@ -379,10 +384,44 @@ export default function Portfolio() {
     loadPositions(id)
   }, [pacAccountId])
 
+  // Show success banner when background payment verification credits the wallet
+  useEffect(() => {
+    function onCredited() {
+      const v = localStorage.getItem('moneta_last_credit')
+      if (v) { localStorage.removeItem('moneta_last_credit'); setCreditBanner(parseFloat(v)) }
+    }
+    window.addEventListener('moneta_wallet_credited', onCredited)
+    return () => window.removeEventListener('moneta_wallet_credited', onCredited)
+  }, [])
+
   const sorted = [...positions].sort((a, b) => b.marketValue - a.marketValue)
 
   return (
     <Layout title="Portfolio">
+      {/* Payment credited banner */}
+      {creditBanner !== null && (
+        <div style={{
+          margin: '12px 16px 0',
+          background: 'linear-gradient(135deg, #059669, #047857)',
+          borderRadius: 14, padding: '14px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          boxShadow: '0 4px 16px rgba(5,150,105,0.3)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <div>
+              <p style={{ color: '#fff', fontWeight: 800, fontSize: 14, margin: 0 }}>Payment received!</p>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>
+                ₦{creditBanner.toLocaleString('en-NG', { minimumFractionDigits: 2 })} added to your wallet
+              </p>
+            </div>
+          </div>
+          <button onClick={() => setCreditBanner(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', padding: 4 }}>×</button>
+        </div>
+      )}
+
       {/* Wallet card */}
       <div style={{ margin: '16px 16px 0', position: 'relative', paddingBottom: 14 }}>
         {/* Cards peeking from behind the wallet */}

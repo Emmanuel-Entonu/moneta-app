@@ -634,12 +634,22 @@ export default function Trade() {
                     return
                   }
                   if (side === 'BUY' && paySource === 'wallet') {
-                    try {
-                      await debitWallet(estimatedTotal)
-                    } catch (e: unknown) {
-                      setMonetaError((e as Error).message)
-                      return
+                    // Place order FIRST — only debit if it succeeds
+                    await placeOrder({
+                      accountId: pacAccountId ?? 'demo',
+                      symbol: stock.symbol, side, quantity: qty, orderType,
+                      limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined,
+                    })
+                    const result = usePortfolioStore.getState().orderResult
+                    if (result?.success) {
+                      try {
+                        await debitWallet(estimatedTotal)
+                      } catch (e: unknown) {
+                        setMonetaError((e as Error).message)
+                      }
                     }
+                    setShowConfirm(false)
+                    return
                   }
                   placeOrder({
                     accountId: pacAccountId ?? 'demo',

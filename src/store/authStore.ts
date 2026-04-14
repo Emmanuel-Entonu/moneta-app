@@ -61,27 +61,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get()
     if (!user) return
 
-    // Core profile — these columns always exist
     const { data: profile } = await supabase
       .from('profiles')
-      .select('pac_account_id, kyc_status')
+      .select('pac_account_id, kyc_status, wallet_balance')
       .eq('id', user.id)
       .single()
+
     if (profile) {
       set({
-        pacAccountId: profile.pac_account_id,
-        kycStatus: profile.kyc_status as AuthState['kycStatus'],
+        pacAccountId: profile.pac_account_id ?? null,
+        kycStatus: (profile.kyc_status as AuthState['kycStatus']) ?? 'pending',
+        walletBalance: profile.wallet_balance ?? 0,
       })
-    }
-
-    // Wallet balance — separate query so a missing column doesn't break the rest
-    const { data: walletRow } = await supabase
-      .from('profiles')
-      .select('wallet_balance')
-      .eq('id', user.id)
-      .single()
-    if (walletRow?.wallet_balance != null) {
-      set({ walletBalance: walletRow.wallet_balance })
+    } else {
+      // No profile row yet (user skipped KYC or signup trigger missing) — create it now
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        kyc_status: 'pending',
+        wallet_balance: 0,
+      })
     }
 
     set({ profileReady: true })
@@ -90,11 +88,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   creditWallet: async (amountNaira) => {
     const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    // Always read the live balance from Supabase first — never trust stale local state
     const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single()
     const current = data?.wallet_balance ?? 0
     const newBalance = current + amountNaira
-    const { error } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id)
+    // upsert so it works even if the profile row doesn't exist yet
+    const { error } = await supabase.from('profiles').upsert({ id: user.id, wallet_balance: newBalance })
     if (error) throw new Error(error.message)
     set({ walletBalance: newBalance })
   },
@@ -102,12 +100,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   debitWallet: async (amountNaira) => {
     const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    // Always read the live balance from Supabase first — never trust stale local state
     const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single()
     const current = data?.wallet_balance ?? 0
     if (current < amountNaira) throw new Error('Insufficient wallet balance')
     const newBalance = current - amountNaira
-    const { error } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id)
+    const { error } = await supabase.from('profiles').upsert({ id: user.id, wallet_balance: newBalance })
     if (error) throw new Error(error.message)
     set({ walletBalance: newBalance })
   },

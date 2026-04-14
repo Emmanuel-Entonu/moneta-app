@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
+import { verifyPayment } from './lib/monetaApi'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -89,19 +90,66 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
-  // On Android: when the in-app payment browser closes, navigate to the
-  // callback page inside the authenticated WebView so the user sees the result.
+  // On native: auto-close the in-app browser once Moneta confirms payment success,
+  // then navigate to the callback page inside the authenticated WebView.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    const listener = Browser.addListener('browserFinished', () => {
+
+    let pollInterval: ReturnType<typeof setInterval> | null = null
+    let pollAttempts = 0
+    const MAX_ATTEMPTS = 60 // 5 minutes at 5s intervals
+
+    function stopPolling() {
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
+      pollAttempts = 0
+    }
+
+    function navigateToCallback() {
       const ref    = localStorage.getItem('moneta_pending_ref')
       const amount = localStorage.getItem('moneta_pending_amount')
       if (!ref) return
-      // Navigate within the WebView — auth session is alive here
       const extra = amount ? `&expected=${encodeURIComponent(amount)}` : ''
       window.location.href = `/payment/callback?reference=${encodeURIComponent(ref)}${extra}`
+    }
+
+    // When the browser is closed (by user or by us calling Browser.close()),
+    // navigate to the callback page in the WebView where auth is alive.
+    const finishedListener = Browser.addListener('browserFinished', () => {
+      stopPolling()
+      navigateToCallback()
     })
-    return () => { listener.then((l) => l.remove()) }
+
+    // browserPageLoaded fires exactly once — when the initial Moneta payment
+    // URL finishes loading. That's our signal to start polling for success
+    // so we can close the browser automatically instead of waiting for the user.
+    const pageLoadedListener = Browser.addListener('browserPageLoaded', () => {
+      const ref = localStorage.getItem('moneta_pending_ref')
+      if (!ref) return
+
+      pollInterval = setInterval(async () => {
+        pollAttempts++
+        const currentRef = localStorage.getItem('moneta_pending_ref')
+        if (!currentRef || pollAttempts > MAX_ATTEMPTS) { stopPolling(); return }
+
+        try {
+          const result = await verifyPayment(currentRef)
+          if (result.success) {
+            stopPolling()
+            // Close the in-app browser — this fires browserFinished which
+            // calls navigateToCallback() above.
+            Browser.close()
+          }
+        } catch {
+          // Network/API error — keep polling
+        }
+      }, 5000)
+    })
+
+    return () => {
+      stopPolling()
+      finishedListener.then((l) => l.remove())
+      pageLoadedListener.then((l) => l.remove())
+    }
   }, [])
 
   return (

@@ -172,8 +172,9 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-function VerifyPaymentSheet({ onClose }: { onClose: () => void }) {
-  const [ref, setRef]         = useState('')
+function VerifyPaymentSheet({ onClose, onCredited }: { onClose: () => void; onCredited: (amount: number) => void }) {
+  const pendingRef = localStorage.getItem('moneta_pending_ref') ?? ''
+  const [ref, setRef]         = useState(pendingRef)
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState<{ ok: boolean; msg: string } | null>(null)
   const creditWallet = useAuthStore((s) => s.creditWallet)
@@ -184,12 +185,14 @@ function VerifyPaymentSheet({ onClose }: { onClose: () => void }) {
     setLoading(true); setResult(null)
     try {
       const res = await verifyPayment(r)
-      if (res.success) {
+      if (res.success && res.amountNaira > 0) {
         await creditWallet(res.amountNaira)
         localStorage.removeItem('moneta_pending_ref')
+        onCredited(res.amountNaira)
         setResult({ ok: true, msg: `₦${res.amountNaira.toLocaleString('en-NG', { minimumFractionDigits: 2 })} credited to your wallet!` })
       } else {
-        setResult({ ok: false, msg: res.message || 'Payment not confirmed by Moneta' })
+        localStorage.removeItem('moneta_pending_ref')
+        setResult({ ok: false, msg: res.message || 'Payment not confirmed by Moneta — no charge was made' })
       }
     } catch (e: unknown) {
       setResult({ ok: false, msg: (e as Error).message })
@@ -363,12 +366,8 @@ export default function Portfolio() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')
   const [showFund, setShowFund]         = useState(false)
-  const [showVerify, setShowVerify]     = useState(false)
-  const [creditBanner, setCreditBanner] = useState<number | null>(() => {
-    const v = localStorage.getItem('moneta_last_credit')
-    if (v) { localStorage.removeItem('moneta_last_credit'); return parseFloat(v) }
-    return null
-  })
+  const [showVerify, setShowVerify]     = useState(() => !!localStorage.getItem('moneta_pending_ref'))
+  const [creditBanner, setCreditBanner] = useState<number | null>(null)
 
   const totalValue = positions.reduce((s, p) => s + p.marketValue, 0)
   const totalPnL = positions.reduce((s, p) => s + p.unrealizedPnL, 0)
@@ -384,15 +383,6 @@ export default function Portfolio() {
     loadPositions(id)
   }, [pacAccountId])
 
-  // Show success banner when background payment verification credits the wallet
-  useEffect(() => {
-    function onCredited() {
-      const v = localStorage.getItem('moneta_last_credit')
-      if (v) { localStorage.removeItem('moneta_last_credit'); setCreditBanner(parseFloat(v)) }
-    }
-    window.addEventListener('moneta_wallet_credited', onCredited)
-    return () => window.removeEventListener('moneta_wallet_credited', onCredited)
-  }, [])
 
   const sorted = [...positions].sort((a, b) => b.marketValue - a.marketValue)
 
@@ -785,7 +775,10 @@ export default function Portfolio() {
         <FundWalletSheet onClose={() => setShowFund(false)} />
       )}
       {showVerify && (
-        <VerifyPaymentSheet onClose={() => setShowVerify(false)} />
+        <VerifyPaymentSheet
+          onClose={() => setShowVerify(false)}
+          onCredited={(amount) => { setShowVerify(false); setCreditBanner(amount) }}
+        />
       )}
     </Layout>
   )

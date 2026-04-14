@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
-import { verifyPayment } from './lib/monetaApi'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -77,35 +76,13 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // When user returns from system browser after payment, silently verify the pending reference.
-  // Only credit the wallet if Moneta confirms a real, completed payment (amount ≥ ₦100).
-  // This avoids false credits for initialized-but-unpaid transactions.
+  // Every time the app comes back to the foreground, re-fetch the wallet balance
+  // from Supabase so manual edits and external credits are always reflected.
   useEffect(() => {
-    let verifying = false
     async function onVisible() {
       if (document.visibilityState !== 'visible') return
-      if (verifying) return
-      const ref = localStorage.getItem('moneta_pending_ref')
-      if (!ref) return
-
-      verifying = true
-      localStorage.removeItem('moneta_pending_ref')
-
-      try {
-        const state = useAuthStore.getState()
-        if (!state.user) return
-        const result = await verifyPayment(ref)
-        if (result.success && result.amountNaira >= 100) {
-          await state.creditWallet(result.amountNaira)
-          // Signal Portfolio to show a success banner
-          localStorage.setItem('moneta_last_credit', String(result.amountNaira))
-          window.dispatchEvent(new Event('moneta_wallet_credited'))
-        }
-      } catch {
-        // Silent — user can recover manually via the "Recover Payment" button
-      } finally {
-        verifying = false
-      }
+      const state = useAuthStore.getState()
+      if (state.user) await state.loadProfile()
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)

@@ -164,7 +164,7 @@ export async function verifyPayment(reference: string): Promise<{
   const success = data.status === 'success' || data.status === true
   return {
     success,
-    amountNaira: (data.data?.amount ?? 0) / 100, // kobo → naira
+    amountNaira: data.data?.amount ?? 0, // Moneta verify returns naira directly (not kobo)
     message: data.message ?? (success ? 'Payment successful' : 'Payment failed'),
   }
 }

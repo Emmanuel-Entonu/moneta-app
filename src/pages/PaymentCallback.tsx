@@ -24,8 +24,11 @@ export default function PaymentCallback() {
     if (ran.current) return
     ran.current = true
 
-    const ref            = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
-    const expectedAmount = parseFloat(params.get('expected') ?? '0')
+    const ref = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
+    // Read the amount WE sent to Moneta — stored at payment initiation
+    const savedAmount = parseFloat(
+      params.get('expected') ?? localStorage.getItem('moneta_pending_amount') ?? '0'
+    )
     if (!ref) { setStatus('failed'); setMessage('No payment reference found.'); return }
     localStorage.removeItem('moneta_pending_ref')
     localStorage.removeItem('moneta_pending_amount')
@@ -38,9 +41,10 @@ export default function PaymentCallback() {
           return
         }
 
-        // Use the amount we sent to Moneta — their verify response amount
-        // can be in a different unit (naira vs kobo) depending on API version.
-        const amountToCredit = expectedAmount > 0 ? expectedAmount : result.amountNaira
+        // Always use the amount we originally sent — Moneta's verify response
+        // returns naira but our code was dividing by 100 (treating it as kobo),
+        // causing ₦100 to be credited as ₦1.
+        const amountToCredit = savedAmount > 0 ? savedAmount : result.amountNaira
         await creditWallet(amountToCredit)
 
         // If this payment was for a specific stock order (from Trade page),

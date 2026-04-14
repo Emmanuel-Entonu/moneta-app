@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:nips.moneta.ng)",
+      "WebFetch(domain:api.moneta.ng)"
+    ]
+  }
+}

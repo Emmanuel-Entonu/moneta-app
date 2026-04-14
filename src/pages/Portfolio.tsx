@@ -4,6 +4,8 @@ import Layout from '../components/Layout'
 import { PortfolioCardSkeleton } from '../components/Skeleton'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import { initializePayment, verifyPayment, MONETA_CONFIGURED, type PaymentType } from '../lib/monetaApi'
 
 const QUICK_AMOUNTS = [5000, 10000, 25000, 50000, 100000]
@@ -22,9 +24,12 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
     setLoading(true); setError(null)
     try {
       const { reference, authorizationUrl } = await initializePayment(userEmail, num, method)
-      // Save reference so the app can verify payment when the user returns from the system browser
       localStorage.setItem('moneta_pending_ref', reference)
-      window.location.href = authorizationUrl
+      if (Capacitor.isNativePlatform()) {
+        await Browser.open({ url: authorizationUrl })
+      } else {
+        window.location.href = authorizationUrl
+      }
     } catch (e: unknown) {
       setError((e as Error).message)
       setLoading(false)

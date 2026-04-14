@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
+import { verifyPayment } from './lib/monetaApi'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -76,8 +79,7 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Every time the app comes back to the foreground, re-fetch the wallet balance
-  // from Supabase so manual edits and external credits are always reflected.
+  // Refresh balance from Supabase whenever the app comes to foreground
   useEffect(() => {
     async function onVisible() {
       if (document.visibilityState !== 'visible') return
@@ -86,6 +88,28 @@ export default function App() {
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
+  // On Android: when the in-app payment browser closes, immediately verify
+  // the pending reference in the WebView (which has the auth session).
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    const listener = Browser.addListener('browserFinished', async () => {
+      const ref = localStorage.getItem('moneta_pending_ref')
+      if (!ref) return
+      localStorage.removeItem('moneta_pending_ref')
+      try {
+        const state = useAuthStore.getState()
+        if (!state.user) return
+        const result = await verifyPayment(ref)
+        if (result.success && result.amountNaira > 0) {
+          await state.creditWallet(result.amountNaira)
+          await state.loadProfile()
+          localStorage.setItem('moneta_last_credit', String(result.amountNaira))
+        }
+      } catch { /* silent — user can use Recover Payment button */ }
+    })
+    return () => { listener.then((l) => l.remove()) }
   }, [])
 
   return (

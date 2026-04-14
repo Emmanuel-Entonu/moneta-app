@@ -4,6 +4,8 @@ import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
 import { MOCK_MARKET_DATA } from '../lib/pacApi'
 import { generateIntradayChart } from '../lib/sparkline'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import { initializePayment } from '../lib/monetaApi'
 
 type Side = 'BUY' | 'SELL'
@@ -617,9 +619,12 @@ export default function Trade() {
                         limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined,
                       }))
                       const { reference, authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
-                      // Save reference so the app can verify payment when the user returns from the system browser
                       localStorage.setItem('moneta_pending_ref', reference)
-                      window.location.href = authorizationUrl
+                      if (Capacitor.isNativePlatform()) {
+                        await Browser.open({ url: authorizationUrl })
+                      } else {
+                        window.location.href = authorizationUrl
+                      }
                     } catch (e: unknown) {
                       localStorage.removeItem('moneta_pending_order')
                       setMonetaError((e as Error).message)

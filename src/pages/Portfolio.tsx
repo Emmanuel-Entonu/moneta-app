@@ -27,6 +27,8 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
       localStorage.setItem('moneta_pending_ref', reference)
       localStorage.setItem('moneta_pending_amount', String(num))
       if (Capacitor.isNativePlatform()) {
+        // Close the fund sheet before opening browser so nothing interferes
+        onClose()
         await Browser.open({ url: authorizationUrl })
       } else {
         window.location.href = authorizationUrl
@@ -372,7 +374,7 @@ export default function Portfolio() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')
   const [showFund, setShowFund]         = useState(false)
-  const [showVerify, setShowVerify]     = useState(() => !!localStorage.getItem('moneta_pending_ref'))
+  const [showVerify, setShowVerify]     = useState(false)
   const [creditBanner, setCreditBanner] = useState<number | null>(null)
 
   const totalValue = positions.reduce((s, p) => s + p.marketValue, 0)

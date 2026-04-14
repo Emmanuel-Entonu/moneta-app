@@ -12,6 +12,9 @@ export default function PaymentCallback() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying')
   const [message, setMessage] = useState('')
   const [amount, setAmount] = useState(0)
+  // Track stock order outcome separately from payment outcome
+  const [orderSymbol, setOrderSymbol] = useState<string | null>(null)
+  const [orderFailed, setOrderFailed] = useState(false)
   const creditWallet = useAuthStore((s) => s.creditWallet)
   const debitWallet  = useAuthStore((s) => s.debitWallet)
   const authLoading  = useAuthStore((s) => s.loading)
@@ -48,18 +51,29 @@ export default function PaymentCallback() {
         await creditWallet(amountToCredit)
 
         // If this payment was for a specific stock order (from Trade page),
-        // execute and immediately debit that order now.
+        // execute the order then debit the wallet — but ONLY debit if the order succeeded.
         const pendingRaw = localStorage.getItem('moneta_pending_order')
         if (pendingRaw) {
           localStorage.removeItem('moneta_pending_order')
           try {
             const order = JSON.parse(pendingRaw) as PacOrderRequest
+            setOrderSymbol(order.symbol)
             await usePortfolioStore.getState().placeOrder(order)
-            // Debit the wallet for the order — use same amount we credited
-            await debitWallet(amountToCredit)
+
+            // placeOrder catches errors internally and never throws — check the store result
+            const orderResult = usePortfolioStore.getState().orderResult
+            if (orderResult?.success) {
+              // Order went through — debit the wallet for the purchase
+              await debitWallet(amountToCredit)
+            } else {
+              // Order failed — money stays in wallet, user can retry from Portfolio
+              setOrderFailed(true)
+              console.error('[PaymentCallback] order failed:', orderResult?.message)
+            }
           } catch (e) {
-            // Order failed but money is safely in the wallet — user can retry from portfolio
-            console.error('[PaymentCallback] pending order failed:', e)
+            // Unexpected error parsing the order — money stays in wallet
+            setOrderFailed(true)
+            console.error('[PaymentCallback] pending order error:', e)
           }
         }
 
@@ -100,23 +114,37 @@ export default function PaymentCallback() {
           <>
             <div style={{
               width: 80, height: 80, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #059669, #047857)',
+              background: orderFailed
+                ? '#fef3c7'
+                : 'linear-gradient(135deg, #059669, #047857)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 20px',
-              boxShadow: '0 8px 24px rgba(5,150,105,0.3)',
+              boxShadow: orderFailed ? 'none' : '0 8px 24px rgba(5,150,105,0.3)',
             }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+              {orderFailed ? (
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              ) : (
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
             </div>
+
             <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>
-              Payment Successful!
+              {orderFailed ? 'Order Failed' : orderSymbol ? 'Order Placed!' : 'Payment Successful!'}
             </h2>
-            <p style={{ fontSize: 28, fontWeight: 900, color: '#059669', marginBottom: 8 }}>
+            <p style={{ fontSize: 28, fontWeight: 900, color: orderFailed ? '#d97706' : '#059669', marginBottom: 8 }}>
               ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2 })}
             </p>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 32 }}>
-              Your wallet has been funded successfully
+              {orderFailed
+                ? `Your payment was received but the ${orderSymbol ?? 'stock'} order could not be placed. Your funds are safe in your wallet — retry from Portfolio.`
+                : orderSymbol
+                  ? `Your ${orderSymbol} buy order has been placed successfully`
+                  : 'Your wallet has been funded successfully'}
             </p>
             <button
               onClick={() => navigate('/portfolio')}

@@ -76,6 +76,20 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // When user returns from system browser after payment, verify the pending reference
+  // inside the Capacitor WebView (which has the auth session) instead of the system browser.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState !== 'visible') return
+      const ref = localStorage.getItem('moneta_pending_ref')
+      if (!ref) return
+      // Don't clear here — PaymentCallback will clear it after verifying
+      window.location.href = `/payment/callback?reference=${encodeURIComponent(ref)}`
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
   return (
     <BrowserRouter>
       <Routes>

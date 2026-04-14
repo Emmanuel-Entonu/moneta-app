@@ -21,7 +21,9 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
     if (num < 100) { setError('Minimum deposit is ₦100'); return }
     setLoading(true); setError(null)
     try {
-      const { authorizationUrl } = await initializePayment(userEmail, num, method)
+      const { reference, authorizationUrl } = await initializePayment(userEmail, num, method)
+      // Save reference so the app can verify payment when the user returns from the system browser
+      localStorage.setItem('moneta_pending_ref', reference)
       window.location.href = authorizationUrl
     } catch (e: unknown) {
       setError((e as Error).message)

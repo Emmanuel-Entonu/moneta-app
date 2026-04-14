@@ -26,6 +26,8 @@ export default function PaymentCallback() {
 
     const ref = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
     if (!ref) { setStatus('failed'); setMessage('No payment reference found.'); return }
+    // Clear the pending reference so the visibility listener doesn't re-trigger
+    localStorage.removeItem('moneta_pending_ref')
 
     verifyPayment(ref)
       .then(async (result) => {

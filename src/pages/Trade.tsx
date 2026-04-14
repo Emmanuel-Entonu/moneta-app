@@ -616,7 +616,9 @@ export default function Trade() {
                         orderType,
                         limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined,
                       }))
-                      const { authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
+                      const { reference, authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
+                      // Save reference so the app can verify payment when the user returns from the system browser
+                      localStorage.setItem('moneta_pending_ref', reference)
                       window.location.href = authorizationUrl
                     } catch (e: unknown) {
                       localStorage.removeItem('moneta_pending_order')

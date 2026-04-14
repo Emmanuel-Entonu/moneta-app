@@ -4,7 +4,7 @@ import Layout from '../components/Layout'
 import { PortfolioCardSkeleton } from '../components/Skeleton'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
-import { initializePayment, MONETA_CONFIGURED, type PaymentType } from '../lib/monetaApi'
+import { initializePayment, verifyPayment, MONETA_CONFIGURED, type PaymentType } from '../lib/monetaApi'
 
 const QUICK_AMOUNTS = [5000, 10000, 25000, 50000, 100000]
 
@@ -172,6 +172,98 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
+function VerifyPaymentSheet({ onClose }: { onClose: () => void }) {
+  const [ref, setRef]         = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult]   = useState<{ ok: boolean; msg: string } | null>(null)
+  const creditWallet = useAuthStore((s) => s.creditWallet)
+
+  async function handleVerify() {
+    const r = ref.trim()
+    if (!r) return
+    setLoading(true); setResult(null)
+    try {
+      const res = await verifyPayment(r)
+      if (res.success) {
+        await creditWallet(res.amountNaira)
+        localStorage.removeItem('moneta_pending_ref')
+        setResult({ ok: true, msg: `₦${res.amountNaira.toLocaleString('en-NG', { minimumFractionDigits: 2 })} credited to your wallet!` })
+      } else {
+        setResult({ ok: false, msg: res.message || 'Payment not confirmed by Moneta' })
+      }
+    } catch (e: unknown) {
+      setResult({ ok: false, msg: (e as Error).message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, backdropFilter: 'blur(4px)' }} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: '#fff', borderRadius: '24px 24px 0 0',
+        padding: '20px 20px calc(env(safe-area-inset-bottom,0px) + 28px)',
+        zIndex: 101, maxWidth: 480, margin: '0 auto',
+        boxShadow: '0 -8px 40px rgba(0,0,0,0.15)',
+      }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e2e8f0', margin: '0 auto 20px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>Recover Payment</h3>
+          <button onClick={onClose} style={{ fontSize: 22, color: 'var(--text-muted)', lineHeight: 1 }}>×</button>
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
+          If your payment went through but your wallet wasn't credited, paste the Moneta reference below.
+        </p>
+
+        <input
+          placeholder="e.g. MON-XXXXXXXX"
+          value={ref}
+          onChange={(e) => setRef(e.target.value)}
+          style={{
+            width: '100%', padding: '13px 16px', borderRadius: 14,
+            border: '2px solid', borderColor: ref ? 'var(--primary)' : 'var(--border)',
+            fontSize: 15, fontWeight: 600, color: 'var(--text)',
+            background: '#f8fafc', marginBottom: 16, boxSizing: 'border-box',
+          }}
+        />
+
+        {result && (
+          <div style={{
+            background: result.ok ? '#f0fdf4' : '#fee2e2',
+            border: `1px solid ${result.ok ? '#bbf7d0' : '#fca5a5'}`,
+            borderRadius: 10, padding: '10px 14px',
+            fontSize: 13, color: result.ok ? '#065f46' : '#991b1b',
+            fontWeight: 600, marginBottom: 14,
+          }}>
+            {result.msg}
+          </div>
+        )}
+
+        <button
+          onClick={result?.ok ? onClose : handleVerify}
+          disabled={loading || (!result?.ok && !ref.trim())}
+          style={{
+            width: '100%', padding: '15px',
+            background: loading || (!result?.ok && !ref.trim())
+              ? 'var(--bg-elevated)'
+              : result?.ok
+                ? 'linear-gradient(135deg, #059669, #047857)'
+                : 'linear-gradient(135deg, #059669, #047857)',
+            color: loading || (!result?.ok && !ref.trim()) ? 'var(--text-muted)' : '#fff',
+            borderRadius: 'var(--radius)', border: 'none',
+            fontSize: 16, fontWeight: 700, cursor: loading ? 'wait' : 'pointer',
+            boxShadow: loading || (!result?.ok && !ref.trim()) ? 'none' : '0 4px 16px rgba(5,150,105,0.3)',
+          }}
+        >
+          {loading ? 'Verifying…' : result?.ok ? 'Done' : 'Verify & Credit Wallet'}
+        </button>
+      </div>
+    </>
+  )
+}
+
 const ALLOC_COLORS = ['#059669', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9', '#ef4444']
 
 function fmt(n: number) {
@@ -270,7 +362,8 @@ export default function Portfolio() {
   const { pacAccountId, walletBalance, loadProfile } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')
-  const [showFund, setShowFund] = useState(false)
+  const [showFund, setShowFund]     = useState(false)
+  const [showVerify, setShowVerify] = useState(false)
 
   const totalValue = positions.reduce((s, p) => s + p.marketValue, 0)
   const totalPnL = positions.reduce((s, p) => s + p.unrealizedPnL, 0)
@@ -368,6 +461,19 @@ export default function Portfolio() {
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Fund Account
+        </button>
+
+        {/* Recover a stuck payment */}
+        <button
+          onClick={() => setShowVerify(true)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 600,
+            marginBottom: 16, padding: 0, textDecoration: 'underline',
+            textUnderlineOffset: 3,
+          }}
+        >
+          Payment debited but wallet not updated?
         </button>
 
         {/* Stats row */}
@@ -638,6 +744,9 @@ export default function Portfolio() {
 
       {showFund && (
         <FundWalletSheet onClose={() => setShowFund(false)} />
+      )}
+      {showVerify && (
+        <VerifyPaymentSheet onClose={() => setShowVerify(false)} />
       )}
     </Layout>
   )

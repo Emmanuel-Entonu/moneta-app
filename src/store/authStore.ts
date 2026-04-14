@@ -88,26 +88,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   creditWallet: async (amountNaira) => {
-    const { user, walletBalance } = get()
+    const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    const newBalance = walletBalance + amountNaira
-    const { error } = await supabase
-      .from('profiles')
-      .update({ wallet_balance: newBalance })
-      .eq('id', user.id)
+    // Always read the live balance from Supabase first — never trust stale local state
+    const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single()
+    const current = data?.wallet_balance ?? 0
+    const newBalance = current + amountNaira
+    const { error } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id)
     if (error) throw new Error(error.message)
     set({ walletBalance: newBalance })
   },
 
   debitWallet: async (amountNaira) => {
-    const { user, walletBalance } = get()
+    const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    if (walletBalance < amountNaira) throw new Error('Insufficient wallet balance')
-    const newBalance = walletBalance - amountNaira
-    const { error } = await supabase
-      .from('profiles')
-      .update({ wallet_balance: newBalance })
-      .eq('id', user.id)
+    // Always read the live balance from Supabase first — never trust stale local state
+    const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single()
+    const current = data?.wallet_balance ?? 0
+    if (current < amountNaira) throw new Error('Insufficient wallet balance')
+    const newBalance = current - amountNaira
+    const { error } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id)
     if (error) throw new Error(error.message)
     set({ walletBalance: newBalance })
   },

@@ -4,7 +4,6 @@ import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
-import { verifyPayment } from './lib/monetaApi'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -90,24 +89,15 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
-  // On Android: when the in-app payment browser closes, immediately verify
-  // the pending reference in the WebView (which has the auth session).
+  // On Android: when the in-app payment browser closes, navigate to the
+  // callback page inside the authenticated WebView so the user sees the result.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    const listener = Browser.addListener('browserFinished', async () => {
+    const listener = Browser.addListener('browserFinished', () => {
       const ref = localStorage.getItem('moneta_pending_ref')
       if (!ref) return
-      localStorage.removeItem('moneta_pending_ref')
-      try {
-        const state = useAuthStore.getState()
-        if (!state.user) return
-        const result = await verifyPayment(ref)
-        if (result.success && result.amountNaira > 0) {
-          await state.creditWallet(result.amountNaira)
-          await state.loadProfile()
-          localStorage.setItem('moneta_last_credit', String(result.amountNaira))
-        }
-      } catch { /* silent — user can use Recover Payment button */ }
+      // Navigate within the WebView — auth session is alive here
+      window.location.href = `/payment/callback?reference=${encodeURIComponent(ref)}`
     })
     return () => { listener.then((l) => l.remove()) }
   }, [])

@@ -20,7 +20,14 @@ const CLIENT_SEC = import.meta.env.VITE_MONETA_CLIENT_SECRET as string
 const SVC_KEY    = import.meta.env.VITE_MONETA_SERVICE_KEY   as string
 const MAC_KEY    = import.meta.env.VITE_MONETA_MAC_KEY       as string
 
-const CALLBACK_URL = `${window.location.origin}/payment/callback`
+import { Capacitor } from '@capacitor/core'
+
+// On native, tag the callback URL so PaymentCallback knows when it's being
+// loaded inside the in-app browser (Custom Tab) vs the Capacitor WebView.
+// The Custom Tab shows a simple "return to app" screen; only the WebView processes payment.
+const CALLBACK_URL = Capacitor.isNativePlatform()
+  ? `${window.location.origin}/payment/callback?source=native`
+  : `${window.location.origin}/payment/callback`
 
 // ─── Token exchange ───────────────────────────────────────────────────────────
 

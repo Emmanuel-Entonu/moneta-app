@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import { verifyPayment } from '../lib/monetaApi'
 import { useAuthStore } from '../store/authStore'
 import { usePortfolioStore } from '../store/portfolioStore'
@@ -12,7 +13,6 @@ export default function PaymentCallback() {
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying')
   const [message, setMessage] = useState('')
   const [amount, setAmount] = useState(0)
-  // Track stock order outcome separately from payment outcome
   const [orderSymbol, setOrderSymbol] = useState<string | null>(null)
   const [orderFailed, setOrderFailed] = useState(false)
   const creditWallet = useAuthStore((s) => s.creditWallet)
@@ -20,7 +20,15 @@ export default function PaymentCallback() {
   const authLoading  = useAuthStore((s) => s.loading)
   const ran = useRef(false)
 
+  // Detect when we're loaded inside the in-app browser (Custom Tab) rather than
+  // the Capacitor WebView. The callback URL includes ?source=native on native builds.
+  // Custom Tab: source=native AND Capacitor.isNativePlatform() = false (it's Chrome, not our app).
+  // WebView:    source=native AND Capacitor.isNativePlatform() = true  → process normally.
+  const isInsideCustomTab = params.get('source') === 'native' && !Capacitor.isNativePlatform()
+
   useEffect(() => {
+    // Don't process anything inside the Custom Tab — the WebView handles it
+    if (isInsideCustomTab) return
     // Wait until auth has restored the session — creditWallet needs user to be set
     if (authLoading) return
     // Guard against StrictMode double-fire
@@ -85,8 +93,42 @@ export default function PaymentCallback() {
         setStatus('failed')
         setMessage(e.message)
       })
-  }, [authLoading])
+  }, [authLoading, isInsideCustomTab])
 
+  // ── Custom Tab: Moneta redirected here inside the in-app browser.
+  // Show a simple "payment done" screen. The Capacitor WebView handles all processing.
+  if (isInsideCustomTab) {
+    return (
+      <div style={{
+        minHeight: '100svh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        background: '#fff', padding: '32px 24px', textAlign: 'center',
+      }}>
+        <MonetaLogo size="md" />
+        <div style={{ marginTop: 40 }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #059669, #047857)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+            boxShadow: '0 8px 24px rgba(5,150,105,0.3)',
+          }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>
+            Payment Complete
+          </h2>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+            Returning to Moneta…
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── WebView: full verification and wallet credit flow
   return (
     <div style={{
       minHeight: '100svh', display: 'flex', flexDirection: 'column',

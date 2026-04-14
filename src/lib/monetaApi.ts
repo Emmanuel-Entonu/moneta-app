@@ -9,6 +9,8 @@
  * Hash: HMAC-SHA512(email + amount + payment_type + callback_url, mac_key)
  */
 
+import { Capacitor } from '@capacitor/core'
+
 const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) || 'https://moneta-proxy.fly.dev'
 
 // All environments: route through Fly.io static IP proxy → api.moneta.ng
@@ -20,11 +22,10 @@ const CLIENT_SEC = import.meta.env.VITE_MONETA_CLIENT_SECRET as string
 const SVC_KEY    = import.meta.env.VITE_MONETA_SERVICE_KEY   as string
 const MAC_KEY    = import.meta.env.VITE_MONETA_MAC_KEY       as string
 
-import { Capacitor } from '@capacitor/core'
-
 // On native, tag the callback URL so PaymentCallback knows when it's being
 // loaded inside the in-app browser (Custom Tab) vs the Capacitor WebView.
-// The Custom Tab shows a simple "return to app" screen; only the WebView processes payment.
+// Custom Tab sees source=native + isNativePlatform()=false → shows "return to app", no processing.
+// WebView    sees source=native + isNativePlatform()=true  → processes normally.
 const CALLBACK_URL = Capacitor.isNativePlatform()
   ? `${window.location.origin}/payment/callback?source=native`
   : `${window.location.origin}/payment/callback`

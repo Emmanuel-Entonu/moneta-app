@@ -41,12 +41,15 @@ export default function PaymentCallback() {
       params.get('expected') ?? localStorage.getItem('moneta_pending_amount') ?? '0'
     )
     if (!ref) { setStatus('failed'); setMessage('No payment reference found.'); return }
+    // navigateToCallback in App.tsx already removed these, but clean up defensively
     localStorage.removeItem('moneta_pending_ref')
     localStorage.removeItem('moneta_pending_amount')
 
     verifyPayment(ref)
       .then(async (result) => {
         if (!result.success) {
+          // Clean up any pending order — don't let it execute on a future successful payment
+          localStorage.removeItem('moneta_pending_order')
           setStatus('failed')
           setMessage(result.message || 'Payment was not completed.')
           return
@@ -93,7 +96,7 @@ export default function PaymentCallback() {
         setStatus('failed')
         setMessage(e.message)
       })
-  }, [authLoading, isInsideCustomTab])
+  }, [authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Custom Tab: Moneta redirected here inside the in-app browser.
   // Show a simple "payment done" screen. The Capacitor WebView handles all processing.

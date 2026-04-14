@@ -108,6 +108,9 @@ export default function App() {
       const ref    = localStorage.getItem('moneta_pending_ref')
       const amount = localStorage.getItem('moneta_pending_amount')
       if (!ref) return
+      // Claim both items before navigating — prevents any concurrent call from also navigating
+      localStorage.removeItem('moneta_pending_ref')
+      localStorage.removeItem('moneta_pending_amount')
       const extra = amount ? `&expected=${encodeURIComponent(amount)}` : ''
       window.location.href = `/payment/callback?reference=${encodeURIComponent(ref)}${extra}`
     }

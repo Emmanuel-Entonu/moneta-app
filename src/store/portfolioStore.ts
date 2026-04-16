@@ -15,7 +15,7 @@ import { useAuthStore } from './authStore'
 
 const USE_MOCK_MARKET = true
 export const USE_MOCK_BROKER = false
-const USE_MOCK_ORDERS = true // orders endpoint not yet confirmed by PAC
+const USE_MOCK_ORDERS = false
 const PAC_TEST_ACCOUNT_ID = '0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e'
 
 interface PortfolioState {
@@ -149,10 +149,13 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
         })
       } else {
         const result = await placeOrder(order)
+        const success = !!(result.id ?? result.orderId) ||
+          result.orderStatus === 'PENDING' || result.orderStatus === 'SUCCESS' ||
+          result.status === 'SUCCESS' || result.status === 'PENDING'
         set({
           orderResult: {
-            success: result.status === 'SUCCESS' || result.status === 'PENDING',
-            message: result.message,
+            success,
+            message: result.routingMessage ?? result.message ?? (success ? 'Order placed' : 'Order failed'),
           },
         })
       }

@@ -145,9 +145,12 @@ export interface PacOrderRequest {
 }
 
 export interface PacOrderResponse {
-  orderId: string
-  status: string
-  message: string
+  id?: string
+  orderId?: string
+  orderStatus?: string
+  status?: string
+  routingMessage?: string
+  message?: string
 }
 
 // ─── Raw MDS response shape ───────────────────────────────────────────────────
@@ -290,7 +293,19 @@ export async function getClientPositions(accountId: string): Promise<PacPosition
 
 /** Place a buy or sell order */
 export async function placeOrder(order: PacOrderRequest): Promise<PacOrderResponse> {
-  return brokerPost('/position/api/v1/orders', order)
+  const body = {
+    accountId:    order.accountId,
+    secId:        order.symbol,
+    side:         order.side,
+    requestedQty: order.quantity,
+    tif:          'DAY',
+    marketCode:   'NGX',
+    currency:     'NGN',
+    numberOfLegs: 1,
+    assetType:    'EQUITY',
+    ...(order.limitPrice ? { limitPrice: order.limitPrice } : {}),
+  }
+  return brokerPost('/investing/api/v1/orders', body)
 }
 
 // ─── Normalizers ──────────────────────────────────────────────────────────────

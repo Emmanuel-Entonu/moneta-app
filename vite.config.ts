@@ -12,7 +12,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/mds-proxy/, ''),
       },
       '/broker-proxy': {
-        target: 'https://stoplight.io/mocks/mywealth-inc/mywealth-platform/1099845682',
+        target: 'https://api.dev.mywealthcare.io',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/broker-proxy/, ''),
       },

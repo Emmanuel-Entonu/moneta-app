@@ -96,7 +96,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     set({ loadingPortfolio: true })
     try {
       const positions = USE_MOCK_BROKER
-        ? []
+        ? MOCK_POSITIONS
         : await getClientPositions(accountId)
       set({ positions })
     } catch (e) {

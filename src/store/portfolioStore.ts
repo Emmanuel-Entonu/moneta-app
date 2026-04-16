@@ -82,7 +82,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
           },
         })
       } else {
-        const realId = accountId === 'demo' ? PAC_TEST_ACCOUNT_ID : accountId
+        const realId = !accountId || accountId.startsWith('demo') ? PAC_TEST_ACCOUNT_ID : accountId
         const account = await getAccountById(realId)
         set({ account })
       }
@@ -99,13 +99,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       if (USE_MOCK_BROKER) {
         set({ positions: MOCK_POSITIONS })
       } else {
-        const realId = accountId === 'demo' ? PAC_TEST_ACCOUNT_ID : accountId
+        const realId = !accountId || accountId.startsWith('demo') ? PAC_TEST_ACCOUNT_ID : accountId
         const positions = await getClientPositions(realId)
         set({ positions })
       }
     } catch (e) {
-      console.error('loadPositions error:', e)
-      set({ positions: MOCK_POSITIONS })
+      const msg = (e as Error).message ?? String(e)
+      console.error('loadPositions error:', msg)
+      set({ positions: MOCK_POSITIONS, apiStatus: `positions error: ${msg}` })
     } finally {
       set({ loadingPortfolio: false })
     }

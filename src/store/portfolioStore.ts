@@ -108,9 +108,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
         set({ positions, apiStatus: `live: ${positions.length} positions` })
       }
     } catch (e) {
-      const msg = (e as Error).message ?? String(e)
-      console.error('loadPositions error:', msg)
-      set({ positions: MOCK_POSITIONS, apiStatus: `ERR: ${msg}` })
+      console.error('loadPositions error:', (e as Error).message)
+      set({ positions: [] })
     } finally {
       set({ loadingPortfolio: false })
     }

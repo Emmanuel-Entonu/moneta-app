@@ -82,7 +82,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
           },
         })
       } else {
-        const realId = !accountId || accountId.startsWith('demo') ? PAC_TEST_ACCOUNT_ID : accountId
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(accountId ?? '')
+        const realId = isUUID ? accountId : PAC_TEST_ACCOUNT_ID
         const account = await getAccountById(realId)
         set({ account })
       }
@@ -99,14 +100,17 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       if (USE_MOCK_BROKER) {
         set({ positions: MOCK_POSITIONS })
       } else {
-        const realId = !accountId || accountId.startsWith('demo') ? PAC_TEST_ACCOUNT_ID : accountId
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(accountId ?? '')
+        const realId = isUUID ? accountId : PAC_TEST_ACCOUNT_ID
+        const { BROKER_BASE_DISPLAY } = await import('../lib/pacApi')
+        set({ apiStatus: `base=${BROKER_BASE_DISPLAY.substring(0,30)} id=${realId.substring(0,8)}` })
         const positions = await getClientPositions(realId)
-        set({ positions })
+        set({ positions, apiStatus: `live: ${positions.length} positions` })
       }
     } catch (e) {
       const msg = (e as Error).message ?? String(e)
       console.error('loadPositions error:', msg)
-      set({ positions: MOCK_POSITIONS, apiStatus: `positions error: ${msg}` })
+      set({ positions: MOCK_POSITIONS, apiStatus: `ERR: ${msg}` })
     } finally {
       set({ loadingPortfolio: false })
     }

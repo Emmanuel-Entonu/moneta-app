@@ -5,6 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Moneta',
   webDir: 'dist',
   server: {
+    url: 'https://moneta-app-ten.vercel.app',
     cleartext: false,
   },
   android: {

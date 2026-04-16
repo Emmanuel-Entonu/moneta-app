@@ -8,6 +8,7 @@
 const MDS_BASE    = (import.meta.env.VITE_MDS_BASE_URL    as string | undefined) || ''
 const MDS_API_KEY = (import.meta.env.VITE_MDS_API_KEY     as string | undefined) || ''
 const BROKER_BASE = (import.meta.env.VITE_BROKER_BASE_URL as string | undefined) || 'https://api.dev.mywealthcare.io'
+export const BROKER_BASE_DISPLAY = BROKER_BASE
 const USERNAME    = (import.meta.env.VITE_PAC_USERNAME    as string | undefined) || 'api.test'
 const PASSWORD    = (import.meta.env.VITE_PAC_PASSWORD    as string | undefined) || '8QUYVaa9J5j#'
 const TENANT_ID   = (import.meta.env.VITE_PAC_TENANT_ID   as string | undefined) || 'pac'
@@ -39,19 +40,36 @@ const SECURITY_NAMES: Record<string, string> = {
 let _bearerToken: string | null = null
 let _tokenExpiry = 0
 
+// Route all PAC broker calls through /api/pac-proxy (Vercel serverless function).
+// This avoids CORS preflight issues — the proxy runs server-side with no origin restrictions.
+const PROXY_PATH = '/api/pac-proxy'
+
+async function pacProxy<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+  const token = _bearerToken ?? ''
+  const url = `${PROXY_PATH}?path=${encodeURIComponent(path)}`
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'x-pac-token': token } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) throw new Error(`Broker ${res.status}: ${await res.text()}`)
+  return res.json()
+}
+
 async function getBearerToken(): Promise<string> {
   if (_bearerToken && Date.now() < _tokenExpiry) return _bearerToken
 
-  const res = await fetch(`${BROKER_BASE}/administration/api/v1/users/token/daemon`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-tenant-id': TENANT_ID },
-    body: JSON.stringify({ username: USERNAME, password: PASSWORD, tenant: TENANT_ID }),
-  })
-
-  if (!res.ok) throw new Error(`Auth failed: ${res.status}`)
-  const data = await res.json() as { token?: string; access_token?: string; expires_in?: number }
+  // Auth call goes through proxy too (server-side, no CORS)
+  const data = await pacProxy<{ token?: string; access_token?: string; expires_in?: number }>(
+    '/administration/api/v1/users/token/daemon',
+    'POST',
+    { username: USERNAME, password: PASSWORD, tenant: TENANT_ID },
+  )
   _bearerToken = data.access_token ?? data.token ?? ''
-  _tokenExpiry = Date.now() + ((data.expires_in ?? 1800) * 1000) - 60000 // 1 min early refresh
+  _tokenExpiry = Date.now() + ((data.expires_in ?? 1800) * 1000) - 60000
   return _bearerToken
 }
 
@@ -74,32 +92,13 @@ async function mdsGet<T>(path: string): Promise<T> {
 }
 
 async function brokerGet<T>(path: string): Promise<T> {
-  const token = await getBearerToken()
-  const res = await fetch(`${BROKER_BASE}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'x-tenant-id': TENANT_ID,
-      Accept: 'application/json',
-    },
-  })
-  if (!res.ok) throw new Error(`Broker ${res.status}: ${await res.text()}`)
-  return res.json()
+  await getBearerToken() // ensure token is fresh
+  return pacProxy<T>(path, 'GET')
 }
 
 async function brokerPost<T>(path: string, body: unknown): Promise<T> {
-  const token = await getBearerToken()
-  const res = await fetch(`${BROKER_BASE}${path}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'x-tenant-id': TENANT_ID,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) throw new Error(`Broker ${res.status}: ${await res.text()}`)
-  return res.json()
+  await getBearerToken()
+  return pacProxy<T>(path, 'POST', body)
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

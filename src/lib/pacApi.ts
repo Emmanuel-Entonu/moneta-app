@@ -42,16 +42,16 @@ let _tokenExpiry = 0
 async function getBearerToken(): Promise<string> {
   if (_bearerToken && Date.now() < _tokenExpiry) return _bearerToken
 
-  const res = await fetch(`${BROKER_BASE}/position/api/v1/auth/login`, {
+  const res = await fetch(`${BROKER_BASE}/administration/api/v1/users/token/daemon`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-tenant-id': TENANT_ID, 'Prefer': 'code=200' },
-    body: JSON.stringify({ username: USERNAME, password: PASSWORD }),
+    headers: { 'Content-Type': 'application/json', 'x-tenant-id': TENANT_ID },
+    body: JSON.stringify({ username: USERNAME, password: PASSWORD, tenant: TENANT_ID }),
   })
 
   if (!res.ok) throw new Error(`Auth failed: ${res.status}`)
-  const data = await res.json() as { token?: string; access_token?: string; expiresIn?: number }
-  _bearerToken = data.token ?? data.access_token ?? ''
-  _tokenExpiry = Date.now() + ((data.expiresIn ?? 3600) * 1000)
+  const data = await res.json() as { token?: string; access_token?: string; expires_in?: number }
+  _bearerToken = data.access_token ?? data.token ?? ''
+  _tokenExpiry = Date.now() + ((data.expires_in ?? 1800) * 1000) - 60000 // 1 min early refresh
   return _bearerToken
 }
 
@@ -261,18 +261,31 @@ export async function getIndexData() {
 
 // ─── Broker endpoints ─────────────────────────────────────────────────────────
 
-/** Get investment account by ID */
+/** Get investment account by ID — derived from the positions report */
 export async function getAccountById(accountId: string): Promise<PacAccount> {
-  const data = await brokerGet<unknown>(`/position/api/v1/accounts/${accountId}`)
-  return normalizeAccount(data)
+  const today = new Date().toISOString().split('T')[0]
+  const data = await brokerGet<Record<string, unknown>>(
+    `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${today}`
+  )
+  return {
+    id:            String(data.accountId ?? accountId),
+    accountNumber: String(data.accountNo ?? ''),
+    accountName:   String(data.accountLabel ?? ''),
+    balance:       Number(data.totalValue ?? 0),
+    currency:      String(data.reportCurrency ?? 'NGN'),
+    status:        'ACTIVE',
+  }
 }
 
 /** Get trading positions for an investment account */
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
-  const data = await brokerGet<{ positions?: unknown[]; data?: unknown[] }>(
-    `/position/api/v1/ledgers/report/trading/account/${accountId}`
-  )
-  const list = data.positions ?? data.data ?? (Array.isArray(data) ? data : [])
+  const today = new Date().toISOString().split('T')[0]
+  const data = await brokerGet<{
+    positionInstruments?: unknown[]
+    positions?: unknown[]
+    data?: unknown[]
+  }>(`/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${today}`)
+  const list = data.positionInstruments ?? data.positions ?? data.data ?? (Array.isArray(data) ? data : [])
   return (list as unknown[]).map(normalizePosition)
 }
 
@@ -321,13 +334,13 @@ function normalizeMover(d: MdsMover): PacMarketData {
 function normalizePosition(d: unknown): PacPosition {
   const r   = d as Record<string, unknown>
   const qty = Number(r.quantity     ?? r.units       ?? 0)
-  const avg = Number(r.averageCost  ?? r.avgCost     ?? r.costPrice    ?? 0)
+  const avg = Number(r.avgCost      ?? r.averageCost ?? r.costPrice    ?? 0)
   const cur = Number(r.currentPrice ?? r.lastPrice   ?? r.price        ?? 0)
-  const val = Number(r.marketValue  ?? r.currentValue ?? qty * cur)
+  const val = Number(r.currentValue ?? r.marketValue ?? qty * cur)
   const pnl = Number(r.unrealizedPnL ?? r.unrealisedPnL ?? val - avg * qty)
   return {
-    symbol:               String(r.symbol ?? r.secId ?? r.ticker ?? ''),
-    securityName:         String(r.securityName ?? r.name ?? ''),
+    symbol:               String(r.secId ?? r.symbol ?? r.ticker ?? ''),
+    securityName:         String(r.secDesc ?? r.securityName ?? r.name ?? ''),
     quantity:             qty,
     averageCost:          avg,
     currentPrice:         cur,
@@ -337,17 +350,6 @@ function normalizePosition(d: unknown): PacPosition {
   }
 }
 
-function normalizeAccount(d: unknown): PacAccount {
-  const r = d as Record<string, unknown>
-  return {
-    id:            String(r.id            ?? r.accountId     ?? ''),
-    accountNumber: String(r.accountNumber ?? r.number        ?? ''),
-    accountName:   String(r.accountName   ?? r.name          ?? ''),
-    balance:       Number(r.balance       ?? r.cashBalance   ?? r.availableCash ?? 0),
-    currency:      String(r.currency      ?? 'NGN'),
-    status:        String(r.status        ?? 'ACTIVE'),
-  }
-}
 
 /** Register a new client with the broker and return their account ID */
 export async function createBrokerAccount(details: {

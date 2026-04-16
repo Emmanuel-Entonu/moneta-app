@@ -13,9 +13,10 @@ import {
 } from '../lib/pacApi'
 import { useAuthStore } from './authStore'
 
-// Flip to false once real API credentials are confirmed
 const USE_MOCK_MARKET = true
-export const USE_MOCK_BROKER = true
+export const USE_MOCK_BROKER = false
+const USE_MOCK_ORDERS = true // orders endpoint not yet confirmed by PAC
+const PAC_TEST_ACCOUNT_ID = '0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e'
 
 interface PortfolioState {
   apiStatus: string | null
@@ -69,7 +70,6 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     set({ loadingPortfolio: true })
     try {
       if (USE_MOCK_BROKER) {
-        // Real wallet balance lives in Supabase — authStore loads it on sign-in
         const balance = useAuthStore.getState().walletBalance
         set({
           account: {
@@ -82,7 +82,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
           },
         })
       } else {
-        const account = await getAccountById(accountId)
+        const realId = accountId === 'demo' ? PAC_TEST_ACCOUNT_ID : accountId
+        const account = await getAccountById(realId)
         set({ account })
       }
     } catch (e) {
@@ -95,10 +96,13 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   loadPositions: async (accountId) => {
     set({ loadingPortfolio: true })
     try {
-      const positions = USE_MOCK_BROKER
-        ? MOCK_POSITIONS
-        : await getClientPositions(accountId)
-      set({ positions })
+      if (USE_MOCK_BROKER) {
+        set({ positions: MOCK_POSITIONS })
+      } else {
+        const realId = accountId === 'demo' ? PAC_TEST_ACCOUNT_ID : accountId
+        const positions = await getClientPositions(realId)
+        set({ positions })
+      }
     } catch (e) {
       console.error('loadPositions error:', e)
       set({ positions: MOCK_POSITIONS })
@@ -131,7 +135,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   placeOrder: async (order) => {
     set({ orderLoading: true, orderResult: null })
     try {
-      if (USE_MOCK_BROKER) {
+      if (USE_MOCK_ORDERS) {
         await new Promise((r) => setTimeout(r, 1200))
         set({
           orderResult: {

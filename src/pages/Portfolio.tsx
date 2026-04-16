@@ -380,7 +380,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 }
 
 export default function Portfolio() {
-  const { positions, account, loadingPortfolio, loadPositions, loadAccount } = usePortfolioStore()
+  const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus } = usePortfolioStore()
   const { pacAccountId, walletBalance, loadProfile } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')

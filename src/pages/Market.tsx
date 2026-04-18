@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { MarketRowSkeleton } from '../components/Skeleton'
@@ -133,7 +133,7 @@ function TopMoversPanel({ topGainer, topLoser, mostActive, onNavigate }: {
         </p>
       </div>
       <div style={{ display: 'flex' }}>
-        {cols.map(({ label, stock, up, color }, i) => (
+        {cols.map(({ label, stock, up }, i) => (
           <button
             key={label}
             onClick={() => onNavigate(stock.symbol)}

@@ -40,7 +40,7 @@ const SLIDES = [
 
 export default function Onboarding() {
   const [current, setCurrent] = useState(0)
-  const [animDir, setAnimDir] = useState<'next' | 'prev'>('next')
+  const [, setAnimDir] = useState<'next' | 'prev'>('next')
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
 

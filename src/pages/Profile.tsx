@@ -44,12 +44,6 @@ export default function Profile() {
       })
   }, [user])
 
-  const hasChanges =
-    profile.full_name     !== savedProfile.full_name     ||
-    profile.phone         !== savedProfile.phone         ||
-    profile.date_of_birth !== savedProfile.date_of_birth ||
-    profile.address       !== savedProfile.address
-
   async function saveProfile() {
     if (!user) return
     setSaving(true)

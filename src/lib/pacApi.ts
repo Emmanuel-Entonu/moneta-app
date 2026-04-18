@@ -148,6 +148,7 @@ export interface PacOrderResponse {
   id?: string
   orderId?: string
   orderStatus?: string
+  routingStatus?: string
   status?: string
   routingMessage?: string
   message?: string
@@ -303,6 +304,8 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
     currency:     'NGN',
     numberOfLegs: 1,
     assetType:    'EQUITY',
+    allOrNone:    false,
+    autoApprove:  true,
     ...(order.limitPrice ? { limitPrice: order.limitPrice } : {}),
   }
   return brokerPost('/investing/api/v1/orders', body)

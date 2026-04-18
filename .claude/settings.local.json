@@ -2,7 +2,36 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:nips.moneta.ng)",
-      "WebFetch(domain:api.moneta.ng)"
+      "WebFetch(domain:api.moneta.ng)",
+      "Bash(cat capacitor.config.ts)",
+      "Bash(cat capacitor.config.json)",
+      "Bash(start \"\" \"C:\\\\Users\\\\ALEX\\\\Desktop\\\\Moneta Stock  Trading App Alpha\\\\android\")",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/position/api/v1/auth/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -H 'Prefer: code=200' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/api/v1/auth/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/auth/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s -I \"https://api.dev.mywealthcare.io\")",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/v1/auth/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/pac/auth/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s https://stoplight.io/mocks/mywealth-inc/mywealth-platform/1099845682/position/api/v1/auth/login -H 'Prefer: code=200')",
+      "Bash(curl -s \"https://stoplight.io/mocks/mywealth-inc/mywealth-platform/1099845682\")",
+      "Bash(curl -s -X POST https://stoplight.io/mocks/mywealth-inc/mywealth-platform/1099845682/api/v1/auth/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -H 'Prefer: code=200' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/position/api/v2/auth/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/position/login -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s https://api.dev.mywealthcare.io/position/actuator/health -H 'x-tenant-id: pac')",
+      "Bash(curl -s https://api.dev.mywealthcare.io/position/api/v1/health -H 'x-tenant-id: pac')",
+      "Bash(curl -X POST \"https://api.dev.mywealthcare.io/position/api/v1/auth/login\" -H \"Content-Type: application/json\" -H \"x-tenant-id: pac\" -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\"}')",
+      "Bash(curl -s -X POST https://api.dev.mywealthcare.io/administration/api/v1/users/token/daemon -H 'Content-Type: application/json' -H 'x-tenant-id: pac' -d '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\",\"tenant\":\"pac\"}')",
+      "Bash(curl -s -I -X OPTIONS https://api.dev.mywealthcare.io/administration/api/v1/users/token/daemon -H 'Origin: https://moneta-app-ten.vercel.app' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type,x-tenant-id')",
+      "Bash(curl -s -I -X OPTIONS https://api.dev.mywealthcare.io/administration/api/v1/users/token/daemon -H 'Origin: capacitor://localhost' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type,x-tenant-id')",
+      "Bash(curl -s -I -X OPTIONS https://api.dev.mywealthcare.io/administration/api/v1/users/token/daemon -H 'Origin: http://localhost' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type,x-tenant-id')",
+      "Bash(curl -s -I -X OPTIONS https://api.dev.mywealthcare.io/position/api/v1/ledgers/report/trading/account/0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e -H 'Origin: capacitor://localhost' -H 'Access-Control-Request-Method: GET' -H 'Access-Control-Request-Headers: authorization,x-tenant-id,accept')",
+      "Bash(curl -v -X OPTIONS https://api.dev.mywealthcare.io/position/api/v1/ledgers/report/trading/account/0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e -H 'Origin: capacitor://localhost' -H 'Access-Control-Request-Method: GET' -H 'Access-Control-Request-Headers: authorization,x-tenant-id,accept')",
+      "Bash(curl -s -I -X OPTIONS https://api.dev.mywealthcare.io/position/api/v1/ledgers/report/trading/account/0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e -H 'Origin: https://moneta-app-ten.vercel.app' -H 'Access-Control-Request-Method: GET' -H 'Access-Control-Request-Headers: authorization,x-tenant-id,accept')",
+      "Bash(curl -v -X OPTIONS https://api.dev.mywealthcare.io/position/api/v1/ledgers/report/trading/account/0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e -H 'Origin: https://moneta-app-ten.vercel.app' -H 'Access-Control-Request-Method: GET' -H 'Access-Control-Request-Headers: authorization,x-tenant-id,accept')",
+      "Bash(cmd /c \"studio64.exe\" \"C:\\\\Users\\\\ALEX\\\\Desktop\\\\Moneta Stock  Trading App Alpha\\\\android\")",
+      "Bash(powershell -Command \"Start-Process 'C:\\\\Program Files\\\\Android\\\\Android Studio\\\\bin\\\\studio64.exe' -ArgumentList 'C:\\\\Users\\\\ALEX\\\\Desktop\\\\Moneta Stock  Trading App Alpha\\\\android'\")",
+      "Read(//c/Users/ALEX/Desktop/Moneta Stock Trading App Alpha/node_modules/@capacitor-community/http/android/**)",
+      "Bash(npx vercel *)"
     ]
   }
 }

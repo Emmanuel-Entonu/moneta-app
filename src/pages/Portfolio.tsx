@@ -27,7 +27,6 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
       localStorage.setItem('moneta_pending_ref', reference)
       localStorage.setItem('moneta_pending_amount', String(num))
       if (Capacitor.isNativePlatform()) {
-        // Close the fund sheet before opening browser so nothing interferes
         onClose()
         await Browser.open({ url: authorizationUrl })
       } else {

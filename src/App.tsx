@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { App as CapApp } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './store/authStore'
-import { verifyPayment } from './lib/monetaApi'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -90,68 +90,41 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
-  // On native: auto-close the in-app browser once Moneta confirms payment success,
-  // then navigate to the callback page inside the authenticated WebView.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
 
-    let pollInterval: ReturnType<typeof setInterval> | null = null
-    let pollAttempts = 0
-    const MAX_ATTEMPTS = 60 // 5 minutes at 5s intervals
-
-    function stopPolling() {
-      if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
-      pollAttempts = 0
-    }
-
-    function navigateToCallback() {
-      const ref    = localStorage.getItem('moneta_pending_ref')
-      const amount = localStorage.getItem('moneta_pending_amount')
-      if (!ref) return
-      // Claim both items before navigating — prevents any concurrent call from also navigating
+    // Claim pending payment from localStorage and navigate to callback.
+    // Returns false if nothing to claim (prevents double-navigation).
+    function claimAndNavigate(ref: string): boolean {
+      const stored = localStorage.getItem('moneta_pending_ref')
+      if (!stored) return false // already claimed by another handler
+      const amount = localStorage.getItem('moneta_pending_amount') ?? ''
       localStorage.removeItem('moneta_pending_ref')
       localStorage.removeItem('moneta_pending_amount')
       const extra = amount ? `&expected=${encodeURIComponent(amount)}` : ''
       window.location.href = `/payment/callback?reference=${encodeURIComponent(ref)}${extra}`
+      return true
     }
 
-    // When the browser is closed (by user or by us calling Browser.close()),
-    // navigate to the callback page in the WebView where auth is alive.
-    const finishedListener = Browser.addListener('browserFinished', () => {
-      stopPolling()
-      navigateToCallback()
+    // moneta:// deep link — fired when Custom Tab redirects to moneta:// scheme.
+    // Remove localStorage FIRST so browserFinished (which may also fire) is a no-op.
+    const urlListener = CapApp.addListener('appUrlOpen', (data: { url: string }) => {
+      if (!data.url.startsWith('moneta://payment/callback')) return
+      const url = new URL(data.url.replace('moneta://', 'https://moneta.app/'))
+      const ref = url.searchParams.get('reference') ?? ''
+      if (!ref) return
+      claimAndNavigate(ref)
     })
 
-    // browserPageLoaded fires exactly once — when the initial Moneta payment
-    // URL finishes loading. That's our signal to start polling for success
-    // so we can close the browser automatically instead of waiting for the user.
-    const pageLoadedListener = Browser.addListener('browserPageLoaded', () => {
-      const ref = localStorage.getItem('moneta_pending_ref')
-      if (!ref) return
-
-      pollInterval = setInterval(async () => {
-        pollAttempts++
-        const currentRef = localStorage.getItem('moneta_pending_ref')
-        if (!currentRef || pollAttempts > MAX_ATTEMPTS) { stopPolling(); return }
-
-        try {
-          const result = await verifyPayment(currentRef)
-          if (result.success) {
-            stopPolling()
-            // Close the in-app browser — this fires browserFinished which
-            // calls navigateToCallback() above.
-            Browser.close()
-          }
-        } catch {
-          // Network/API error — keep polling
-        }
-      }, 5000)
+    // Fallback: user manually closes the Custom Tab before moneta:// fires.
+    const finishedListener = Browser.addListener('browserFinished', () => {
+      const ref = localStorage.getItem('moneta_pending_ref') ?? ''
+      if (ref) claimAndNavigate(ref)
     })
 
     return () => {
-      stopPolling()
+      urlListener.then((l: { remove: () => void }) => l.remove())
       finishedListener.then((l) => l.remove())
-      pageLoadedListener.then((l) => l.remove())
     }
   }, [])
 

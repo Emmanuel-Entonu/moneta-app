@@ -148,10 +148,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
           },
         })
       } else {
-        const result = await placeOrder(order)
-        const success = !!(result.id ?? result.orderId) ||
-          result.orderStatus === 'PENDING' || result.orderStatus === 'SUCCESS' ||
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.accountId ?? '')
+        const realOrder = { ...order, accountId: isUUID ? order.accountId : PAC_TEST_ACCOUNT_ID }
+        const result = await placeOrder(realOrder)
+        const routingOk = result.routingStatus === 'ACCEPTED' || result.routingStatus === 'DELIVERED'
+        const statusOk = result.orderStatus === 'PENDING' || result.orderStatus === 'NEW' ||
+          result.orderStatus === 'FILLED' || result.orderStatus === 'PARTIALLY_FILLED' ||
           result.status === 'SUCCESS' || result.status === 'PENDING'
+        const success = routingOk || statusOk || !!(result.id ?? result.orderId)
         set({
           orderResult: {
             success,

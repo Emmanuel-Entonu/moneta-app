@@ -20,71 +20,91 @@ export default function PaymentCallback() {
   const authLoading  = useAuthStore((s) => s.loading)
   const ran = useRef(false)
 
-  // Detect when we're loaded inside the in-app browser (Custom Tab) rather than
-  // the Capacitor WebView. The callback URL includes ?source=native on native builds.
-  // Custom Tab: source=native AND Capacitor.isNativePlatform() = false (it's Chrome, not our app).
-  // WebView:    source=native AND Capacitor.isNativePlatform() = true  → process normally.
-  const isInsideCustomTab = params.get('source') === 'native' && !Capacitor.isNativePlatform()
+  // Read URL params once — these are stable for the component's lifetime
+  const ref         = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
+  const expectedStr = params.get('expected') ?? ''
 
+  // isNativePlatform() = true  → we're in the Capacitor WebView → do full verification
+  // isNativePlatform() = false → we're in Chrome Custom Tab or desktop browser
+  //   If moneta_pending_ref exists in localStorage → desktop/web browser → do full verification
+  //   If moneta_pending_ref is absent → Chrome Custom Tab (separate storage from WebView) → redirect to app
+  const isInsideCustomTab = !Capacitor.isNativePlatform() && !localStorage.getItem('moneta_pending_ref')
+
+  // Custom Tab: redirect to moneta:// scheme immediately → Android closes tab and opens app
   useEffect(() => {
-    // Don't process anything inside the Custom Tab — the WebView handles it
+    if (!isInsideCustomTab) return
+    const returnUrl = `moneta://payment/callback?reference=${encodeURIComponent(ref)}&expected=${encodeURIComponent(expectedStr)}`
+    window.location.href = returnUrl
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // WebView / web: full verification flow
+  useEffect(() => {
     if (isInsideCustomTab) return
-    // Wait until auth has restored the session — creditWallet needs user to be set
     if (authLoading) return
-    // Guard against StrictMode double-fire
+    if (!useAuthStore.getState().user) return
     if (ran.current) return
     ran.current = true
 
-    const ref = params.get('reference') ?? params.get('txnref') ?? params.get('ref_no') ?? ''
-    // Read the amount WE sent to Moneta — stored at payment initiation
-    const savedAmount = parseFloat(
-      params.get('expected') ?? localStorage.getItem('moneta_pending_amount') ?? '0'
-    )
     if (!ref) { setStatus('failed'); setMessage('No payment reference found.'); return }
-    // navigateToCallback in App.tsx already removed these, but clean up defensively
+
+    // Claim amount — URL param takes priority (set by claimAndNavigate), else localStorage
+    const savedAmount = parseFloat(expectedStr || localStorage.getItem('moneta_pending_amount') || '0')
+
+    // Claim pending order NOW before any async work — prevents it executing on a future payment
+    // if anything below throws (e.g. creditWallet fails due to network error)
+    const pendingRaw = localStorage.getItem('moneta_pending_order')
+    localStorage.removeItem('moneta_pending_order')
     localStorage.removeItem('moneta_pending_ref')
     localStorage.removeItem('moneta_pending_amount')
 
-    verifyPayment(ref)
+    async function verifyWithRetry(): Promise<Awaited<ReturnType<typeof verifyPayment>>> {
+      let lastError: Error | null = null
+      for (let i = 0; i < 5; i++) {
+        if (i > 0) await new Promise((r) => setTimeout(r, 3000))
+        try {
+          const result = await verifyPayment(ref)
+          if (result.success) return result
+          lastError = null
+        } catch (e) {
+          lastError = e as Error
+        }
+      }
+      if (lastError) throw lastError
+      return verifyPayment(ref)
+    }
+
+    verifyWithRetry()
       .then(async (result) => {
         if (!result.success) {
-          // Clean up any pending order — don't let it execute on a future successful payment
-          localStorage.removeItem('moneta_pending_order')
           setStatus('failed')
           setMessage(result.message || 'Payment was not completed.')
           return
         }
 
-        // Always use the amount we originally sent — Moneta's verify response
-        // returns naira but our code was dividing by 100 (treating it as kobo),
-        // causing ₦100 to be credited as ₦1.
+        // Guard: user must be authenticated before crediting wallet
+        const user = useAuthStore.getState().user
+        if (!user) {
+          setStatus('failed')
+          setMessage('Session expired. Please contact support — your payment was received.')
+          return
+        }
+
         const amountToCredit = savedAmount > 0 ? savedAmount : result.amountNaira
         await creditWallet(amountToCredit)
 
-        // If this payment was for a specific stock order (from Trade page),
-        // execute the order then debit the wallet — but ONLY debit if the order succeeded.
-        const pendingRaw = localStorage.getItem('moneta_pending_order')
         if (pendingRaw) {
-          localStorage.removeItem('moneta_pending_order')
           try {
             const order = JSON.parse(pendingRaw) as PacOrderRequest
             setOrderSymbol(order.symbol)
             await usePortfolioStore.getState().placeOrder(order)
-
-            // placeOrder catches errors internally and never throws — check the store result
             const orderResult = usePortfolioStore.getState().orderResult
             if (orderResult?.success) {
-              // Order went through — debit the wallet for the purchase
               await debitWallet(amountToCredit)
             } else {
-              // Order failed — money stays in wallet, user can retry from Portfolio
               setOrderFailed(true)
-              console.error('[PaymentCallback] order failed:', orderResult?.message)
             }
-          } catch (e) {
-            // Unexpected error parsing the order — money stays in wallet
+          } catch {
             setOrderFailed(true)
-            console.error('[PaymentCallback] pending order error:', e)
           }
         }
 
@@ -94,13 +114,13 @@ export default function PaymentCallback() {
       })
       .catch((e: Error) => {
         setStatus('failed')
-        setMessage(e.message)
+        setMessage(e.message ?? 'Verification failed. Use "Payment debited but wallet not updated?" to recover.')
       })
   }, [authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Custom Tab: Moneta redirected here inside the in-app browser.
-  // Show a simple "payment done" screen. The Capacitor WebView handles all processing.
+  // ── Custom Tab UI: "Returning to Moneta…" while moneta:// redirect fires
   if (isInsideCustomTab) {
+    const returnUrl = `moneta://payment/callback?reference=${encodeURIComponent(ref)}&expected=${encodeURIComponent(expectedStr)}`
     return (
       <div style={{
         minHeight: '100svh', display: 'flex', flexDirection: 'column',
@@ -110,28 +130,27 @@ export default function PaymentCallback() {
         <MonetaLogo size="md" />
         <div style={{ marginTop: 40 }}>
           <div style={{
-            width: 80, height: 80, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #059669, #047857)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 20px',
-            boxShadow: '0 8px 24px rgba(5,150,105,0.3)',
-          }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>
-            Payment Complete
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-            Returning to Moneta…
+            width: 56, height: 56, borderRadius: '50%',
+            border: '3px solid #d1fae5', borderTopColor: '#059669',
+            animation: 'spin 0.8s linear infinite', margin: '0 auto 20px',
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Payment received!</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
+            Close this browser tab to return to Moneta
           </p>
+          <a
+            href={returnUrl}
+            style={{ display: 'block', marginTop: 16, color: '#059669', fontWeight: 600, fontSize: 13 }}
+          >
+            Or tap here to open Moneta
+          </a>
         </div>
       </div>
     )
   }
 
-  // ── WebView: full verification and wallet credit flow
+  // ── WebView / web: verification UI
   return (
     <div style={{
       minHeight: '100svh', display: 'flex', flexDirection: 'column',
@@ -146,8 +165,7 @@ export default function PaymentCallback() {
             <div style={{
               width: 56, height: 56, borderRadius: '50%',
               border: '3px solid #d1fae5', borderTopColor: '#059669',
-              animation: 'spin 0.8s linear infinite',
-              margin: '0 auto 20px',
+              animation: 'spin 0.8s linear infinite', margin: '0 auto 20px',
             }} />
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Verifying payment…</p>
@@ -159,9 +177,7 @@ export default function PaymentCallback() {
           <>
             <div style={{
               width: 80, height: 80, borderRadius: '50%',
-              background: orderFailed
-                ? '#fef3c7'
-                : 'linear-gradient(135deg, #059669, #047857)',
+              background: orderFailed ? '#fef3c7' : 'linear-gradient(135deg, #059669, #047857)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 20px',
               boxShadow: orderFailed ? 'none' : '0 8px 24px rgba(5,150,105,0.3)',
@@ -177,7 +193,6 @@ export default function PaymentCallback() {
                 </svg>
               )}
             </div>
-
             <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>
               {orderFailed ? 'Order Failed' : orderSymbol ? 'Order Placed!' : 'Payment Successful!'}
             </h2>
@@ -186,7 +201,7 @@ export default function PaymentCallback() {
             </p>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 32 }}>
               {orderFailed
-                ? `Your payment was received but the ${orderSymbol ?? 'stock'} order could not be placed. Your funds are safe in your wallet — retry from Portfolio.`
+                ? `Your payment was received but the ${orderSymbol ?? 'stock'} order could not be placed. Your funds are safe in your wallet.`
                 : orderSymbol
                   ? `Your ${orderSymbol} buy order has been placed successfully`
                   : 'Your wallet has been funded successfully'}
@@ -209,8 +224,7 @@ export default function PaymentCallback() {
         {status === 'failed' && (
           <>
             <div style={{
-              width: 80, height: 80, borderRadius: '50%',
-              background: '#fee2e2',
+              width: 80, height: 80, borderRadius: '50%', background: '#fee2e2',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 20px',
             }}>
@@ -218,9 +232,7 @@ export default function PaymentCallback() {
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>
-              Payment Failed
-            </h2>
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)', marginBottom: 8 }}>Payment Failed</h2>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 32 }}>{message}</p>
             <button
               onClick={() => navigate('/portfolio')}

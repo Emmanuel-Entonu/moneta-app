@@ -33,9 +33,9 @@ function KYCStatusIcon({ type, color }: { type: 'clock' | 'eye' | 'check' | 'x';
 export default function Profile() {
   const navigate = useNavigate()
   const { user, kycStatus } = useAuthStore()
-  const [profile, setProfile] = useState<ProfileData>({
-    full_name: '', phone: '', date_of_birth: '', address: '', bvn: '', kyc_status: 'pending',
-  })
+  const empty: ProfileData = { full_name: '', phone: '', date_of_birth: '', address: '', bvn: '', kyc_status: 'pending' }
+  const [profile, setProfile] = useState<ProfileData>(empty)
+  const [savedProfile, setSavedProfile] = useState<ProfileData>(empty)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState<'profile' | 'kyc'>('profile')
@@ -43,8 +43,19 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return
     supabase.from('profiles').select('*').eq('id', user.id).single()
-      .then(({ data }) => { if (data) setProfile(data as ProfileData) })
+      .then(({ data }) => {
+        if (data) {
+          setProfile(data as ProfileData)
+          setSavedProfile(data as ProfileData)
+        }
+      })
   }, [user])
+
+  const hasChanges =
+    profile.full_name     !== savedProfile.full_name     ||
+    profile.phone         !== savedProfile.phone         ||
+    profile.date_of_birth !== savedProfile.date_of_birth ||
+    profile.address       !== savedProfile.address
 
   async function saveProfile() {
     if (!user) return
@@ -57,6 +68,7 @@ export default function Profile() {
       address: profile.address,
     })
     setSaving(false)
+    setSavedProfile({ ...profile })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -170,21 +182,23 @@ export default function Profile() {
             <Field label="Date of Birth" value={profile.date_of_birth} onChange={(v) => setProfile((p) => ({ ...p, date_of_birth: v }))} type="date" />
             <Field label="Residential Address" value={profile.address} onChange={(v) => setProfile((p) => ({ ...p, address: v }))} placeholder="123 Marina Street, Lagos Island" multiline />
 
-            {saved && (
+            {saved && !hasChanges && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                background: 'var(--up-dim)', borderLeft: '3px solid var(--up)',
-                borderRadius: 8, padding: '11px 14px',
-                color: 'var(--up-text)', fontSize: 13, fontWeight: 600,
+                background: '#f0fdf4', border: '1.5px solid #a7f3d0',
+                borderRadius: 10, padding: '11px 14px',
+                color: '#065f46', fontSize: 13, fontWeight: 600,
               }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 Profile saved successfully
               </div>
             )}
 
-            <button onClick={saveProfile} disabled={saving} style={primaryBtn(saving)}>
-              {saving ? 'Saving…' : 'Save Profile'}
-            </button>
+            {hasChanges && (
+              <button onClick={saveProfile} disabled={saving} style={primaryBtn(saving)}>
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+            )}
           </>
         ) : (
           <>

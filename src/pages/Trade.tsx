@@ -205,28 +205,30 @@ export default function Trade() {
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: '18px 20px',
-        paddingTop: 'calc(env(safe-area-inset-top,0px) + 18px)',
-        background: '#fff',
-        borderBottom: '1px solid var(--border)',
+        padding: '14px 20px',
+        paddingTop: 'calc(env(safe-area-inset-top,0px) + 14px)',
+        background: 'linear-gradient(135deg, #050d1a 0%, #0c1526 65%, #022c22 100%)',
+        borderBottom: '1px solid rgba(5,150,105,0.2)',
         position: 'sticky', top: 0, zIndex: 40,
       }}>
         <button
           onClick={() => navigate(-1)}
           style={{
             width: 38, height: 38, borderRadius: 12,
-            background: '#f8fafc', border: '1.5px solid var(--border)',
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
 
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <p style={{ fontWeight: 900, fontSize: 18, color: 'var(--text)', letterSpacing: -0.4 }}>{stock.symbol}</p>
+            <p style={{ fontWeight: 900, fontSize: 18, color: '#fff', letterSpacing: -0.4 }}>{stock.symbol}</p>
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 3,
               fontSize: 11, fontWeight: 700,
@@ -240,7 +242,7 @@ export default function Trade() {
               {Math.abs(stock.changePercent).toFixed(2)}%
             </span>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{stock.name}</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>{stock.name}</p>
         </div>
 
         {/* Compare button */}
@@ -249,12 +251,13 @@ export default function Trade() {
           title="Compare with another stock"
           style={{
             width: 38, height: 38, borderRadius: 12,
-            background: '#f0fdf4', border: '1.5px solid #a7f3d0',
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', flexShrink: 0,
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
             <line x1="2" y1="20" x2="22" y2="20"/>
           </svg>
@@ -262,11 +265,12 @@ export default function Trade() {
 
         {holding && (
           <div style={{
-            background: '#f0fdf4', padding: '6px 12px', borderRadius: 20,
-            border: '1.5px solid #a7f3d0',
+            background: 'rgba(16,185,129,0.2)',
+            padding: '6px 12px', borderRadius: 20,
+            border: '1px solid rgba(16,185,129,0.35)',
           }}>
-            <p style={{ fontSize: 10, color: '#059669', fontWeight: 700 }}>OWNED</p>
-            <p style={{ fontSize: 12, color: '#065f46', fontWeight: 800, textAlign: 'center' }}>{holding.quantity}</p>
+            <p style={{ fontSize: 9, color: '#6ee7b7', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>OWNED</p>
+            <p style={{ fontSize: 12, color: '#fff', fontWeight: 800, textAlign: 'center' }}>{holding.quantity}</p>
           </div>
         )}
       </div>
@@ -290,19 +294,20 @@ export default function Trade() {
         margin: '16px 20px 0',
         borderRadius: 14, overflow: 'hidden',
         border: '1.5px solid var(--border)',
+        background: '#f8fafc',
       }}>
         {[
-          { label: 'Open',   val: `₦${stock.open.toFixed(2)}` },
-          { label: 'High',   val: `₦${stock.high.toFixed(2)}` },
-          { label: 'Low',    val: `₦${stock.low.toFixed(2)}`  },
-          { label: 'Vol',    val: (stock.volume / 1000).toFixed(0) + 'K' },
-        ].map(({ label, val }, i) => (
+          { label: 'Open', val: `₦${stock.open.toFixed(2)}` },
+          { label: 'High', val: `₦${stock.high.toFixed(2)}`, color: '#059669' },
+          { label: 'Low',  val: `₦${stock.low.toFixed(2)}`,  color: '#dc2626' },
+          { label: 'Vol',  val: (stock.volume / 1000).toFixed(0) + 'K' },
+        ].map(({ label, val, color }, i) => (
           <div key={label} style={{
-            padding: '10px 0', textAlign: 'center', background: '#fff',
+            padding: '11px 0', textAlign: 'center', background: '#fff',
             borderLeft: i > 0 ? '1px solid var(--border)' : 'none',
           }}>
-            <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 4 }}>{label}</p>
-            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{val}</p>
+            <p style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 5 }}>{label}</p>
+            <p style={{ fontSize: 13, fontWeight: 800, color: color ?? 'var(--text)', letterSpacing: -0.2 }}>{val}</p>
           </div>
         ))}
       </div>

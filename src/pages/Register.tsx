@@ -28,45 +28,55 @@ export default function Register() {
   return (
     <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
 
-      {/* Compact green header */}
+      {/* Compact dark header */}
       <div style={{
-        background: 'linear-gradient(160deg, #064e3b 0%, #059669 100%)',
-        padding: '36px 24px 32px',
+        background: 'linear-gradient(160deg, #050e1a 0%, #0c1f2e 40%, #064e3b 100%)',
+        padding: 'calc(env(safe-area-inset-top,0px) + 22px) 20px 28px',
         display: 'flex',
         alignItems: 'center',
-        gap: 16,
-        borderRadius: '0 0 28px 28px',
+        gap: 14,
+        borderRadius: '0 0 32px 32px',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          pointerEvents: 'none',
+        }} />
         <button
           onClick={() => navigate('/login')}
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 12,
-            background: 'rgba(255,255,255,0.15)',
+            width: 40,
+            height: 40,
+            borderRadius: 13,
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
             flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.2)',
+            position: 'relative',
+            zIndex: 1,
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <div>
+        <div style={{ position: 'relative', zIndex: 1 }}>
           <MonetaLogo size="sm" inverted />
         </div>
       </div>
 
       {/* Form */}
       <div style={{ flex: 1, padding: '28px 24px 40px' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', marginBottom: 5, letterSpacing: -0.5 }}>
           Create your account
         </h2>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 26 }}>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 28, fontWeight: 500 }}>
           Start investing on the NSE today
         </p>
 
@@ -95,15 +105,19 @@ export default function Register() {
               display: 'flex',
               alignItems: 'flex-start',
               gap: 10,
-              background: 'var(--down-dim)',
-              borderLeft: '3px solid var(--down)',
-              borderRadius: 8,
+              background: '#fff5f5',
+              border: '1.5px solid #fecaca',
+              borderRadius: 10,
               padding: '12px 14px',
-              color: 'var(--down-text)',
+              color: '#991b1b',
               fontSize: 13,
               fontWeight: 500,
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,marginTop:1}}>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
               {error}
             </div>
           )}
@@ -113,15 +127,15 @@ export default function Register() {
             disabled={loading}
             style={{
               marginTop: 6,
-              padding: '15px',
+              padding: '16px',
               background: loading
                 ? 'var(--bg-elevated)'
                 : 'linear-gradient(135deg, #059669, #047857)',
               color: loading ? 'var(--text-muted)' : '#fff',
               borderRadius: 'var(--radius)',
               fontSize: 16,
-              fontWeight: 700,
-              boxShadow: loading ? 'none' : '0 4px 20px rgba(5,150,105,0.35)',
+              fontWeight: 800,
+              boxShadow: loading ? 'none' : '0 6px 24px rgba(5,150,105,0.38)',
               transition: 'all 0.2s',
             }}
           >
@@ -146,10 +160,10 @@ export default function Register() {
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
-  fontSize: 12,
-  fontWeight: 600,
+  fontSize: 11,
+  fontWeight: 700,
   color: 'var(--text-secondary)',
-  marginBottom: 7,
-  letterSpacing: 0.3,
+  marginBottom: 8,
+  letterSpacing: 0.4,
   textTransform: 'uppercase',
 }

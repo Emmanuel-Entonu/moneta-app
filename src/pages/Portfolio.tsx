@@ -446,28 +446,47 @@ export default function Portfolio() {
         }} />
 
       <div style={{
-        background: 'linear-gradient(145deg, #022c22 0%, #064e3b 40%, #059669 100%)',
+        background: 'linear-gradient(135deg, #020f0a 0%, #042d1e 35%, #064e3b 65%, #059669 100%)',
         borderRadius: 24, padding: '24px 22px 22px',
         position: 'relative', overflow: 'hidden', zIndex: 1,
-        boxShadow: '0 8px 32px rgba(2,44,34,0.5), inset 0 0 0 1.5px rgba(255,255,255,0.09)',
+        boxShadow: '0 12px 48px rgba(2,44,34,0.55), inset 0 0 0 1px rgba(255,255,255,0.08)',
       }}>
+        {/* Decorative mesh gradient */}
+        <div style={{
+          position: 'absolute', top: -60, right: -40,
+          width: 220, height: 220, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(52,211,153,0.18) 0%, transparent 65%)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -30, left: -30,
+          width: 160, height: 160, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(5,150,105,0.15) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+        {/* Subtle grid */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+          pointerEvents: 'none',
+        }} />
+
         {/* Wallet icon top-right */}
         <div style={{
           position: 'absolute', top: 20, right: 20,
-          width: 38, height: 38, borderRadius: 12,
+          width: 40, height: 40, borderRadius: 13,
           background: 'rgba(255,255,255,0.1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backdropFilter: 'blur(4px)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255,255,255,0.12)',
         }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="1" y="6" width="22" height="14" rx="3"/>
             <path d="M16 14a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
             <path d="M1 10h22"/>
           </svg>
         </div>
-        {/* Decorative shine */}
-        <div style={{ position: 'absolute', top: -40, left: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
-        <div style={{ position: 'absolute', bottom: -20, right: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
 
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>
           Total Portfolio Value

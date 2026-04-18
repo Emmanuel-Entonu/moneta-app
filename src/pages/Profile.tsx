@@ -71,29 +71,47 @@ export default function Profile() {
       {/* User hero */}
       <div style={{
         padding: '20px 20px 0',
-        background: 'linear-gradient(160deg, #064e3b, #059669)',
+        background: 'linear-gradient(160deg, #050e1a 0%, #0c1f2e 40%, #064e3b 80%, #059669 100%)',
         margin: 0,
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        {/* Decorative orbs */}
+        <div style={{
+          position: 'absolute', top: -30, right: -30,
+          width: 150, height: 150, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(5,150,105,0.2) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          pointerEvents: 'none',
+        }} />
+
         <div style={{
           display: 'flex', alignItems: 'center', gap: 16,
           padding: '0 0 20px',
+          position: 'relative', zIndex: 1,
         }}>
           {/* Avatar */}
           <div style={{
-            width: 60, height: 60, borderRadius: 20,
-            background: 'rgba(255,255,255,0.2)',
-            border: '2px solid rgba(255,255,255,0.35)',
+            width: 64, height: 64, borderRadius: 22,
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1))',
+            border: '2px solid rgba(255,255,255,0.28)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: -1,
+            fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: -1,
             flexShrink: 0,
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)',
           }}>
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 3, letterSpacing: -0.3 }}>
+            <p style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginBottom: 3, letterSpacing: -0.4 }}>
               {profile.full_name || 'Complete your profile'}
             </p>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
               {user?.email}
             </p>
           </div>
@@ -251,13 +269,20 @@ export default function Profile() {
         <button
           onClick={() => useAuthStore.getState().signOut()}
           style={{
-            width: '100%', padding: '13px',
-            background: 'none',
-            border: '1.5px solid var(--border)',
+            width: '100%', padding: '14px',
+            background: '#fff5f5',
+            border: '1.5px solid #fecaca',
             borderRadius: 'var(--radius)',
-            color: 'var(--down)', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            color: '#dc2626', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            transition: 'all 0.15s',
           }}
         >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
           Sign Out
         </button>
       </div>

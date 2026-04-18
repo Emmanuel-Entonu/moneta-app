@@ -77,7 +77,7 @@ export default function BottomNav() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 5,
-                padding: '12px 0 10px',
+                padding: '8px 0 6px',
                 position: 'relative',
                 cursor: 'pointer',
               }}>
@@ -98,8 +98,8 @@ export default function BottomNav() {
 
                 {/* Icon container */}
                 <div style={{
-                  width: 40,
-                  height: 32,
+                  width: 38,
+                  height: 28,
                   borderRadius: 12,
                   display: 'flex',
                   alignItems: 'center',

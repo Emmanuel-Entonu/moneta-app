@@ -81,7 +81,7 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
       <main style={{
         flex: 1,
         overflowY: 'auto',
-        paddingBottom: hideNav ? 0 : 72,
+        paddingBottom: hideNav ? 0 : 60,
       }}>
         {children}
       </main>

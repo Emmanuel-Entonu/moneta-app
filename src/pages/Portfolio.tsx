@@ -446,52 +446,63 @@ export default function Portfolio() {
         }} />
 
       <div style={{
-        background: 'linear-gradient(135deg, #020f0a 0%, #042d1e 35%, #064e3b 65%, #059669 100%)',
-        borderRadius: 24, padding: '24px 22px 22px',
+        background: 'linear-gradient(135deg, #0a1628 0%, #0f2240 35%, #053d2a 70%, #0a5c3c 100%)',
+        borderRadius: 26, padding: '26px 24px 22px',
         position: 'relative', overflow: 'hidden', zIndex: 1,
-        boxShadow: '0 12px 48px rgba(2,44,34,0.55), inset 0 0 0 1px rgba(255,255,255,0.08)',
+        boxShadow: '0 16px 56px rgba(2,30,20,0.60), inset 0 0 0 1px rgba(255,255,255,0.07)',
+        minHeight: 200,
       }}>
-        {/* Decorative mesh gradient */}
+        {/* Decorative circles like a credit card brand */}
         <div style={{
-          position: 'absolute', top: -60, right: -40,
-          width: 220, height: 220, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(52,211,153,0.18) 0%, transparent 65%)',
+          position: 'absolute', top: -50, right: -50,
+          width: 240, height: 240, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(52,211,153,0.12) 0%, transparent 60%)',
           pointerEvents: 'none',
         }} />
         <div style={{
-          position: 'absolute', bottom: -30, left: -30,
-          width: 160, height: 160, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(5,150,105,0.15) 0%, transparent 70%)',
+          position: 'absolute', bottom: -40, left: -40,
+          width: 200, height: 200, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(5,150,105,0.14) 0%, transparent 65%)',
           pointerEvents: 'none',
         }} />
-        {/* Subtle grid */}
+        {/* Mastercard-style brand circles bottom-right */}
         <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Wallet icon top-right */}
-        <div style={{
-          position: 'absolute', top: 20, right: 20,
-          width: 40, height: 40, borderRadius: 13,
-          background: 'rgba(255,255,255,0.1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.12)',
+          position: 'absolute', bottom: 20, right: 22,
+          display: 'flex',
         }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="1" y="6" width="22" height="14" rx="3"/>
-            <path d="M16 14a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/>
-            <path d="M1 10h22"/>
-          </svg>
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.10)', marginLeft: -12 }} />
+        </div>
+        {/* Chip icon */}
+        <div style={{
+          position: 'absolute', top: 24, right: 24,
+          width: 36, height: 28, borderRadius: 5,
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))',
+          border: '1px solid rgba(255,255,255,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            width: 22, height: 16, borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.4)',
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+            gridTemplateRows: '1fr 1fr',
+            gap: 1, padding: 2,
+          }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.3)', borderRadius: 1 }} />
+            ))}
+          </div>
         </div>
 
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>
+        {/* MONETA branding on card */}
+        <p style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.35)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16, marginTop: 4 }}>
+          MONETA
+        </p>
+
+        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 5 }}>
           Total Portfolio Value
         </p>
-        <p style={{ fontSize: 38, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 10 }}>
+        <p style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 10 }}>
           {fmt(totalValue)}
         </p>
 

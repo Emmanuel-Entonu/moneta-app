@@ -55,7 +55,7 @@ function PriceChart({ symbol, price, isUp }: { symbol: string; price: number; is
   return (
     <div>
       {/* Chart */}
-      <div style={{ position: 'relative', background: isUp ? '#f0fdf4' : '#fff5f5' }}>
+      <div style={{ position: 'relative', background: 'transparent' }}>
         {/* Hover price tooltip */}
         {hoverPrice !== null && (
           <div style={{
@@ -200,7 +200,7 @@ export default function Trade() {
   const estimatedTotal = effectivePrice * qty
 
   return (
-    <div style={{ minHeight: '100svh', background: '#fff', display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
+    <div style={{ minHeight: '100svh', background: 'var(--bg-page)', display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
 
       {/* Header */}
       <div style={{
@@ -275,26 +275,38 @@ export default function Trade() {
         )}
       </div>
 
-      {/* Price */}
-      <div style={{ padding: '18px 20px 14px', background: '#fff' }}>
-        <p style={{ fontSize: 40, fontWeight: 900, color: 'var(--text)', letterSpacing: -1.5, lineHeight: 1, marginBottom: 6 }}>
-          {fmt(stock.price)}
-        </p>
-        <p style={{ fontSize: 13, color: isUp ? '#059669' : '#dc2626', fontWeight: 600 }}>
-          {isUp ? '+' : ''}₦{stock.change.toFixed(2)} today
-        </p>
+      {/* Price + Chart — single white section */}
+      <div style={{ background: '#fff', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '20px 20px 4px' }}>
+          <p style={{ fontSize: 42, fontWeight: 900, color: 'var(--text)', letterSpacing: -1.8, lineHeight: 1, marginBottom: 8 }}>
+            {fmt(stock.price)}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: isUp ? '#059669' : '#e03131' }}>
+              {isUp ? '+' : ''}₦{stock.change.toFixed(2)}
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 700,
+              color: isUp ? '#065f46' : '#991b1b',
+              background: isUp ? '#d1fae5' : '#fee2e2',
+              padding: '3px 9px', borderRadius: 20,
+            }}>
+              {isUp ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
+            </span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>today</span>
+          </div>
+        </div>
+        <PriceChart symbol={stock.symbol} price={stock.price} isUp={isUp} />
       </div>
-
-      {/* Chart */}
-      <PriceChart symbol={stock.symbol} price={stock.price} isUp={isUp} />
 
       {/* OHLV */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(4,1fr)',
-        margin: '16px 20px 0',
-        borderRadius: 14, overflow: 'hidden',
-        border: '1.5px solid var(--border)',
-        background: '#f8fafc',
+        margin: '16px 16px 0',
+        borderRadius: 16, overflow: 'hidden',
+        border: '1px solid var(--border)',
+        background: '#fff',
+        boxShadow: 'var(--shadow-sm)',
       }}>
         {[
           { label: 'Open', val: `₦${stock.open.toFixed(2)}` },
@@ -313,7 +325,14 @@ export default function Trade() {
       </div>
 
       {/* Order form */}
-      <div style={{ padding: '20px 20px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{
+        margin: '16px 16px 0',
+        background: '#fff', borderRadius: 20,
+        padding: '20px 16px',
+        boxShadow: 'var(--shadow-sm)',
+        border: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column', gap: 14,
+      }}>
 
         {/* Buy/Sell toggle */}
         <div style={{

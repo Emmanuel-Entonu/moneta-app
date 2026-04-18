@@ -47,56 +47,75 @@ const tabs = [
 
 export default function BottomNav() {
   return (
-    <div style={{
+    <nav style={{
       position: 'fixed',
-      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)',
-      left: '50%',
-      transform: 'translateX(-50%)',
+      bottom: 0,
+      left: 0,
+      right: 0,
       zIndex: 50,
+      background: 'rgba(8, 14, 26, 0.97)',
+      backdropFilter: 'blur(24px)',
+      WebkitBackdropFilter: 'blur(24px)',
+      borderTop: '1px solid rgba(255,255,255,0.07)',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      boxShadow: '0 -4px 32px rgba(0,0,0,0.32)',
     }}>
-      <nav style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 3,
-        background: 'rgba(8, 16, 30, 0.92)',
-        backdropFilter: 'blur(28px)',
-        WebkitBackdropFilter: 'blur(28px)',
-        borderRadius: 44,
-        padding: '5px 6px',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.05)',
-      }}>
+      {/* Top accent line */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: 1,
+        background: 'linear-gradient(90deg, transparent 0%, rgba(5,150,105,0.5) 30%, rgba(52,211,153,0.6) 60%, transparent 100%)',
+      }} />
+
+      <div style={{ display: 'flex', alignItems: 'stretch' }}>
         {tabs.map((tab) => (
-          <NavLink key={tab.to} to={tab.to} style={{ textDecoration: 'none' }}>
+          <NavLink key={tab.to} to={tab.to} style={{ flex: 1, textDecoration: 'none' }}>
             {({ isActive }) => (
               <div style={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                gap: isActive ? 7 : 0,
-                padding: isActive ? '10px 18px 10px 14px' : '10px 13px',
-                borderRadius: 36,
-                background: isActive
-                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                  : 'transparent',
-                boxShadow: isActive
-                  ? '0 2px 16px rgba(5,150,105,0.45), inset 0 1px 0 rgba(255,255,255,0.15)'
-                  : 'none',
-                transition: 'all 0.26s cubic-bezier(0.34,1.56,0.64,1)',
-                overflow: 'hidden',
-                cursor: 'pointer',
+                justifyContent: 'center',
+                gap: 5,
+                padding: '12px 0 10px',
                 position: 'relative',
+                cursor: 'pointer',
               }}>
-                {tab.icon(isActive)}
+                {/* Active indicator dot */}
+                {isActive && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 28,
+                    height: 2.5,
+                    borderRadius: '0 0 3px 3px',
+                    background: 'linear-gradient(90deg, #059669, #34d399)',
+                    boxShadow: '0 0 10px rgba(5,150,105,0.7)',
+                  }} />
+                )}
+
+                {/* Icon container */}
+                <div style={{
+                  width: 40,
+                  height: 32,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isActive ? 'rgba(5,150,105,0.15)' : 'transparent',
+                  transition: 'background 0.2s ease',
+                }}>
+                  {tab.icon(isActive)}
+                </div>
+
                 <span style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#fff',
-                  letterSpacing: 0.1,
-                  maxWidth: isActive ? 64 : 0,
-                  opacity: isActive ? 1 : 0,
-                  transition: 'max-width 0.26s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
+                  fontSize: 10,
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? '#34d399' : 'rgba(255,255,255,0.38)',
+                  letterSpacing: 0.2,
+                  transition: 'color 0.2s ease',
                 }}>
                   {tab.label}
                 </span>
@@ -104,7 +123,7 @@ export default function BottomNav() {
             )}
           </NavLink>
         ))}
-      </nav>
-    </div>
+      </div>
+    </nav>
   )
 }

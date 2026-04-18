@@ -15,19 +15,11 @@ interface ProfileData {
   kyc_status: KYCStatus
 }
 
-const KYC_CONFIG: Record<KYCStatus, { label: string; sub: string; color: string; bg: string; border: string; iconType: 'clock' | 'eye' | 'check' | 'x' }> = {
-  pending:   { label: 'KYC Required',   sub: 'Complete verification to unlock trading',    color: '#92400e', bg: '#fffbeb', border: '#fde68a', iconType: 'clock' },
-  submitted: { label: 'Under Review',   sub: 'Typically takes 1–2 business days',          color: '#1e40af', bg: '#eff6ff', border: '#bfdbfe', iconType: 'eye'   },
-  verified:  { label: 'KYC Verified',   sub: 'You are fully approved to trade',            color: '#065f46', bg: '#f0fdf4', border: '#a7f3d0', iconType: 'check' },
-  rejected:  { label: 'KYC Rejected',   sub: 'Please re-submit with valid documents',      color: '#991b1b', bg: '#fff5f5', border: '#fecaca', iconType: 'x'     },
-}
-
-function KYCStatusIcon({ type, color }: { type: 'clock' | 'eye' | 'check' | 'x'; color: string }) {
-  const props = { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
-  if (type === 'clock') return <svg {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-  if (type === 'eye')   return <svg {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-  if (type === 'check') return <svg {...props}><polyline points="20 6 9 17 4 12"/></svg>
-  return <svg {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+const KYC_CONFIG: Record<KYCStatus, { label: string; sub: string; color: string; bg: string; border: string; dot: string }> = {
+  pending:   { label: 'KYC Required',  sub: 'Complete verification to unlock trading', color: '#92400e', bg: '#fffbeb', border: '#fde68a', dot: '#f59e0b' },
+  submitted: { label: 'Under Review',  sub: 'Typically takes 1–2 business days',       color: '#1e40af', bg: '#eff6ff', border: '#bfdbfe', dot: '#3b82f6' },
+  verified:  { label: 'Verified',      sub: 'Fully approved to trade on the NGX',      color: '#065f46', bg: '#f0fdf4', border: '#a7f3d0', dot: '#059669' },
+  rejected:  { label: 'KYC Rejected',  sub: 'Please re-submit with valid documents',   color: '#991b1b', bg: '#fff5f5', border: '#fecaca', dot: '#e03131' },
 }
 
 export default function Profile() {
@@ -39,6 +31,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState<'profile' | 'kyc'>('profile')
+  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -70,6 +63,7 @@ export default function Profile() {
     setSaving(false)
     setSavedProfile({ ...profile })
     setSaved(true)
+    setEditing(false)
     setTimeout(() => setSaved(false), 2500)
   }
 
@@ -80,80 +74,80 @@ export default function Profile() {
 
   return (
     <Layout title="Profile">
-      {/* User hero */}
+      {/* Hero */}
       <div style={{
-        padding: '20px 20px 0',
-        background: 'linear-gradient(160deg, #050e1a 0%, #0c1f2e 40%, #064e3b 80%, #059669 100%)',
-        margin: 0,
-        position: 'relative',
-        overflow: 'hidden',
+        background: 'linear-gradient(160deg, #050e1a 0%, #0c1f2e 45%, #053d2a 80%, #065f3e 100%)',
+        padding: '24px 24px 0',
+        position: 'relative', overflow: 'hidden',
       }}>
-        {/* Decorative orbs */}
-        <div style={{
-          position: 'absolute', top: -30, right: -30,
-          width: 150, height: 150, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(5,150,105,0.2) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-          pointerEvents: 'none',
-        }} />
-
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 16,
-          padding: '0 0 20px',
-          position: 'relative', zIndex: 1,
-        }}>
-          {/* Avatar */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{
-            width: 64, height: 64, borderRadius: 22,
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1))',
-            border: '2px solid rgba(255,255,255,0.28)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: -1,
-            flexShrink: 0,
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)',
-          }}>
-            {initials}
+            position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(5,150,105,0.2) 0%, transparent 65%)',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+          }} />
+        </div>
+
+        {/* Avatar + name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24, position: 'relative', zIndex: 1 }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 24,
+              background: 'linear-gradient(135deg, #059669, #047857)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: -1,
+              boxShadow: '0 8px 24px rgba(5,150,105,0.4)',
+            }}>
+              {initials}
+            </div>
+            {/* KYC status dot */}
+            <div style={{
+              position: 'absolute', bottom: -2, right: -2,
+              width: 18, height: 18, borderRadius: '50%',
+              background: cfg.dot,
+              border: '3px solid #050e1a',
+            }} />
           </div>
+
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginBottom: 3, letterSpacing: -0.4 }}>
-              {profile.full_name || 'Complete your profile'}
+            <p style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: -0.5, marginBottom: 4 }}>
+              {profile.full_name || 'Your Name'}
             </p>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user?.email}
             </p>
           </div>
         </div>
 
-        {/* KYC status banner */}
+        {/* KYC status strip — sits at bottom of hero */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          background: cfg.bg, border: `1.5px solid ${cfg.border}`,
-          borderRadius: '14px 14px 0 0', padding: '14px 16px',
-          margin: '0 -0px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'rgba(255,255,255,0.07)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '14px 14px 0 0',
+          padding: '12px 16px',
+          position: 'relative', zIndex: 1,
         }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: cfg.color + '18',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <KYCStatusIcon type={cfg.iconType} color={cfg.color} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: cfg.dot,
+              boxShadow: `0 0 8px ${cfg.dot}`,
+            }} />
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>{cfg.label}</p>
           </div>
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 800, color: cfg.color, marginBottom: 2 }}>{cfg.label}</p>
-            <p style={{ fontSize: 11, color: cfg.color, opacity: 0.75, fontWeight: 500 }}>{cfg.sub}</p>
-          </div>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{cfg.sub}</p>
         </div>
       </div>
 
-      {/* Tab switcher */}
+      {/* Tab bar */}
       <div style={{
-        display: 'flex', background: '#fff',
+        display: 'flex',
+        background: '#fff',
         borderBottom: '1px solid var(--border)',
       }}>
         {(['profile', 'kyc'] as const).map((t) => (
@@ -161,12 +155,11 @@ export default function Profile() {
             key={t}
             onClick={() => setTab(t)}
             style={{
-              flex: 1, padding: '14px 0',
+              flex: 1, padding: '15px 0',
               fontWeight: 700, fontSize: 13, cursor: 'pointer',
               color: tab === t ? 'var(--primary)' : 'var(--text-muted)',
               borderBottom: `2.5px solid ${tab === t ? 'var(--primary)' : 'transparent'}`,
-              background: 'none', transition: 'all 0.15s',
-              letterSpacing: 0.2,
+              background: 'none', transition: 'all 0.15s', letterSpacing: 0.1,
             }}
           >
             {t === 'profile' ? 'Personal Info' : 'KYC Verification'}
@@ -174,182 +167,281 @@ export default function Profile() {
         ))}
       </div>
 
-      <div style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 14 }} className="animate-in">
-        {tab === 'profile' ? (
-          <>
-            <Field label="Full Legal Name" value={profile.full_name} onChange={(v) => setProfile((p) => ({ ...p, full_name: v }))} placeholder="John Doe" />
-            <Field label="Phone Number" value={profile.phone} onChange={(v) => setProfile((p) => ({ ...p, phone: v }))} placeholder="+234 800 000 0000" type="tel" />
-            <Field label="Date of Birth" value={profile.date_of_birth} onChange={(v) => setProfile((p) => ({ ...p, date_of_birth: v }))} type="date" />
-            <Field label="Residential Address" value={profile.address} onChange={(v) => setProfile((p) => ({ ...p, address: v }))} placeholder="123 Marina Street, Lagos Island" multiline />
+      {/* Content */}
+      {tab === 'profile' ? (
+        <div style={{ padding: '20px 16px 40px' }} className="animate-in">
 
-            {saved && !hasChanges && (
+          {/* Info card */}
+          <div style={{
+            background: '#fff', borderRadius: 18,
+            border: '1px solid var(--border)',
+            boxShadow: '0 2px 8px rgba(10,22,40,0.06)',
+            overflow: 'hidden', marginBottom: 14,
+          }}>
+            {/* Card header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 18px',
+              borderBottom: '1px solid var(--border)',
+            }}>
+              <p style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: 0.6, textTransform: 'uppercase' }}>
+                Personal Information
+              </p>
+              {!editing ? (
+                <button
+                  onClick={() => setEditing(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '6px 12px', borderRadius: 20,
+                    background: '#f0fdf4', border: '1px solid #a7f3d0',
+                    color: '#059669', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Edit
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setProfile({ ...savedProfile }); setEditing(false) }}
+                  style={{
+                    padding: '6px 12px', borderRadius: 20,
+                    background: '#f8fafc', border: '1px solid var(--border)',
+                    color: 'var(--text-muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+
+            <SectionRow label="Full Legal Name" value={editing ? profile.full_name : (savedProfile.full_name || '—')}
+              placeholder="John Doe" readOnly={!editing}
+              onChange={(v) => setProfile((p) => ({ ...p, full_name: v }))} />
+            <SectionRow label="Phone Number" value={editing ? profile.phone : (savedProfile.phone || '—')}
+              placeholder="+234 800 000 0000" type="tel" readOnly={!editing}
+              onChange={(v) => setProfile((p) => ({ ...p, phone: v }))} />
+            <SectionRow label="Date of Birth" value={editing ? profile.date_of_birth : (savedProfile.date_of_birth || '—')}
+              type="date" readOnly={!editing}
+              onChange={(v) => setProfile((p) => ({ ...p, date_of_birth: v }))} />
+            <SectionRow label="Residential Address" value={editing ? profile.address : (savedProfile.address || '—')}
+              placeholder="123 Marina Street, Lagos Island" multiline readOnly={!editing}
+              onChange={(v) => setProfile((p) => ({ ...p, address: v }))} last />
+          </div>
+
+          {saved && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: '#f0fdf4', border: '1.5px solid #a7f3d0',
+              borderRadius: 12, padding: '12px 16px', marginBottom: 14,
+              color: '#065f46', fontSize: 13, fontWeight: 600,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Profile saved successfully
+            </div>
+          )}
+
+          {editing && (
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              style={{
+                width: '100%', padding: '16px',
+                background: saving ? 'var(--bg-elevated)' : 'linear-gradient(135deg,#059669,#047857)',
+                color: saving ? 'var(--text-muted)' : '#fff',
+                borderRadius: 16, fontSize: 16, fontWeight: 800,
+                boxShadow: saving ? 'none' : '0 6px 24px rgba(5,150,105,0.35)',
+                transition: 'all 0.2s', cursor: saving ? 'not-allowed' : 'pointer',
+                marginBottom: 14,
+              }}
+            >
+              {saving ? 'Saving…' : 'Save Changes'}
+            </button>
+          )}
+
+          {/* Sign out */}
+          <button
+            onClick={() => useAuthStore.getState().signOut()}
+            style={{
+              width: '100%', padding: '15px',
+              background: '#fff5f5', border: '1.5px solid #fecaca',
+              borderRadius: 16, color: '#dc2626', fontWeight: 700, fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign Out
+          </button>
+        </div>
+      ) : (
+        <div style={{ padding: '20px 16px 40px' }} className="animate-in">
+          {kycStatus === 'verified' && (
+            <div style={{
+              background: '#fff', borderRadius: 18,
+              border: '1.5px solid #a7f3d0',
+              boxShadow: '0 2px 8px rgba(10,22,40,0.06)',
+              padding: '24px 20px', textAlign: 'center',
+              marginBottom: 14,
+            }}>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                background: '#f0fdf4', border: '1.5px solid #a7f3d0',
-                borderRadius: 10, padding: '11px 14px',
-                color: '#065f46', fontSize: 13, fontWeight: 600,
+                width: 64, height: 64, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #059669, #047857)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 8px 24px rgba(5,150,105,0.35)',
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Profile saved successfully
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
               </div>
-            )}
+              <p style={{ fontSize: 18, fontWeight: 900, color: '#065f46', marginBottom: 6, letterSpacing: -0.3 }}>Identity Verified</p>
+              <p style={{ fontSize: 13, color: '#059669', fontWeight: 500, lineHeight: 1.5 }}>
+                You are fully approved to trade on the Nigerian Stock Exchange
+              </p>
+            </div>
+          )}
 
-            {hasChanges && (
-              <button onClick={saveProfile} disabled={saving} style={primaryBtn(saving)}>
-                {saving ? 'Saving…' : 'Save Changes'}
-              </button>
-            )}
-          </>
-        ) : (
-          <>
-            {/* Status card */}
-            {kycStatus === 'verified' && (
+          {kycStatus === 'submitted' && (
+            <div style={{
+              background: '#fff', borderRadius: 18,
+              border: '1.5px solid #bfdbfe',
+              boxShadow: '0 2px 8px rgba(10,22,40,0.06)',
+              padding: '24px 20px', textAlign: 'center',
+              marginBottom: 14,
+            }}>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: '#f0fdf4', border: '1.5px solid #a7f3d0',
-                borderRadius: 16, padding: '18px 16px',
+                width: 64, height: 64, borderRadius: '50%',
+                background: '#2563eb',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 8px 24px rgba(37,99,235,0.35)',
               }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#059669,#047857)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: '#065f46' }}>Identity Verified</p>
-                  <p style={{ fontSize: 12, color: '#059669', fontWeight: 500 }}>You are fully approved to trade on the NGX</p>
-                </div>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
               </div>
-            )}
+              <p style={{ fontSize: 18, fontWeight: 900, color: '#1e40af', marginBottom: 6, letterSpacing: -0.3 }}>Under Review</p>
+              <p style={{ fontSize: 13, color: '#3b82f6', fontWeight: 500, lineHeight: 1.5 }}>
+                Your documents are being reviewed. This typically takes 1–2 business days.
+              </p>
+            </div>
+          )}
 
-            {kycStatus === 'submitted' && (
+          {(kycStatus === 'pending' || kycStatus === 'rejected') && (
+            <>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: '#eff6ff', border: '1.5px solid #bfdbfe',
-                borderRadius: 16, padding: '18px 16px',
+                background: '#fff', borderRadius: 18,
+                border: '1.5px solid var(--border)',
+                boxShadow: '0 2px 8px rgba(10,22,40,0.06)',
+                padding: '24px 20px', textAlign: 'center',
+                marginBottom: 14,
               }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: '#1e40af' }}>Under Review</p>
-                  <p style={{ fontSize: 12, color: '#3b82f6', fontWeight: 500 }}>Typically takes 1–2 business days to complete</p>
-                </div>
-              </div>
-            )}
-
-            {(kycStatus === 'pending' || kycStatus === 'rejected') && (
-              <>
                 <div style={{
-                  background: '#fff5f5', border: '1.5px solid #fecaca',
-                  borderRadius: 16, padding: '18px 16px',
-                  display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 4,
+                  width: 64, height: 64, borderRadius: '50%',
+                  background: kycStatus === 'rejected' ? '#fee2e2' : '#f0fdf4',
+                  border: `2px solid ${kycStatus === 'rejected' ? '#fecaca' : '#a7f3d0'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px',
                 }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke={kycStatus === 'rejected' ? '#dc2626' : '#059669'}
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: '#991b1b', marginBottom: 4 }}>
-                      {kycStatus === 'rejected' ? 'KYC Rejected — Please resubmit' : 'Identity not verified'}
-                    </p>
-                    <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 500, lineHeight: 1.5 }}>
-                      You cannot place trades until your identity is verified. This is required by the SEC.
-                    </p>
-                  </div>
                 </div>
+                <p style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', marginBottom: 8, letterSpacing: -0.3 }}>
+                  {kycStatus === 'rejected' ? 'Verification Failed' : 'Identity Not Verified'}
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.6 }}>
+                  {kycStatus === 'rejected'
+                    ? 'Your documents were rejected. Please re-submit with clear, valid ID documents.'
+                    : 'You need to verify your identity before placing trades. This is required by the SEC.'}
+                </p>
+              </div>
 
-                <button
-                  onClick={() => navigate('/kyc')}
-                  style={{
-                    width: '100%', padding: '15px',
-                    background: 'linear-gradient(135deg,#059669,#047857)',
-                    color: '#fff', borderRadius: 'var(--radius)', border: 'none',
-                    fontSize: 15, fontWeight: 800, cursor: 'pointer',
-                    boxShadow: '0 4px 16px rgba(5,150,105,0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  </svg>
-                  {kycStatus === 'rejected' ? 'Resubmit KYC' : 'Complete KYC Verification'}
-                </button>
-              </>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Sign out */}
-      <div style={{ padding: '8px 20px 48px' }}>
-        <button
-          onClick={() => useAuthStore.getState().signOut()}
-          style={{
-            width: '100%', padding: '14px',
-            background: '#fff5f5',
-            border: '1.5px solid #fecaca',
-            borderRadius: 'var(--radius)',
-            color: '#dc2626', fontWeight: 700, fontSize: 14, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            transition: 'all 0.15s',
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Sign Out
-        </button>
-      </div>
+              <button
+                onClick={() => navigate('/kyc')}
+                style={{
+                  width: '100%', padding: '16px',
+                  background: 'linear-gradient(135deg, #059669, #047857)',
+                  color: '#fff', borderRadius: 16, border: 'none',
+                  fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                  boxShadow: '0 6px 24px rgba(5,150,105,0.35)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                {kycStatus === 'rejected' ? 'Resubmit KYC' : 'Complete Verification'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </Layout>
   )
 }
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
-
-function Field({ label, value, onChange, placeholder, type = 'text', multiline, maxLength, disabled, hint }: {
+function SectionRow({ label, value, onChange, placeholder, type = 'text', multiline, last, readOnly }: {
   label: string; value: string; onChange: (v: string) => void
-  placeholder?: string; type?: string; multiline?: boolean
-  maxLength?: number; disabled?: boolean; hint?: string
+  placeholder?: string; type?: string; multiline?: boolean; last?: boolean; readOnly?: boolean
 }) {
+  const textColor = readOnly ? 'var(--text)' : 'var(--text)'
+  const emptyColor = 'var(--text-muted)'
+  const displayValue = readOnly && !value ? '—' : value
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.3, textTransform: 'uppercase' }}>
-          {label}
-        </label>
-        {hint && <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{hint}</span>}
-      </div>
-      {multiline ? (
+    <div style={{
+      borderBottom: last ? 'none' : '1px solid var(--border)',
+      padding: '13px 18px',
+      background: readOnly ? '#fff' : '#fafcff',
+      transition: 'background 0.15s',
+    }}>
+      <label style={{
+        display: 'block', fontSize: 10, fontWeight: 700,
+        color: 'var(--text-muted)', letterSpacing: 0.6,
+        textTransform: 'uppercase', marginBottom: 5,
+      }}>
+        {label}
+      </label>
+      {readOnly ? (
+        <p style={{
+          fontSize: 15, fontWeight: 500,
+          color: displayValue === '—' ? emptyColor : textColor,
+          lineHeight: 1.5,
+        }}>
+          {displayValue}
+        </p>
+      ) : multiline ? (
         <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={3}
-          disabled={disabled}
-          className="input-field"
-          style={{ resize: 'none', fontFamily: 'inherit', opacity: disabled ? 0.5 : 1 }}
+          value={value} onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder} rows={3}
+          style={{
+            width: '100%', background: 'none', border: 'none', resize: 'none',
+            fontFamily: 'inherit', fontSize: 15, fontWeight: 500,
+            color: textColor, outline: 'none',
+          }}
         />
       ) : (
         <input
-          className="input-field"
-          type={type} value={value}
-          onChange={(e) => onChange(e.target.value)}
+          type={type} value={value} onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          maxLength={maxLength}
-          disabled={disabled}
-          style={{ opacity: disabled ? 0.5 : 1 }}
+          style={{
+            width: '100%', background: 'none', border: 'none',
+            fontSize: 15, fontWeight: 500, color: textColor, outline: 'none',
+          }}
         />
       )}
     </div>
   )
 }
-
-
-const primaryBtn = (disabled: boolean): React.CSSProperties => ({
-  padding: '15px', width: '100%', cursor: disabled ? 'not-allowed' : 'pointer',
-  background: disabled ? 'var(--bg-elevated)' : 'linear-gradient(135deg,#059669,#047857)',
-  color: disabled ? 'var(--text-muted)' : '#fff',
-  borderRadius: 'var(--radius)', fontSize: 16, fontWeight: 800,
-  boxShadow: disabled ? 'none' : '0 4px 20px rgba(5,150,105,0.32)',
-  transition: 'all 0.2s',
-})

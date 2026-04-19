@@ -30,8 +30,8 @@ const tabs = [
     ),
   },
   {
-    to: '/profile',
-    label: 'Profile',
+    to: '/settings',
+    label: 'Account',
     icon: (active: boolean) => (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
         stroke={active ? '#fff' : 'rgba(255,255,255,0.45)'}

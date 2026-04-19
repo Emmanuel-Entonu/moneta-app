@@ -134,24 +134,13 @@ export default function Onboarding() {
         padding: '24px 32px 0',
         position: 'relative', zIndex: 2,
       }}>
-        {/* Illustration in a glass card */}
-        <div style={{
-          width: 220, height: 220,
-          borderRadius: 36,
-          background: 'rgba(255,255,255,0.07)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          backdropFilter: 'blur(12px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 40,
-          boxShadow: `0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.06)`,
-        }}>
-          <img
-            key={slide.image}
-            src={slide.image}
-            alt={slide.title}
-            style={{ width: 170, height: 170, objectFit: 'contain' }}
-          />
-        </div>
+        {/* Illustration */}
+        <img
+          key={slide.image}
+          src={slide.image}
+          alt={slide.title}
+          style={{ width: 220, height: 220, objectFit: 'contain', marginBottom: 40 }}
+        />
 
         {/* Tag */}
         <span style={{

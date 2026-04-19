@@ -10,7 +10,9 @@ const tabs = [
         strokeWidth={active ? 2.5 : 2}
         strokeLinecap="round" strokeLinejoin="round"
       >
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        <rect x="3" y="12" width="4" height="9" rx="1" />
+        <rect x="10" y="7" width="4" height="14" rx="1" />
+        <rect x="17" y="3" width="4" height="18" rx="1" />
       </svg>
     ),
   },

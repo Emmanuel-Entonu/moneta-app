@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import Aurora from '../components/Aurora'
+import SoftAurora from '../components/SoftAurora'
 import { PortfolioCardSkeleton } from '../components/Skeleton'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
@@ -268,9 +268,7 @@ export default function Portfolio() {
         padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 20px 24px',
         position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-          <Aurora colorStops={['#059669', '#34d399', '#047857']} amplitude={1.0} blend={0.55} speed={0.35} />
-        </div>
+
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none', zIndex: 1 }} />
         <p style={{
           textAlign: 'center', position: 'relative', zIndex: 2,
@@ -287,7 +285,7 @@ export default function Portfolio() {
         <div style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0f2240 35%, #053d2a 70%, #0a5c3c 100%)', borderRadius: 26, padding: '26px 24px 22px', position: 'relative', overflow: 'hidden', zIndex: 1, boxShadow: '0 16px 56px rgba(2,30,20,0.60), inset 0 0 0 1px rgba(255,255,255,0.07)', minHeight: 200 }}>
           {/* Aurora inside wallet card */}
           <div style={{ position: 'absolute', inset: 0, opacity: 0.45, pointerEvents: 'none' }}>
-            <Aurora colorStops={['#059669', '#34d399', '#065f3e']} amplitude={1.8} blend={0.8} speed={0.2} />
+            <SoftAurora color1="#059669" color2="#34d399" speed={0.2} brightness={0.85} enableMouseInteraction={false} bandHeight={0.6} noiseAmplitude={0.6} />
           </div>
           <div style={{ position: 'absolute', top: -50, right: -50, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(52,211,153,0.12) 0%, transparent 60%)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: -40, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.14) 0%, transparent 65%)', pointerEvents: 'none' }} />

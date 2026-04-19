@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { MarketRowSkeleton } from '../components/Skeleton'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { generateSparklineArea } from '../lib/sparkline'
 import type { PacMarketData } from '../lib/pacApi'
@@ -32,7 +31,7 @@ function isMarketOpen() {
   return day >= 1 && day <= 5 && total >= 510 && total < 810
 }
 
-function Sparkline({ symbol, isUp, w = 72, h = 28 }: { symbol: string; isUp: boolean; w?: number; h?: number }) {
+function Sparkline({ symbol, isUp, w = 72, h = 32 }: { symbol: string; isUp: boolean; w?: number; h?: number }) {
   const id = `sp-${symbol}-${Math.random().toString(36).slice(2, 5)}`
   const { line, area } = generateSparklineArea(symbol, isUp, w, h)
   const color = isUp ? '#10b981' : '#ef4444'
@@ -58,38 +57,30 @@ function MoverCard({ label, stock, accent, onPress }: {
     <button
       onClick={onPress}
       style={{
-        flexShrink: 0, width: 158,
-        background: 'rgba(255,255,255,0.04)',
-        border: `1px solid ${accent}40`,
-        borderRadius: 18,
+        flexShrink: 0, width: 170,
+        background: '#0e1c2f',
+        border: `1.5px solid ${accent}50`,
+        borderRadius: 20,
         padding: '14px 14px 12px',
         textAlign: 'left', cursor: 'pointer',
         display: 'flex', flexDirection: 'column',
-        transition: 'background 0.15s',
+        position: 'relative', overflow: 'hidden',
       }}
-      onPointerEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
-      onPointerLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
     >
-      <p style={{ fontSize: 9, fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
-        {label}
-      </p>
-      <p style={{ fontSize: 17, fontWeight: 900, color: '#fff', letterSpacing: -0.5, marginBottom: 2 }}>
-        {stock.symbol}
-      </p>
-      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', fontWeight: 500, marginBottom: 10,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+      <div style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${accent}25 0%, transparent 70%)`, pointerEvents: 'none' }} />
+      <p style={{ fontSize: 9, fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{label}</p>
+      <p style={{ fontSize: 18, fontWeight: 900, color: '#ffffff', letterSpacing: -0.6, marginBottom: 1 }}>{stock.symbol}</p>
+      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 500, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {stock.name.split(' ').slice(0, 3).join(' ')}
       </p>
-      <Sparkline symbol={stock.symbol} isUp={up} w={130} h={36} />
+      <Sparkline symbol={stock.symbol} isUp={up} w={142} h={40} />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-        <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: -0.3 }}>
-          {fmt(stock.price)}
-        </p>
+        <p style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: -0.3 }}>{fmt(stock.price)}</p>
         <span style={{
           fontSize: 11, fontWeight: 700,
           color: up ? '#34d399' : '#f87171',
-          background: up ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-          padding: '2px 8px', borderRadius: 20,
+          background: up ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.18)',
+          padding: '3px 8px', borderRadius: 20,
         }}>
           {up ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
         </span>
@@ -98,74 +89,78 @@ function MoverCard({ label, stock, accent, onPress }: {
   )
 }
 
-function StockRow({ stock, onClick }: { stock: PacMarketData; onClick: () => void }) {
+function StockCard({ stock, borderRight, onClick }: { stock: PacMarketData; borderRight: boolean; onClick: () => void }) {
   const up = stock.changePercent >= 0
   const color = getColor(stock.symbol)
   return (
     <button
       onClick={onClick}
       style={{
-        display: 'flex', alignItems: 'center',
-        padding: '13px 20px 13px 16px',
-        width: '100%', textAlign: 'left', cursor: 'pointer',
+        background: '#0a1525',
+        padding: '14px 13px',
+        display: 'flex', flexDirection: 'column',
+        textAlign: 'left', cursor: 'pointer',
+        position: 'relative', overflow: 'hidden',
+        borderRight: borderRight ? '1px solid rgba(255,255,255,0.05)' : 'none',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
-        background: 'transparent',
-        transition: 'background 0.1s',
-        position: 'relative',
+        transition: 'background 0.12s',
+        width: '100%',
       }}
-      onPointerEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
-      onPointerLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      onPointerEnter={(e) => (e.currentTarget.style.background = '#0d1b2e')}
+      onPointerLeave={(e) => (e.currentTarget.style.background = '#0a1525')}
     >
-      {/* Left accent bar */}
-      <div style={{
-        position: 'absolute', left: 0, top: '20%', bottom: '20%',
-        width: 3, borderRadius: '0 3px 3px 0',
-        background: color,
-        opacity: 0.7,
-      }} />
+      {/* Corner color glow */}
+      <div style={{ position: 'absolute', top: -16, right: -16, width: 72, height: 72, borderRadius: '50%', background: `radial-gradient(circle, ${color}28 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
-      {/* Ticker avatar */}
-      <div style={{
-        width: 42, height: 42, borderRadius: 13,
-        background: color + '18',
-        border: `1px solid ${color}30`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginRight: 12, flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 8, fontWeight: 900, color, letterSpacing: -0.3 }}>
-          {stock.symbol.slice(0, 4)}
-        </span>
-      </div>
-
-      {/* Name */}
-      <div style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
-        <p style={{ fontWeight: 700, fontSize: 14, color: '#fff', marginBottom: 3, letterSpacing: -0.2 }}>
-          {stock.symbol}
-        </p>
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
-          {stock.name}
-        </p>
-      </div>
-
-      {/* Sparkline */}
-      <Sparkline symbol={stock.symbol} isUp={up} />
-
-      {/* Price + change */}
-      <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 88, marginLeft: 10 }}>
-        <p style={{ fontWeight: 800, fontSize: 14, color: '#fff', marginBottom: 5, letterSpacing: -0.3 }}>
-          {fmt(stock.price)}
-        </p>
+      {/* Direction badge top-right */}
+      <div style={{ position: 'absolute', top: 12, right: 12 }}>
         <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 2,
-          fontSize: 11, fontWeight: 700,
+          fontSize: 10, fontWeight: 800,
           color: up ? '#34d399' : '#f87171',
-          background: up ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-          padding: '3px 8px', borderRadius: 20,
-        }}>
-          {up ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
-        </span>
+        }}>{up ? '↑' : '↓'}</span>
       </div>
+
+      {/* Ticker */}
+      <p style={{ fontSize: 13, fontWeight: 900, color: '#ffffff', letterSpacing: -0.3, marginBottom: 2, paddingRight: 16 }}>
+        {stock.symbol}
+      </p>
+      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)', fontWeight: 600, marginBottom: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+        {stock.name.split(' ').slice(0, 2).join(' ')}
+      </p>
+
+      {/* Sparkline — full width */}
+      <div style={{ width: '100%', marginBottom: 10 }}>
+        <Sparkline symbol={stock.symbol} isUp={up} w={130} h={44} />
+      </div>
+
+      {/* Price */}
+      <p style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: -0.3, marginBottom: 5 }}>
+        {fmt(stock.price)}
+      </p>
+
+      {/* % Badge */}
+      <span style={{
+        fontSize: 10, fontWeight: 700, alignSelf: 'flex-start',
+        color: up ? '#34d399' : '#f87171',
+        background: up ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
+        border: `1px solid ${up ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+        padding: '2px 8px', borderRadius: 20,
+      }}>
+        {up ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
+      </span>
     </button>
+  )
+}
+
+function SkeletonCard({ borderRight }: { borderRight: boolean }) {
+  return (
+    <div style={{ background: '#0a1525', padding: '14px 13px', borderRight: borderRight ? '1px solid rgba(255,255,255,0.05)' : 'none', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ width: 70, height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.07)', marginBottom: 6 }} />
+      <div style={{ width: 90, height: 9, borderRadius: 6, background: 'rgba(255,255,255,0.04)', marginBottom: 14 }} />
+      <div style={{ width: '100%', height: 44, borderRadius: 8, background: 'rgba(255,255,255,0.04)', marginBottom: 10 }} />
+      <div style={{ width: 80, height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.07)', marginBottom: 6 }} />
+      <div style={{ width: 52, height: 20, borderRadius: 20, background: 'rgba(255,255,255,0.06)' }} />
+    </div>
   )
 }
 
@@ -200,34 +195,31 @@ export default function Market() {
   return (
     <Layout noBorder>
 
-      {/* ── Hero ── */}
+      {/* ── HERO ── */}
       <div style={{
         background: 'linear-gradient(160deg, #050e1a 0%, #0c1f2e 50%, #053d2a 85%, #065f3e 100%)',
-        padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 20px 20px',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 20px 22px',
         position: 'relative', overflow: 'hidden',
       }}>
-        {/* Decorative */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.18) 0%, transparent 65%)' }} />
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
 
-        {/* Title row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, position: 'relative', zIndex: 1 }}>
+        {/* Title + Compare */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, position: 'relative', zIndex: 1 }}>
           <p style={{
-            fontSize: 27, fontWeight: 900, letterSpacing: -0.7, lineHeight: 1,
+            fontSize: 27, fontWeight: 900, letterSpacing: -0.7,
             background: 'linear-gradient(95deg, #34d399 0%, #059669 55%, #6ee7b7 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>Market</p>
-
           <button
             onClick={() => navigate('/compare')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 16px', borderRadius: 20,
-              background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.16)',
-              color: '#fff', fontSize: 12, fontWeight: 700,
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.16)',
+              color: '#ffffff', fontSize: 12, fontWeight: 700,
             }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -237,13 +229,11 @@ export default function Market() {
           </button>
         </div>
 
-        {/* NSE stats */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, position: 'relative', zIndex: 1 }}>
+        {/* NGX Stats */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18, position: 'relative', zIndex: 1 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.8, textTransform: 'uppercase' }}>
-                NGX All-Share Index
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.8, textTransform: 'uppercase' }}>NGX All-Share Index</p>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,
                 fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
@@ -252,30 +242,18 @@ export default function Market() {
                 border: `1px solid ${marketOpen ? 'rgba(5,150,105,0.4)' : 'rgba(255,255,255,0.1)'}`,
                 padding: '3px 8px', borderRadius: 20,
               }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: '50%',
-                  background: marketOpen ? '#34d399' : 'rgba(255,255,255,0.28)',
-                  boxShadow: marketOpen ? '0 0 6px #34d399' : 'none',
-                  animation: marketOpen ? 'pulse-dot 2.4s ease-in-out infinite' : 'none',
-                }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: marketOpen ? '#34d399' : 'rgba(255,255,255,0.28)', boxShadow: marketOpen ? '0 0 6px #34d399' : 'none', animation: marketOpen ? 'pulse-dot 2.4s ease-in-out infinite' : 'none' }} />
                 {marketOpen ? 'OPEN' : 'CLOSED'}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: -1 }}>97,842.14</span>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 3,
-                fontSize: 12, fontWeight: 800,
-                color: nseUp ? '#34d399' : '#f87171',
-                background: nseUp ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.15)',
-                padding: '4px 10px', borderRadius: 20,
-              }}>
+              <span style={{ fontSize: 28, fontWeight: 900, color: '#ffffff', letterSpacing: -1 }}>97,842.14</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 800, color: nseUp ? '#34d399' : '#f87171', background: nseUp ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.15)', padding: '4px 10px', borderRadius: 20 }}>
                 {nseUp ? '▲' : '▼'} {Math.abs(nseChange).toFixed(2)}%
               </span>
             </div>
           </div>
-
-          <div style={{ display: 'flex', gap: 20, paddingBottom: 2 }}>
+          <div style={{ display: 'flex', gap: 20 }}>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Up</p>
               <p style={{ fontSize: 24, fontWeight: 900, color: '#34d399', letterSpacing: -0.5 }}>{gainers.length}</p>
@@ -291,133 +269,108 @@ export default function Market() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: 0.5 }}>Bullish {gainers.length}</span>
-            <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Market Sentiment</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Market Sentiment</span>
             <span style={{ fontSize: 9, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: 0.5 }}>Bearish {losers.length}</span>
           </div>
-          <div style={{ height: 4, borderRadius: 10, background: 'rgba(239,68,68,0.3)', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', width: `${gainerPct}%`, borderRadius: 10,
-              background: 'linear-gradient(90deg, #059669, #34d399)',
-              transition: 'width 0.6s ease',
-            }} />
+          <div style={{ height: 4, borderRadius: 10, background: 'rgba(239,68,68,0.28)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${gainerPct}%`, borderRadius: 10, background: 'linear-gradient(90deg, #059669, #34d399)', transition: 'width 0.6s ease' }} />
           </div>
         </div>
       </div>
 
-      {/* ── Top Movers ── */}
-      {!loadingMarket && topGainer && topLoser && mostActive && (
-        <div style={{ padding: '20px 0 4px' }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 0.8, paddingLeft: 20, marginBottom: 12 }}>
-            Top Movers
-          </p>
-          <div style={{
-            display: 'flex', gap: 10, overflowX: 'auto',
-            paddingLeft: 20, paddingRight: 20, paddingBottom: 4,
-            scrollbarWidth: 'none',
-          }}>
-            <MoverCard label="Top Gainer"  stock={topGainer}  accent="#10b981" onPress={() => navigate(`/trade/${topGainer.symbol}`)} />
-            <MoverCard label="Top Loser"   stock={topLoser}   accent="#ef4444" onPress={() => navigate(`/trade/${topLoser.symbol}`)} />
-            <MoverCard label="Most Active" stock={mostActive} accent="#3b82f6" onPress={() => navigate(`/trade/${mostActive.symbol}`)} />
-          </div>
-        </div>
-      )}
+      {/* ── DARK BODY ── */}
+      <div style={{ background: '#070e1a', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
 
-      {/* ── Search + Filters ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: 14, padding: '11px 14px', marginBottom: 12,
-        }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text" placeholder="Search stocks…"
-            value={search} onChange={(e) => setSearch(e.target.value)}
-            style={{ background: 'none', color: '#fff', fontSize: 14, flex: 1, fontWeight: 500 }}
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              style={{
-                width: 20, height: 20, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', fontSize: 14,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >×</button>
-          )}
-        </div>
-
-        <div style={{
-          display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 16,
-          scrollbarWidth: 'none',
-        }}>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              style={{
-                padding: '7px 16px', borderRadius: 20, whiteSpace: 'nowrap',
-                fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
-                border: '1px solid',
-                borderColor: category === cat ? 'transparent' : 'rgba(255,255,255,0.1)',
-                background: category === cat ? 'linear-gradient(135deg, #059669, #047857)' : 'rgba(255,255,255,0.05)',
-                color: category === cat ? '#fff' : 'rgba(255,255,255,0.4)',
-                boxShadow: category === cat ? '0 4px 14px rgba(5,150,105,0.35)' : 'none',
-                transition: 'all 0.15s',
-              }}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Count row ── */}
-      <div style={{ padding: '0 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 0.7 }}>
-          {category === 'All' ? 'All Equities' : category}
-        </span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>
-          {filtered.length} securities
-        </span>
-      </div>
-
-      {/* ── Stock list ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        {loadingMarket ? (
-          Array.from({ length: 8 }).map((_, i) => <MarketRowSkeleton key={i} />)
-        ) : (
-          <div className="animate-in">
-            {filtered.map((stock) => (
-              <StockRow key={stock.symbol} stock={stock} onClick={() => navigate(`/trade/${stock.symbol}`)} />
-            ))}
-            {filtered.length === 0 && (
-              <div style={{ padding: '64px 20px', textAlign: 'center' }}>
-                <div style={{
-                  width: 64, height: 64, borderRadius: 20,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)', margin: '0 auto 16px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
-                  </svg>
-                </div>
-                <p style={{ fontWeight: 800, color: '#fff', marginBottom: 5, fontSize: 15 }}>No results</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)' }}>
-                  {search ? `No stocks match "${search}"` : `No stocks in ${category}`}
-                </p>
-              </div>
-            )}
+        {/* Top Movers section */}
+        {!loadingMarket && topGainer && topLoser && mostActive && (
+          <div style={{ padding: '20px 0 0' }}>
+            <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: 1, paddingLeft: 16, marginBottom: 12 }}>Top Movers</p>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingLeft: 16, paddingRight: 16, paddingBottom: 4, scrollbarWidth: 'none' }}>
+              <MoverCard label="Top Gainer"  stock={topGainer}  accent="#10b981" onPress={() => navigate(`/trade/${topGainer.symbol}`)} />
+              <MoverCard label="Top Loser"   stock={topLoser}   accent="#ef4444" onPress={() => navigate(`/trade/${topLoser.symbol}`)} />
+              <MoverCard label="Most Active" stock={mostActive} accent="#3b82f6" onPress={() => navigate(`/trade/${mostActive.symbol}`)} />
+            </div>
           </div>
         )}
-      </div>
 
-      <div style={{ height: 100 }} />
+        {/* Search + Filter — floating card */}
+        <div style={{ margin: '20px 12px 0', background: '#0d1a2b', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: '14px 14px 12px' }}>
+          {/* Search input */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 13, padding: '10px 14px', marginBottom: 12 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text" placeholder="Search stocks…"
+              value={search} onChange={(e) => setSearch(e.target.value)}
+              style={{ background: 'none', color: '#ffffff', fontSize: 14, flex: 1, fontWeight: 500 }}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            )}
+          </div>
+          {/* Category pills */}
+          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none' }}>
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                style={{
+                  padding: '6px 14px', borderRadius: 20, whiteSpace: 'nowrap', flexShrink: 0,
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  border: '1px solid',
+                  borderColor: category === cat ? 'transparent' : 'rgba(255,255,255,0.09)',
+                  background: category === cat ? 'linear-gradient(135deg, #059669, #047857)' : 'rgba(255,255,255,0.04)',
+                  color: category === cat ? '#ffffff' : 'rgba(255,255,255,0.38)',
+                  boxShadow: category === cat ? '0 4px 14px rgba(5,150,105,0.35)' : 'none',
+                  transition: 'all 0.15s',
+                }}
+              >{cat}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Stock count */}
+        <div style={{ padding: '14px 20px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: 0.7 }}>
+            {category === 'All' ? 'All Equities' : category}
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.28)' }}>{filtered.length} securities</span>
+        </div>
+
+        {/* Stock grid — floating card */}
+        <div style={{ margin: '0 12px', background: '#0d1a2b', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, overflow: 'hidden' }}>
+          {loadingMarket ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+              {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} borderRight={i % 2 === 0} />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: '56px 20px', textAlign: 'center' }}>
+              <div style={{ width: 60, height: 60, borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+                </svg>
+              </div>
+              <p style={{ fontWeight: 800, color: '#ffffff', marginBottom: 4, fontSize: 15 }}>No results</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+                {search ? `No stocks match "${search}"` : `No stocks in ${category}`}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+              {filtered.map((stock, i) => (
+                <StockCard
+                  key={stock.symbol}
+                  stock={stock}
+                  borderRight={i % 2 === 0}
+                  onClick={() => navigate(`/trade/${stock.symbol}`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </Layout>
   )
 }

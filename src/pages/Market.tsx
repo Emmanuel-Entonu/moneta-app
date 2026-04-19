@@ -279,7 +279,7 @@ export default function Market() {
       </div>
 
       {/* ── DARK BODY ── */}
-      <div style={{ background: '#070e1a', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
+      <div style={{ background: '#ffffff', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
 
         {/* Top Movers section */}
         {!loadingMarket && topGainer && topLoser && mostActive && (

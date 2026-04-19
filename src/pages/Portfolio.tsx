@@ -278,56 +278,144 @@ export default function Portfolio() {
         }}>Portfolio</p>
       </div>
 
-      {/* Wallet card */}
+      {/* Wallet card — Premium Wallet */}
       <div style={{ margin: '16px 16px 0', position: 'relative', paddingBottom: 14 }}>
-        <div style={{ position: 'absolute', bottom: 6, left: 10, right: 10, height: '92%', background: 'linear-gradient(145deg, #047857, #065f46)', borderRadius: 22, zIndex: 0, boxShadow: '0 4px 16px rgba(2,44,34,0.3)' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 20, right: 20, height: '90%', background: 'linear-gradient(145deg, #065f46, #022c22)', borderRadius: 20, zIndex: 0 }} />
-        <div style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0f2240 35%, #053d2a 70%, #0a5c3c 100%)', borderRadius: 26, padding: '26px 24px 22px', position: 'relative', overflow: 'hidden', zIndex: 1, boxShadow: '0 16px 56px rgba(2,30,20,0.60), inset 0 0 0 1px rgba(255,255,255,0.07)', minHeight: 200 }}>
-          {/* Aurora inside wallet card */}
-          <div style={{ position: 'absolute', inset: 0, opacity: 0.45, pointerEvents: 'none' }}>
+
+        {/* Wallet thickness — stacked pages */}
+        <div style={{ position: 'absolute', top: 10, left: 4, right: -7, bottom: 0, borderRadius: 26, background: '#020a06', zIndex: 0 }} />
+        <div style={{ position: 'absolute', top: 5, left: 2, right: -4, bottom: 0, borderRadius: 26, background: '#03100a', zIndex: 0 }} />
+        <div style={{ position: 'absolute', top: 2, left: 1, right: -2, bottom: 0, borderRadius: 26, background: '#04150c', zIndex: 0 }} />
+
+        {/* Cards peeking from left */}
+        <div style={{ position: 'absolute', left: -8, top: '36%', width: 16, height: 52, background: 'linear-gradient(160deg, #1e3a8a, #2563eb)', borderRadius: '7px 0 0 7px', zIndex: 0, boxShadow: '-3px 2px 10px rgba(0,0,0,0.6)' }} />
+        <div style={{ position: 'absolute', left: -5, top: '43%', width: 16, height: 44, background: 'linear-gradient(160deg, #7f1d1d, #b91c1c)', borderRadius: '7px 0 0 7px', zIndex: 0 }} />
+        <div style={{ position: 'absolute', left: -2, top: '49%', width: 16, height: 36, background: 'linear-gradient(160deg, #292524, #57534e)', borderRadius: '7px 0 0 7px', zIndex: 0 }} />
+
+        {/* Main wallet body */}
+        <div style={{
+          background: 'linear-gradient(160deg, #071220 0%, #0b1d35 40%, #042e1e 75%, #065036 100%)',
+          borderRadius: 26, position: 'relative', overflow: 'hidden', zIndex: 1,
+          boxShadow: '0 24px 64px rgba(2,30,20,0.80), 0 8px 24px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.07)',
+        }}>
+          {/* Leather grain */}
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.018) 1px, transparent 1px)', backgroundSize: '9px 9px', zIndex: 0 }} />
+          {/* SoftAurora */}
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.28, pointerEvents: 'none', zIndex: 1 }}>
             <SoftAurora color1="#059669" color2="#34d399" speed={0.2} brightness={0.85} enableMouseInteraction={false} bandHeight={0.6} noiseAmplitude={0.6} />
           </div>
-          <div style={{ position: 'absolute', top: -50, right: -50, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle, rgba(52,211,153,0.12) 0%, transparent 60%)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.14) 0%, transparent 65%)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: 20, right: 22, display: 'flex' }}>
-            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
-            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.10)', marginLeft: -12 }} />
-          </div>
-          <div style={{ position: 'absolute', top: 24, right: 24, width: 36, height: 28, borderRadius: 5, background: 'linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.12))', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 22, height: 16, borderRadius: 3, border: '1px solid rgba(255,255,255,0.4)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 1, padding: 2 }}>
-              {Array.from({ length: 6 }).map((_, i) => <div key={i} style={{ background: 'rgba(255,255,255,0.3)', borderRadius: 1 }} />)}
+          {/* Body stitching */}
+          <div style={{ position: 'absolute', inset: 8, borderRadius: 19, border: '1.5px dashed rgba(255,255,255,0.065)', pointerEvents: 'none', zIndex: 2 }} />
+          {/* Card slot crease line */}
+          <div style={{ position: 'absolute', top: 122, left: 0, right: 0, height: 1, background: 'rgba(0,0,0,0.3)', zIndex: 2 }} />
+          <div style={{ position: 'absolute', top: 123, left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.035)', zIndex: 2 }} />
+
+          {/* Space for flap */}
+          <div style={{ height: 138 }} />
+
+          {/* Content below flap */}
+          <div style={{ padding: '12px 24px 22px', position: 'relative', zIndex: 3 }}>
+            <div style={{ position: 'absolute', bottom: -40, left: -40, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
+
+            {/* Card number row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.22)', letterSpacing: 5, fontFamily: 'monospace' }}>
+                •••• •••• •••• {account?.accountNumber?.slice(-4) ?? '——'}
+              </p>
+              {/* Network circles in body */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(210,40,40,0.5)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(210,130,20,0.5)', border: '1px solid rgba(255,255,255,0.08)', marginLeft: -8 }} />
+              </div>
+            </div>
+
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 4 }}>Total Portfolio Value</p>
+            <p style={{ fontSize: 34, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 10 }}>{fmt(totalValue)}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.14)', color: '#fff', padding: '5px 12px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="#fff" style={{ marginRight: 4, verticalAlign: 'middle' }}>{isUp ? <polygon points="4,0 8,8 0,8" /> : <polygon points="0,0 8,0 4,8" />}</svg>
+                {fmt(Math.abs(totalPnL))} ({isUp ? '+' : ''}{totalPnLPct.toFixed(2)}%)
+              </span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>Unrealized P&L</span>
+            </div>
+            <button onClick={() => setShowFund(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 20, marginBottom: 14, background: 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(4px)', transition: 'background 0.15s' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+              Fund Account
+            </button>
+            <button onClick={() => setShowVerify(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 600, marginBottom: 16, padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              Payment debited but wallet not updated?
+            </button>
+            <div style={{ display: 'flex', gap: 0, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 14 }}>
+              {[
+                { label: 'Cash Balance', val: fmt(walletBalance) },
+                { label: 'Holdings', val: String(positions.length) },
+                { label: 'Account', val: account?.accountNumber ?? '—' },
+              ].map(({ label, val }, i) => (
+                <div key={label} style={{ flex: 1, borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.1)' : 'none', paddingLeft: i > 0 ? 14 : 0, paddingRight: 14 }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 3, fontWeight: 600 }}>{label}</p>
+                  <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>{val}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <p style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.35)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16, marginTop: 4 }}>MONETA</p>
-          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 600, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 5 }}>Total Portfolio Value</p>
-          <p style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: -1.5, lineHeight: 1, marginBottom: 10 }}>{fmt(totalValue)}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, background: 'rgba(255,255,255,0.16)', color: '#fff', padding: '5px 12px', borderRadius: 20, backdropFilter: 'blur(4px)' }}>
-              <svg width="8" height="8" viewBox="0 0 8 8" fill="#fff" style={{ marginRight: 4, verticalAlign: 'middle' }}>{isUp ? <polygon points="4,0 8,8 0,8" /> : <polygon points="0,0 8,0 4,8" />}</svg>
-              {fmt(Math.abs(totalPnL))} ({isUp ? '+' : ''}{totalPnLPct.toFixed(2)}%)
-            </span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Unrealized P&L</span>
-          </div>
-          <button onClick={() => setShowFund(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 20, marginBottom: 16, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(4px)', transition: 'background 0.15s' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            Fund Account
-          </button>
-          <button onClick={() => setShowVerify(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: 600, marginBottom: 16, padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 }}>
-            Payment debited but wallet not updated?
-          </button>
-          <div style={{ display: 'flex', gap: 0, borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 16 }}>
-            {[
-              { label: 'Cash Balance', val: fmt(walletBalance) },
-              { label: 'Holdings', val: String(positions.length) },
-              { label: 'Account', val: account?.accountNumber ?? '—' },
-            ].map(({ label, val }, i) => (
-              <div key={label} style={{ flex: 1, borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.12)' : 'none', paddingLeft: i > 0 ? 14 : 0, paddingRight: 14 }}>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 3, fontWeight: 600 }}>{label}</p>
-                <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>{val}</p>
+        </div>
+
+        {/* Flap with drop-shadow */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 158, zIndex: 2, filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.8))', pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '26px 26px 0 0', overflow: 'hidden' }}>
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(160deg, #122e44 0%, #0e3d2e 45%, #10503c 100%)',
+              clipPath: 'polygon(0 0, 100% 0, 100% 55%, 93% 65%, 84% 74%, 73% 81%, 61% 87%, 55% 89%, 50% 90%, 45% 89%, 39% 87%, 27% 81%, 16% 74%, 7% 65%, 0 55%)',
+            }}>
+              {/* Leather grain */}
+              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)', backgroundSize: '9px 9px', pointerEvents: 'none' }} />
+              {/* Subtle security strip (1px, barely visible) */}
+              <div style={{ position: 'absolute', top: 58, left: 24, right: 24, height: 1.5, background: 'linear-gradient(90deg, transparent, rgba(255,160,50,0.18), rgba(80,200,255,0.18), rgba(180,80,255,0.15), transparent)', borderRadius: 1, pointerEvents: 'none' }} />
+              {/* Inner shadow at arch edge */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))', pointerEvents: 'none' }} />
+              {/* Flap stitching */}
+              <div style={{ position: 'absolute', top: 8, left: 8, right: 8, bottom: 10, clipPath: 'polygon(0 0, 100% 0, 100% 52%, 93% 62%, 84% 71%, 73% 78%, 61% 84%, 50% 87%, 39% 84%, 27% 78%, 16% 71%, 7% 62%, 0 52%)', border: '1.5px dashed rgba(255,255,255,0.1)', borderBottom: 'none', borderRadius: '19px 19px 0 0' }} />
+              {/* Corner rivets */}
+              <div style={{ position: 'absolute', top: 14, left: 14, width: 7, height: 7, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.4), rgba(255,255,255,0.1))', border: '1px solid rgba(255,255,255,0.15)' }} />
+              <div style={{ position: 'absolute', top: 14, right: 14, width: 7, height: 7, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.4), rgba(255,255,255,0.1))', border: '1px solid rgba(255,255,255,0.15)' }} />
+
+              {/* Row 1: MONETA (left) | NFC + Gold Chip (right) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 22px 0', position: 'relative', zIndex: 1 }}>
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 900, color: 'rgba(255,255,255,0.5)', letterSpacing: 3, textTransform: 'uppercase', textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>MONETA</p>
+                  <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: 1, marginTop: 2 }}>PORTFOLIO WALLET</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* NFC icon */}
+                  <svg width="16" height="20" viewBox="0 0 16 20" fill="none">
+                    <circle cx="2.5" cy="10" r="2" fill="rgba(255,255,255,0.35)" />
+                    <path d="M7 4.5 Q13 7 13 10 Q13 13 7 15.5" stroke="rgba(255,255,255,0.32)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                    <path d="M11 1.5 Q16 5 16 10 Q16 15 11 18.5" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+                  </svg>
+                  {/* Gold chip */}
+                  <div style={{ width: 36, height: 28, borderRadius: 5, background: 'linear-gradient(135deg, #b8912a 0%, #e8c96a 30%, #c8a84b 55%, #f0d060 80%, #d4a843 100%)', border: '1px solid rgba(255,220,80,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(180,140,20,0.45)' }}>
+                    <div style={{ width: 22, height: 16, borderRadius: 3, border: '1px solid rgba(100,70,5,0.5)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 1, padding: 2 }}>
+                      {Array.from({ length: 6 }).map((_, i) => <div key={i} style={{ background: 'linear-gradient(135deg, rgba(160,110,10,0.8), rgba(210,160,40,0.5))', borderRadius: 1 }} />)}
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
+
+        {/* Magnetic clasp */}
+        <div style={{
+          position: 'absolute', top: 140, left: '50%', transform: 'translateX(-50%)',
+          width: 22, height: 22, borderRadius: '50%', zIndex: 5,
+          background: 'linear-gradient(135deg, #4ade80, #059669)',
+          boxShadow: '0 0 0 4px rgba(52,211,153,0.15), 0 0 20px rgba(52,211,153,0.65)',
+          border: '2px solid rgba(255,255,255,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', boxShadow: '0 0 5px rgba(255,255,255,0.5)' }} />
+        </div>
+
       </div>
 
       {/* ── Dark body ── */}

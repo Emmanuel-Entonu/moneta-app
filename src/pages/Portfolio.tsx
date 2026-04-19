@@ -335,7 +335,7 @@ export default function Portfolio() {
 
         {/* Allocation preview */}
         {positions.length > 0 && (
-          <div style={{ margin: '0 12px 0', background: '#0e1c2f', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '16px' }}>
+          <div style={{ margin: '16px 12px 0', background: '#0e1c2f', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <MiniDonut positions={sorted} />
               <div style={{ flex: 1 }}>

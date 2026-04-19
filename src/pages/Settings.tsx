@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
+import Layout from '../components/Layout'
 
 type KYCStatus = 'pending' | 'submitted' | 'verified' | 'rejected'
 
@@ -217,20 +218,17 @@ export default function Settings() {
     : user?.email?.[0]?.toUpperCase() ?? 'U'
 
   return (
-    <div style={{ minHeight: '100svh', background: 'var(--bg-page)', display: 'flex', flexDirection: 'column', paddingBottom: 80 }}>
-
+    <Layout title="Account">
       {/* Hero */}
       <div style={{
         background: 'linear-gradient(160deg, #050e1a 0%, #0c1f2e 45%, #053d2a 80%, #065f3e 100%)',
-        padding: 'calc(env(safe-area-inset-top,0px) + 20px) 24px 0',
+        padding: '20px 24px 0',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.2) 0%, transparent 65%)' }} />
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-
-        <p style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.4)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, position: 'relative', zIndex: 1 }}>Account</p>
 
         {/* Avatar + name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24, position: 'relative', zIndex: 1 }}>
@@ -430,6 +428,6 @@ export default function Settings() {
           </div>
         </>
       )}
-    </div>
+    </Layout>
   )
 }

@@ -12,6 +12,7 @@ import Market from './pages/Market'
 import Portfolio from './pages/Portfolio'
 import Trade from './pages/Trade'
 import Profile from './pages/Profile'
+import Settings from './pages/Settings'
 import Compare from './pages/Compare'
 import Onboarding from './pages/Onboarding'
 import KYC from './pages/KYC'
@@ -144,6 +145,7 @@ export default function App() {
         <Route path="/trade/:symbol" element={<RequireAuth><Trade /></RequireAuth>} />
         <Route path="/compare" element={<RequireAuth><Compare /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+        <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
 
         {/* Default */}
         <Route path="*" element={<Navigate to="/market" replace />} />

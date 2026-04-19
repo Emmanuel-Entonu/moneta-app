@@ -8,11 +8,12 @@ interface LayoutProps {
   rightAction?: ReactNode
   hideNav?: boolean
   noPadTop?: boolean
+  noBorder?: boolean
 }
 
-export default function Layout({ children, title, subtitle, rightAction, hideNav, noPadTop }: LayoutProps) {
+export default function Layout({ children, title, subtitle, rightAction, hideNav, noPadTop, noBorder }: LayoutProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100svh', background: 'var(--bg)' }}>
       {title && (
         <header style={{
           position: 'sticky',
@@ -21,7 +22,7 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
           background: 'linear-gradient(135deg, #050d1a 0%, #0c1526 65%, #022c22 100%)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(5,150,105,0.2)',
+          borderBottom: noBorder ? 'none' : '1px solid rgba(5,150,105,0.2)',
           paddingTop: noPadTop
             ? 'calc(env(safe-area-inset-top, 0px) + 10px)'
             : 'calc(env(safe-area-inset-top, 0px) + 18px)',
@@ -69,12 +70,14 @@ export default function Layout({ children, title, subtitle, rightAction, hideNav
           </div>
 
           {/* Bottom gradient accent line */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            height: 1.5,
-            background: 'linear-gradient(90deg, transparent 0%, #059669 30%, #34d399 60%, transparent 100%)',
-            opacity: 0.5,
-          }} />
+          {!noBorder && (
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              height: 1.5,
+              background: 'linear-gradient(90deg, transparent 0%, #059669 30%, #34d399 60%, transparent 100%)',
+              opacity: 0.5,
+            }} />
+          )}
         </header>
       )}
 

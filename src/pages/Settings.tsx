@@ -218,17 +218,25 @@ export default function Settings() {
     : user?.email?.[0]?.toUpperCase() ?? 'U'
 
   return (
-    <Layout title="Account">
+    <Layout noBorder>
       {/* Hero */}
       <div style={{
         background: 'linear-gradient(160deg, #050e1a 0%, #0c1f2e 45%, #053d2a 80%, #065f3e 100%)',
-        padding: '20px 24px 0',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 24px 0',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.2) 0%, transparent 65%)' }} />
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
+
+        {/* Page title */}
+        <p style={{
+          fontSize: 27, fontWeight: 900, letterSpacing: -0.7, lineHeight: 1,
+          background: 'linear-gradient(95deg, #34d399 0%, #059669 55%, #6ee7b7 100%)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          marginBottom: 20, position: 'relative', zIndex: 1,
+        }}>Account</p>
 
         {/* Avatar + name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24, position: 'relative', zIndex: 1 }}>

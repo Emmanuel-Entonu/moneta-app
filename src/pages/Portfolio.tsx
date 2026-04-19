@@ -331,7 +331,7 @@ export default function Portfolio() {
       </div>
 
       {/* ── Dark body ── */}
-      <div style={{ background: '#070e1a', marginTop: 16, paddingBottom: 100 }}>
+      <div style={{ background: '#070e1a', marginTop: -16, borderRadius: '24px 24px 0 0', paddingTop: 8, paddingBottom: 100 }}>
 
         {/* Allocation preview */}
         {positions.length > 0 && (

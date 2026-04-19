@@ -491,6 +491,7 @@ export default function Portfolio() {
                           <p style={{ fontWeight: 800, fontSize: 15, color: '#ffffff', letterSpacing: -0.2 }}>{pos.symbol}</p>
                           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{pct.toFixed(0)}% of portfolio</span>
                         </div>
+                        {pos.securityName && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, marginBottom: 2 }}>{pos.securityName}</p>}
                         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{pos.quantity.toLocaleString()} units · avg ₦{pos.averageCost.toFixed(2)}</p>
                       </div>
                     </div>

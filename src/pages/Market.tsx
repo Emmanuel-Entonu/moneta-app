@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import SoftAurora from '../components/SoftAurora'
+import Aurora from '../components/Aurora'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { generateSparklineArea } from '../lib/sparkline'
 import type { PacMarketData } from '../lib/pacApi'
@@ -204,7 +204,7 @@ export default function Market() {
       }}>
         {/* Aurora background */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-          <SoftAurora color1="#059669" color2="#34d399" speed={0.25} brightness={0.45} scale={1.8} enableMouseInteraction={false} bandHeight={0.55} bandSpread={0.3} noiseAmplitude={0.4} noiseFrequency={0.6} />
+          <Aurora colorStops={['#059669', '#34d399', '#047857']} amplitude={1.2} blend={0.6} speed={0.4} />
         </div>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
           <div style={{ position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.18) 0%, transparent 65%)' }} />

@@ -142,6 +142,7 @@ export interface PacOrderRequest {
   quantity: number
   orderType: 'MARKET' | 'LIMIT'
   limitPrice?: number
+  estimatedTotal?: number
 }
 
 export interface PacOrderResponse {

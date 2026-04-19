@@ -141,12 +141,19 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     try {
       if (USE_MOCK_ORDERS) {
         await new Promise((r) => setTimeout(r, 1200))
-        set({
-          orderResult: {
-            success: true,
-            message: `${order.side} order for ${order.quantity} units of ${order.symbol} placed successfully.`,
-          },
-        })
+        const msg = `${order.side} order for ${order.quantity} units of ${order.symbol} placed successfully.`
+        set({ orderResult: { success: true, message: msg } })
+        const { supabase } = await import('../lib/supabase')
+        const userId = useAuthStore.getState().user?.id
+        if (userId) {
+          await supabase.from('orders').insert({
+            user_id: userId, symbol: order.symbol, side: order.side,
+            order_type: order.orderType, quantity: order.quantity,
+            limit_price: order.limitPrice ?? null,
+            estimated_total: order.estimatedTotal ?? null,
+            pac_order_id: null, status: 'placed',
+          })
+        }
       } else {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.accountId ?? '')
         const realOrder = { ...order, accountId: isUUID ? order.accountId : PAC_TEST_ACCOUNT_ID }
@@ -162,6 +169,18 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
             message: result.routingMessage ?? result.message ?? (success ? 'Order placed' : 'Order failed'),
           },
         })
+        const { supabase } = await import('../lib/supabase')
+        const userId = useAuthStore.getState().user?.id
+        if (userId) {
+          await supabase.from('orders').insert({
+            user_id: userId, symbol: realOrder.symbol, side: realOrder.side,
+            order_type: realOrder.orderType, quantity: realOrder.quantity,
+            limit_price: realOrder.limitPrice ?? null,
+            estimated_total: realOrder.estimatedTotal ?? null,
+            pac_order_id: result.id ?? result.orderId ?? null,
+            status: success ? 'placed' : 'failed',
+          })
+        }
       }
     } catch (e: unknown) {
       set({ orderResult: { success: false, message: (e as Error).message } })

@@ -663,6 +663,7 @@ export default function Trade() {
                       accountId: pacAccountId ?? 'demo',
                       symbol: stock.symbol, side, quantity: qty, orderType,
                       limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined,
+                      estimatedTotal,
                     })
                     const result = usePortfolioStore.getState().orderResult
                     if (result?.success) {
@@ -679,6 +680,7 @@ export default function Trade() {
                     accountId: pacAccountId ?? 'demo',
                     symbol: stock.symbol, side, quantity: qty, orderType,
                     limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined,
+                    estimatedTotal,
                   })
                   setShowConfirm(false)
                 }}

@@ -192,7 +192,20 @@ export default function KYC() {
     if (!user) return
     setSaving(true); setError(null)
     try {
-      // 1. Save KYC data to Supabase
+      // 1. Upload ID document to Supabase Storage
+      let kycDocUrl: string | null = null
+      if (docFile) {
+        const ext = docFile.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+        const path = `${user.id}/${Date.now()}.${ext}`
+        const { error: uploadErr } = await supabase.storage
+          .from('kyc-docs')
+          .upload(path, docFile, { upsert: true })
+        if (uploadErr) throw new Error(`Document upload failed: ${uploadErr.message}`)
+        const { data: { publicUrl } } = supabase.storage.from('kyc-docs').getPublicUrl(path)
+        kycDocUrl = publicUrl
+      }
+
+      // 2. Save KYC data to Supabase
       const { error: dbError } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: fullName,
@@ -201,6 +214,7 @@ export default function KYC() {
         address,
         bvn,
         kyc_status: bvnState === 'done' ? 'verified' : 'submitted',
+        kyc_doc_url: kycDocUrl,
       })
       if (dbError) throw new Error(dbError.message)
 
@@ -595,8 +609,8 @@ export default function KYC() {
               <button onClick={() => setStep(2)} style={secondaryBtn}>Back</button>
               <button
                 onClick={handleSubmit}
-                disabled={saving}
-                style={primaryBtn(saving)}
+                disabled={saving || !docFile}
+                style={primaryBtn(saving || !docFile)}
               >
                 {saving ? 'Submitting…' : 'Submit KYC'}
                 {!saving && (

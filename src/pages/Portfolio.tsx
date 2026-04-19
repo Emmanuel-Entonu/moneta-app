@@ -4,9 +4,23 @@ import Layout from '../components/Layout'
 import { PortfolioCardSkeleton } from '../components/Skeleton'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
+import { supabase } from '../lib/supabase'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { initializePayment, verifyPayment, MONETA_CONFIGURED, type PaymentType } from '../lib/monetaApi'
+
+interface OrderRecord {
+  id: string
+  symbol: string
+  side: 'BUY' | 'SELL'
+  order_type: string
+  quantity: number
+  limit_price: number | null
+  estimated_total: number | null
+  status: string
+  pac_order_id: string | null
+  created_at: string
+}
 
 const QUICK_AMOUNTS = [5000, 10000, 25000, 50000, 100000]
 
@@ -382,10 +396,13 @@ export default function Portfolio() {
   const { positions, account, loadingPortfolio, loadPositions, loadAccount } = usePortfolioStore()
   const { pacAccountId, walletBalance, loadProfile } = useAuthStore()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'holdings' | 'allocation'>('holdings')
+  const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
   const [showFund, setShowFund]         = useState(false)
   const [showVerify, setShowVerify]     = useState(false)
   const [creditBanner, setCreditBanner] = useState<number | null>(null)
+  const [orders, setOrders]             = useState<OrderRecord[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const userId = useAuthStore((s) => s.user?.id)
 
   const totalValue = positions.reduce((s, p) => s + p.marketValue, 0)
   const totalPnL = positions.reduce((s, p) => s + p.unrealizedPnL, 0)
@@ -394,12 +411,26 @@ export default function Portfolio() {
   const isUp = totalPnL >= 0
 
   useEffect(() => {
-    // Refresh wallet balance from Supabase every time this page is opened
     loadProfile()
     const id = pacAccountId ?? 'demo-account'
     loadAccount(id)
     loadPositions(id)
   }, [pacAccountId])
+
+  useEffect(() => {
+    if (tab !== 'orders' || !userId) return
+    setOrdersLoading(true)
+    supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        setOrders((data as OrderRecord[]) ?? [])
+        setOrdersLoading(false)
+      })
+  }, [tab, userId])
 
 
   const sorted = [...positions].sort((a, b) => b.marketValue - a.marketValue)
@@ -602,7 +633,7 @@ export default function Portfolio() {
         padding: '20px 20px 10px',
       }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {(['holdings', 'allocation'] as const).map((t) => (
+          {(['holdings', 'allocation', 'orders'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -810,6 +841,102 @@ export default function Portfolio() {
                   {fmt(pos.marketValue)}
                 </span>
               </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Orders tab */}
+      {tab === 'orders' && (
+        <div style={{ padding: '0 16px 16px' }} className="animate-in">
+          {ordersLoading && (
+            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+              Loading orders…
+            </div>
+          )}
+          {!ordersLoading && orders.length === 0 && (
+            <div style={{ padding: '48px 20px', textAlign: 'center' }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: 24,
+                background: '#f8fafc', border: '2px solid var(--border)',
+                margin: '0 auto 16px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <p style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 6 }}>No orders yet</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.5 }}>
+                Your placed buy and sell orders will appear here
+              </p>
+            </div>
+          )}
+          {!ordersLoading && orders.map((o) => {
+            const isBuy = o.side === 'BUY'
+            const isPlaced = o.status === 'placed'
+            const date = new Date(o.created_at)
+            const dateStr = date.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+            const timeStr = date.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
+            return (
+              <button
+                key={o.id}
+                onClick={() => navigate(`/trade/${o.symbol}`)}
+                style={{
+                  width: '100%', textAlign: 'left', cursor: 'pointer',
+                  background: '#fff', border: '1.5px solid var(--border)',
+                  borderRadius: 16, padding: '14px 16px', marginBottom: 10,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                      background: isBuy ? '#d1fae5' : '#fee2e2',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 8 8" fill={isBuy ? '#059669' : '#dc2626'}>
+                        {isBuy ? <polygon points="4,0 8,8 0,8" /> : <polygon points="0,0 8,0 4,8" />}
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
+                        <p style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)' }}>{o.symbol}</p>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700,
+                          color: isBuy ? '#065f46' : '#991b1b',
+                          background: isBuy ? '#d1fae5' : '#fee2e2',
+                          padding: '2px 7px', borderRadius: 20,
+                        }}>{o.side}</span>
+                      </div>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
+                        {o.quantity.toLocaleString()} units · {o.order_type}
+                        {o.limit_price ? ` @ ₦${o.limit_price.toFixed(2)}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {o.estimated_total != null && (
+                      <p style={{ fontWeight: 800, fontSize: 14, color: 'var(--text)', letterSpacing: -0.3 }}>
+                        {fmt(o.estimated_total)}
+                      </p>
+                    )}
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      color: isPlaced ? '#065f46' : '#991b1b',
+                      background: isPlaced ? '#d1fae5' : '#fee2e2',
+                      padding: '2px 7px', borderRadius: 20, marginTop: 4, display: 'inline-block',
+                    }}>
+                      {isPlaced ? '✓ Placed' : 'Failed'}
+                    </span>
+                  </div>
+                </div>
+                <p style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500, marginTop: 10 }}>
+                  {dateStr} · {timeStr}{o.pac_order_id ? ` · ID: ${o.pac_order_id}` : ''}
+                </p>
+              </button>
             )
           })}
         </div>

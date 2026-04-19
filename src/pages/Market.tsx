@@ -223,26 +223,26 @@ export default function Market() {
         </button>
       }
     >
-      {/* NSE dark stats banner */}
+      {/* NSE stats banner */}
       <div style={{
         padding: '16px 20px',
-        background: 'linear-gradient(135deg, #0a1628, #0f1f38)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: '#fff',
+        borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div>
-          <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.7, textTransform: 'uppercase', marginBottom: 6 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.7, textTransform: 'uppercase', marginBottom: 6 }}>
             NSE All-Share Index
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: -0.8 }}>
+            <span style={{ fontSize: 24, fontWeight: 900, color: 'var(--text)', letterSpacing: -0.8 }}>
               97,842.14
             </span>
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 3,
               fontSize: 12, fontWeight: 800,
-              color: '#fff',
-              background: nseUp ? '#059669' : '#e03131',
+              color: nseUp ? '#065f46' : '#991b1b',
+              background: nseUp ? '#d1fae5' : '#fee2e2',
               padding: '4px 10px', borderRadius: 20,
             }}>
               {nseUp ? '▲' : '▼'} {Math.abs(nseChange).toFixed(2)}%
@@ -251,12 +251,12 @@ export default function Market() {
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Gainers</p>
-            <p style={{ fontSize: 22, fontWeight: 900, color: '#10b981', letterSpacing: -0.5 }}>{gainers.length}</p>
+            <p style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Gainers</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#059669', letterSpacing: -0.5 }}>{gainers.length}</p>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Losers</p>
-            <p style={{ fontSize: 22, fontWeight: 900, color: '#fc5c65', letterSpacing: -0.5 }}>{losers.length}</p>
+            <p style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Losers</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#e03131', letterSpacing: -0.5 }}>{losers.length}</p>
           </div>
         </div>
       </div>

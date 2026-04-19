@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
+import SoftAurora from '../components/SoftAurora'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { generateSparklineArea } from '../lib/sparkline'
 import type { PacMarketData } from '../lib/pacApi'
@@ -201,13 +202,17 @@ export default function Market() {
         padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 20px 22px',
         position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        {/* Aurora background */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+          <SoftAurora color1="#059669" color2="#34d399" speed={0.25} brightness={0.45} scale={1.8} enableMouseInteraction={false} bandHeight={0.55} bandSpread={0.3} noiseAmplitude={0.4} noiseFrequency={0.6} />
+        </div>
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
           <div style={{ position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,150,105,0.18) 0%, transparent 65%)' }} />
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
 
         {/* Title + Compare */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, position: 'relative', zIndex: 2 }}>
           <p style={{
             fontSize: 27, fontWeight: 900, letterSpacing: -0.7,
             background: 'linear-gradient(95deg, #34d399 0%, #059669 55%, #6ee7b7 100%)',

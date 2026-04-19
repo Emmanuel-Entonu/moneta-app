@@ -214,7 +214,6 @@ export default function Market() {
         {/* Title + Compare */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, position: 'relative', zIndex: 2 }}>
           <p style={{
-            flex: 1, textAlign: 'center',
             fontSize: 27, fontWeight: 900, letterSpacing: -0.7,
             background: 'linear-gradient(95deg, #34d399 0%, #059669 55%, #6ee7b7 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',

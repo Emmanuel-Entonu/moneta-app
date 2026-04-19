@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import MonetaLogo from '../components/MonetaLogo'
 import { useAuthStore } from '../store/authStore'
+import Aurora from '../components/Aurora'
 
 const SLIDES = [
   {
@@ -82,32 +83,25 @@ export default function Onboarding() {
       minHeight: '100svh',
       display: 'flex',
       flexDirection: 'column',
-      background: slide.bg,
-      transition: 'background 0.5s ease',
+      background: '#050e1a',
       userSelect: 'none',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Background decoration */}
+      {/* Aurora background */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <div style={{
-          position: 'absolute', top: -60, right: -60,
-          width: 280, height: 280, borderRadius: '50%',
-          background: `radial-gradient(circle, ${slide.accent}22 0%, transparent 65%)`,
-          transition: 'background 0.5s',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '35%', left: -40,
-          width: 200, height: 200, borderRadius: '50%',
-          background: `radial-gradient(circle, ${slide.accent}14 0%, transparent 65%)`,
-          transition: 'background 0.5s',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
-          backgroundSize: '36px 36px',
-        }} />
+        <Aurora
+          colorStops={['#059669', '#34d399', '#047857']}
+          amplitude={1.2}
+          blend={0.6}
+          speed={0.8}
+        />
       </div>
+      {/* Dark overlay so text stays readable */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'rgba(5,14,26,0.55)',
+      }} />
 
       {/* Header */}
       <div style={{

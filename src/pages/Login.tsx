@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import MonetaLogo from '../components/MonetaLogo'
+import SoftAurora from '../components/SoftAurora'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -25,40 +26,30 @@ export default function Login() {
   return (
     <div style={{
       minHeight: '100svh',
-      background: 'linear-gradient(160deg, #050e1a 0%, #071a2e 40%, #062a1e 75%, #074d36 100%)',
+      background: '#050e1a',
       display: 'flex', flexDirection: 'column',
       position: 'relative', overflow: 'hidden',
     }}>
-      {/* Background decoration */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <div style={{
-          position: 'absolute', top: '8%', left: '50%', transform: 'translateX(-50%)',
-          width: 360, height: 360, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(5,150,105,0.18) 0%, transparent 65%)',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '30%', right: -60,
-          width: 240, height: 240, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(52,211,153,0.1) 0%, transparent 65%)',
-        }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
-        {/* Floating ticker dots */}
-        {[
-          { top: '18%', left: '12%', size: 5, opacity: 0.3 },
-          { top: '28%', right: '14%', size: 3, opacity: 0.2 },
-          { top: '42%', left: '8%', size: 4, opacity: 0.25 },
-          { top: '55%', right: '10%', size: 6, opacity: 0.15 },
-        ].map((dot, i) => (
-          <div key={i} style={{
-            position: 'absolute', ...dot as React.CSSProperties,
-            width: dot.size, height: dot.size, borderRadius: '50%',
-            background: '#10b981', opacity: dot.opacity,
-          }} />
-        ))}
+      {/* SoftAurora background — covers only the top hero area */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: '55%', pointerEvents: 'none',
+      }}>
+        <SoftAurora
+          color1="#059669"
+          color2="#34d399"
+          speed={0.5}
+          brightness={1.2}
+          scale={1.5}
+          bandHeight={0.5}
+          bandSpread={1.2}
+          noiseFrequency={2.5}
+          noiseAmplitude={1.0}
+          octaveDecay={0.1}
+          layerOffset={0.4}
+          colorSpeed={0.8}
+          enableMouseInteraction={false}
+        />
       </div>
 
       {/* Top hero area */}

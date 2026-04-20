@@ -281,14 +281,22 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
   }
 }
 
+function lastTradingDay(): string {
+  const d = new Date()
+  const day = d.getUTCDay()
+  if (day === 0) d.setUTCDate(d.getUTCDate() - 2) // Sunday → Friday
+  else if (day === 6) d.setUTCDate(d.getUTCDate() - 1) // Saturday → Friday
+  return d.toISOString().split('T')[0]
+}
+
 /** Get trading positions for an investment account */
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
-  const today = new Date().toISOString().split('T')[0]
+  const valueDate = lastTradingDay()
   const data = await brokerGet<{
     positionInstruments?: unknown[]
     positions?: unknown[]
     data?: unknown[]
-  }>(`/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${today}`)
+  }>(`/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`)
   const list = data.positionInstruments ?? data.positions ?? data.data ?? (Array.isArray(data) ? data : [])
   return (list as unknown[]).map(normalizePosition)
 }

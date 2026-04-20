@@ -7,13 +7,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = req.method ?? 'GET'
   const token  = (req.headers['x-pac-token'] as string) ?? ''
 
+  const isGet = method === 'GET' || method === 'HEAD'
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    'Accept': 'application/json',
     'x-tenant-id': 'pac',
+    ...(!isGet ? { 'Content-Type': 'application/json' } : {}),
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const body = method !== 'GET' && method !== 'HEAD' ? JSON.stringify(req.body) : undefined
+  const body = !isGet ? JSON.stringify(req.body) : undefined
 
   try {
     console.log(`[pac-proxy] ${method} ${path} | token=${token ? token.substring(0, 20) + '...' : 'NONE'}`)

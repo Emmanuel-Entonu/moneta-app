@@ -213,7 +213,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 }
 
 export default function Portfolio() {
-  const { positions, account, loadingPortfolio, loadPositions, loadAccount } = usePortfolioStore()
+  const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus } = usePortfolioStore()
   const { pacAccountId, walletBalance, loadProfile } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
@@ -248,6 +248,9 @@ export default function Portfolio() {
 
   return (
     <Layout noBorder>
+      {/* DEBUG — remove after fix */}
+      {apiStatus && <div style={{ margin: '8px 16px', background: '#1a0a00', border: '1px solid #f97316', borderRadius: 8, padding: '8px 12px', fontSize: 11, color: '#f97316', wordBreak: 'break-all' }}>{apiStatus}</div>}
+
       {/* Payment credited banner */}
       {creditBanner !== null && (
         <div style={{ margin: '12px 16px 0', background: 'linear-gradient(135deg, #059669, #047857)', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 16px rgba(5,150,105,0.3)' }}>

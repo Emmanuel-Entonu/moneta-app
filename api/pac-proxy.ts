@@ -16,8 +16,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = method !== 'GET' && method !== 'HEAD' ? JSON.stringify(req.body) : undefined
 
   try {
+    console.log(`[pac-proxy] ${method} ${path} | token=${token ? token.substring(0, 20) + '...' : 'NONE'}`)
     const upstream = await fetch(`${PAC_BASE}${path}`, { method, headers, body })
     const data = await upstream.text()
+    console.log(`[pac-proxy] response ${upstream.status}`)
     res.status(upstream.status).setHeader('Content-Type', 'application/json').send(data)
   } catch (e) {
     res.status(500).json({ error: String(e) })

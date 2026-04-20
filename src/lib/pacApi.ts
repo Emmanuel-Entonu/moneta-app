@@ -292,13 +292,19 @@ function lastTradingDay(): string {
 /** Get trading positions for an investment account */
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
   const valueDate = lastTradingDay()
-  const data = await brokerGet<{
-    positionInstruments?: unknown[]
-    positions?: unknown[]
-    data?: unknown[]
-  }>(`/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`)
-  const list = data.positionInstruments ?? data.positions ?? data.data ?? (Array.isArray(data) ? data : [])
-  return (list as unknown[]).map(normalizePosition)
+  try {
+    const data = await brokerGet<{
+      positionInstruments?: unknown[]
+      positions?: unknown[]
+      data?: unknown[]
+    }>(`/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`)
+    const list = data.positionInstruments ?? data.positions ?? data.data ?? (Array.isArray(data) ? data : [])
+    return (list as unknown[]).map(normalizePosition)
+  } catch (e) {
+    const msg = (e as Error).message ?? ''
+    if (msg.includes('500') && msg.includes('processing journal')) return []
+    throw e
+  }
 }
 
 /** Place a buy or sell order */
@@ -420,3 +426,5 @@ export const MOCK_POSITIONS: PacPosition[] = [
   { symbol: 'ZENITHBANK', securityName: 'Zenith Bank Plc',        quantity: 800,  averageCost: 38.50,  currentPrice: 37.50,  marketValue: 30000, unrealizedPnL: -800,  unrealizedPnLPercent: -2.60 },
   { symbol: 'ACCESS',     securityName: 'Access Holdings Plc',    quantity: 1000, averageCost: 18.00,  currentPrice: 19.75,  marketValue: 19750, unrealizedPnL: 1750,  unrealizedPnLPercent: 9.72  },
 ]
+
+

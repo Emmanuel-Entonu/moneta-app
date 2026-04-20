@@ -288,7 +288,7 @@ export default function Portfolio() {
         <div style={{ position: 'absolute', top: 2, left: 1, right: -2, bottom: 0, borderRadius: 26, background: '#04150c', zIndex: 0 }} />
 
         {/* Cards peeking from left */}
-        <div style={{ position: 'absolute', left: -8, top: '36%', width: 16, height: 52, background: 'linear-gradient(160deg, #1e3a8a, #2563eb)', borderRadius: '7px 0 0 7px', zIndex: 0, boxShadow: '-3px 2px 10px rgba(0,0,0,0.6)' }} />
+        <div style={{ position: 'absolute', left: -8, top: '36%', width: 16, height: 52, background: 'linear-gradient(160deg, #374151, #6b7280)', borderRadius: '7px 0 0 7px', zIndex: 0, boxShadow: '-3px 2px 10px rgba(0,0,0,0.6)' }} />
         <div style={{ position: 'absolute', left: -5, top: '43%', width: 16, height: 44, background: 'linear-gradient(160deg, #7f1d1d, #b91c1c)', borderRadius: '7px 0 0 7px', zIndex: 0 }} />
         <div style={{ position: 'absolute', left: -2, top: '49%', width: 16, height: 36, background: 'linear-gradient(160deg, #292524, #57534e)', borderRadius: '7px 0 0 7px', zIndex: 0 }} />
 

@@ -288,7 +288,7 @@ export default function Portfolio() {
         <div style={{ position: 'absolute', top: 2, left: 1, right: -2, bottom: 0, borderRadius: 26, background: '#04150c', zIndex: 0 }} />
 
         {/* Cards peeking from left */}
-        <div style={{ position: 'absolute', left: -8, top: '36%', width: 16, height: 52, background: 'linear-gradient(160deg, #374151, #6b7280)', borderRadius: '7px 0 0 7px', zIndex: 0, boxShadow: '-3px 2px 10px rgba(0,0,0,0.6)' }} />
+        <div style={{ position: 'absolute', left: -8, top: '36%', width: 16, height: 52, background: 'linear-gradient(160deg, #1e3a8a, #2563eb)', borderRadius: '7px 0 0 7px', zIndex: 0, boxShadow: '-3px 2px 10px rgba(0,0,0,0.6)' }} />
         <div style={{ position: 'absolute', left: -5, top: '43%', width: 16, height: 44, background: 'linear-gradient(160deg, #7f1d1d, #b91c1c)', borderRadius: '7px 0 0 7px', zIndex: 0 }} />
         <div style={{ position: 'absolute', left: -2, top: '49%', width: 16, height: 36, background: 'linear-gradient(160deg, #292524, #57534e)', borderRadius: '7px 0 0 7px', zIndex: 0 }} />
 
@@ -365,7 +365,7 @@ export default function Portfolio() {
           <div style={{ position: 'absolute', inset: 0, borderRadius: '26px 26px 0 0', overflow: 'hidden' }}>
             <div style={{
               position: 'absolute', inset: 0,
-              background: 'linear-gradient(160deg, #122e44 0%, #0e3d2e 45%, #10503c 100%)',
+              background: 'linear-gradient(160deg, #1f2937 0%, #374151 45%, #4b5563 100%)',
               clipPath: 'polygon(0 0, 100% 0, 100% 55%, 93% 65%, 84% 74%, 73% 81%, 61% 87%, 55% 89%, 50% 90%, 45% 89%, 39% 87%, 27% 81%, 16% 74%, 7% 65%, 0 55%)',
             }}>
               {/* Leather grain */}

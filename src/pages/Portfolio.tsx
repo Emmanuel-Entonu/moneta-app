@@ -365,7 +365,7 @@ export default function Portfolio() {
           <div style={{ position: 'absolute', inset: 0, borderRadius: '26px 26px 0 0', overflow: 'hidden' }}>
             <div style={{
               position: 'absolute', inset: 0,
-              background: 'linear-gradient(160deg, #1f2937 0%, #374151 45%, #4b5563 100%)',
+              background: 'linear-gradient(160deg, #0f172a 0%, #1e3a8a 55%, #1e40af 100%)',
               clipPath: 'polygon(0 0, 100% 0, 100% 55%, 93% 65%, 84% 74%, 73% 81%, 61% 87%, 55% 89%, 50% 90%, 45% 89%, 39% 87%, 27% 81%, 16% 74%, 7% 65%, 0 55%)',
             }}>
               {/* Leather grain */}

@@ -267,9 +267,8 @@ export async function getIndexData() {
 
 /** Get investment account by ID — derived from the positions report */
 export async function getAccountById(accountId: string): Promise<PacAccount> {
-  const today = new Date().toISOString().split('T')[0]
   const data = await brokerGet<Record<string, unknown>>(
-    `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${today}`
+    `/position/api/v1/ledgers/report/trading/account/${accountId}`
   )
   return {
     id:            String(data.accountId ?? accountId),
@@ -283,12 +282,11 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
 
 /** Get trading positions for an investment account */
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
-  const valueDate = new Date().toISOString().split('T')[0]
   const data = await brokerGet<{
     positionInstruments?: unknown[]
     positions?: unknown[]
     data?: unknown[]
-  }>(`/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`)
+  }>(`/position/api/v1/ledgers/report/trading/account/${accountId}`)
   const list = data.positionInstruments ?? data.positions ?? data.data ?? (Array.isArray(data) ? data : [])
   return (list as unknown[]).map(normalizePosition)
 }

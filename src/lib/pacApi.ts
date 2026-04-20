@@ -281,17 +281,9 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
   }
 }
 
-function lastTradingDay(): string {
-  const d = new Date()
-  const day = d.getUTCDay()
-  if (day === 0) d.setUTCDate(d.getUTCDate() - 2) // Sunday → Friday
-  else if (day === 6) d.setUTCDate(d.getUTCDate() - 1) // Saturday → Friday
-  return d.toISOString().split('T')[0]
-}
-
 /** Get trading positions for an investment account */
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
-  const valueDate = lastTradingDay()
+  const valueDate = new Date().toISOString().split('T')[0]
   const data = await brokerGet<{
     positionInstruments?: unknown[]
     positions?: unknown[]

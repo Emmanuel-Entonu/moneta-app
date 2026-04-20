@@ -267,9 +267,8 @@ export async function getIndexData() {
 
 /** Get investment account by ID — derived from the positions report */
 export async function getAccountById(accountId: string): Promise<PacAccount> {
-  const valueDate = lastTradingDay()
   const data = await brokerGet<Record<string, unknown>>(
-    `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`
+    `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${new Date().toISOString().split('T')[0]}`
   )
   return {
     id:            String(data.accountId ?? accountId),
@@ -281,17 +280,9 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
   }
 }
 
-function lastTradingDay(): string {
-  const d = new Date()
-  const day = d.getDay() // local day
-  if (day === 0) d.setDate(d.getDate() - 2) // Sunday → Friday
-  else if (day === 6) d.setDate(d.getDate() - 1) // Saturday → Friday
-  return d.toISOString().split('T')[0]
-}
-
 /** Get trading positions for an investment account */
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
-  const valueDate = lastTradingDay()
+  const valueDate = new Date().toISOString().split('T')[0]
   const data = await brokerGet<{
     positionInstruments?: unknown[]
     positions?: unknown[]

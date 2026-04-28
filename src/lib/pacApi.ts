@@ -39,6 +39,7 @@ const SECURITY_NAMES: Record<string, string> = {
 
 let _bearerToken: string | null = null
 let _tokenExpiry = 0
+let _tokenPromise: Promise<string> | null = null
 
 // Route all PAC broker calls through /api/pac-proxy (Vercel serverless function).
 // This avoids CORS preflight issues — the proxy runs server-side with no origin restrictions.
@@ -62,16 +63,23 @@ async function pacProxy<T>(path: string, method = 'GET', body?: unknown): Promis
 
 async function getBearerToken(): Promise<string> {
   if (_bearerToken && Date.now() < _tokenExpiry) return _bearerToken
-
-  // Auth call goes through proxy too (server-side, no CORS)
-  const data = await pacProxy<{ token?: string; access_token?: string; expires_in?: number }>(
-    '/administration/api/v1/users/token/daemon',
-    'POST',
-    { username: USERNAME, password: PASSWORD, tenant: TENANT_ID },
-  )
-  _bearerToken = data.access_token ?? data.token ?? ''
-  _tokenExpiry = Date.now() + ((data.expires_in ?? 1800) * 1000) - 60000
-  return _bearerToken
+  // Coalesce concurrent callers onto one in-flight request — avoids double auth calls
+  if (!_tokenPromise) {
+    _tokenPromise = pacProxy<{ token?: string; access_token?: string; expires_in?: number }>(
+      '/administration/api/v1/users/token/daemon',
+      'POST',
+      { username: USERNAME, password: PASSWORD, tenant: TENANT_ID },
+    ).then((data) => {
+      _bearerToken = data.access_token ?? data.token ?? ''
+      _tokenExpiry = Date.now() + ((data.expires_in ?? 1800) * 1000) - 60000
+      _tokenPromise = null
+      return _bearerToken
+    }).catch((e) => {
+      _tokenPromise = null
+      throw e
+    })
+  }
+  return _tokenPromise
 }
 
 // ─── Request helpers ──────────────────────────────────────────────────────────

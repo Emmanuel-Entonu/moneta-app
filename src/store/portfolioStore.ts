@@ -92,17 +92,15 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   loadPositions: async (accountId) => {
-    set({ loadingPortfolio: true })
+    set({ loadingPortfolio: true, apiStatus: null })
     try {
       if (USE_MOCK_BROKER) {
         set({ positions: MOCK_POSITIONS })
       } else {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(accountId ?? '')
         const realId = isUUID ? accountId : PAC_TEST_ACCOUNT_ID
-        const { BROKER_BASE_DISPLAY } = await import('../lib/pacApi')
-        set({ apiStatus: `base=${BROKER_BASE_DISPLAY.substring(0,30)} id=${realId.substring(0,8)}` })
         const positions = await getClientPositions(realId)
-        set({ positions, apiStatus: `live: ${positions.length} positions` })
+        set({ positions })
       }
     } catch (e) {
       const msg = (e as Error).message ?? String(e)
@@ -117,18 +115,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     set({ loadingMarket: true })
     try {
       if (USE_MOCK_MARKET) {
-        set({ marketData: MOCK_MARKET_DATA, apiStatus: 'mock' })
+        set({ marketData: MOCK_MARKET_DATA })
       } else {
         const marketData = await getMarketData()
-        if (marketData.length > 0) {
-          set({ marketData, apiStatus: 'live' })
-        } else {
-          set({ marketData: MOCK_MARKET_DATA, apiStatus: 'mock: API returned empty' })
-        }
+        set({ marketData: marketData.length > 0 ? marketData : MOCK_MARKET_DATA })
       }
     } catch (e) {
       const msg = (e as Error).message ?? String(e)
-      set({ marketData: MOCK_MARKET_DATA, apiStatus: `error: ${msg}` })
+      set({ marketData: MOCK_MARKET_DATA, apiStatus: `Market data error: ${msg}` })
     } finally {
       set({ loadingMarket: false })
     }

@@ -235,7 +235,18 @@ export default function Portfolio() {
     const id = pacAccountId ?? 'demo-account'
     loadAccount(id)
     loadPositions(id)
+    // Auto-show verify sheet if a payment was pending when app reloads
+    if (localStorage.getItem('moneta_pending_ref')) setShowVerify(true)
   }, [pacAccountId])
+
+  useEffect(() => {
+    // On native: auto-show verify sheet when in-app browser closes
+    let unsub: (() => void) | undefined
+    Browser.addListener('browserFinished', () => {
+      if (localStorage.getItem('moneta_pending_ref')) setShowVerify(true)
+    }).then((handle) => { unsub = () => handle.remove() })
+    return () => { unsub?.() }
+  }, [])
 
   useEffect(() => {
     if (tab !== 'orders' || !userId) return

@@ -252,8 +252,10 @@ export default function Portfolio() {
     if (tab !== 'orders' || !userId) return
     setOrdersLoading(true)
     supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50)
-      .then(({ data }) => { setOrders((data as OrderRecord[]) ?? []); setOrdersLoading(false) })
-      .catch(() => setOrdersLoading(false))
+      .then(
+        ({ data }) => { setOrders((data as OrderRecord[]) ?? []); setOrdersLoading(false) },
+        () => setOrdersLoading(false),
+      )
   }, [tab, userId])
 
   const sorted = [...positions].sort((a, b) => b.marketValue - a.marketValue)

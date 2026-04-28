@@ -58,19 +58,20 @@ export default function PaymentCallback() {
     localStorage.removeItem('moneta_pending_amount')
 
     async function verifyWithRetry(): Promise<Awaited<ReturnType<typeof verifyPayment>>> {
+      let lastResult: Awaited<ReturnType<typeof verifyPayment>> | null = null
       let lastError: Error | null = null
       for (let i = 0; i < 5; i++) {
         if (i > 0) await new Promise((r) => setTimeout(r, 3000))
         try {
           const result = await verifyPayment(ref)
           if (result.success) return result
-          lastError = null
+          lastResult = result
         } catch (e) {
           lastError = e as Error
         }
       }
       if (lastError) throw lastError
-      return verifyPayment(ref)
+      return lastResult!
     }
 
     verifyWithRetry()

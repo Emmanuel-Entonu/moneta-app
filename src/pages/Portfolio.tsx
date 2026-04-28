@@ -124,18 +124,25 @@ function VerifyPaymentSheet({ onClose, onCredited }: { onClose: () => void; onCr
           setResult({ ok: true, msg: `₦${amountToCredit.toLocaleString('en-NG', { minimumFractionDigits: 2 })} credited to your wallet!` })
         } else {
           localStorage.removeItem('moneta_pending_ref')
+          localStorage.removeItem('moneta_pending_amount')
           setResult({ ok: false, msg: 'Payment verified but amount could not be determined.' })
         }
       } else {
-        localStorage.removeItem('moneta_pending_ref')
+        // Don't remove ref on failure — user may retry or payment may be delayed
         setResult({ ok: false, msg: res.message || 'Payment not confirmed by Moneta — no charge was made' })
       }
     } catch (e: unknown) {
+      // Network error — keep ref so user can retry
       setResult({ ok: false, msg: (e as Error).message })
     } finally {
       setLoading(false)
     }
   }
+
+  // Auto-verify when sheet opens with a pre-filled ref (browser closed / page reload)
+  useEffect(() => {
+    if (pendingRef) handleVerify()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>

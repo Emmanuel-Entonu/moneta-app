@@ -136,9 +136,9 @@ export default function PaymentCallback() {
             animation: 'spin 0.8s linear infinite', margin: '0 auto 20px',
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Payment received!</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Returning to Moneta…</p>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
-            Close this browser tab to return to Moneta
+            Close this browser tab to continue
           </p>
           <a
             href={returnUrl}

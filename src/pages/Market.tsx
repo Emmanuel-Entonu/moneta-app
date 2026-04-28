@@ -33,7 +33,7 @@ function isMarketOpen() {
 }
 
 function Sparkline({ symbol, isUp, w = 72, h = 32 }: { symbol: string; isUp: boolean; w?: number; h?: number }) {
-  const id = `sp-${symbol}-${Math.random().toString(36).slice(2, 5)}`
+  const id = `sp-${symbol}-${isUp ? 'u' : 'd'}`
   const { line, area } = generateSparklineArea(symbol, isUp, w, h)
   const color = isUp ? '#10b981' : '#ef4444'
   return (

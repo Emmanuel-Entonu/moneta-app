@@ -336,8 +336,18 @@ export default function Trade() {
                       const { reference, authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
                       localStorage.setItem('moneta_pending_ref', reference)
                       localStorage.setItem('moneta_pending_amount', String(estimatedTotal))
-                      if (Capacitor.isNativePlatform()) { await Browser.open({ url: authorizationUrl }) } else { window.location.href = authorizationUrl }
-                    } catch (e: unknown) { localStorage.removeItem('moneta_pending_order'); setMonetaError((e as Error).message); setMonetaLoading(false) }
+                      if (Capacitor.isNativePlatform()) {
+                        setShowConfirm(false)
+                        await Browser.open({ url: authorizationUrl })
+                      } else {
+                        window.location.href = authorizationUrl
+                      }
+                    } catch (e: unknown) {
+                      localStorage.removeItem('moneta_pending_order')
+                      setMonetaError((e as Error).message)
+                    } finally {
+                      setMonetaLoading(false)
+                    }
                     return
                   }
                   if (side === 'BUY' && paySource === 'wallet') {

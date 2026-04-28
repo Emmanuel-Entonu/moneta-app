@@ -152,6 +152,7 @@ export default function Settings() {
   const [editing, setEditing]       = useState(false)
   const [saving, setSaving]         = useState(false)
   const [savedOk, setSavedOk]       = useState(false)
+  const [saveError, setSaveError]   = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -164,7 +165,8 @@ export default function Settings() {
   async function saveProfile() {
     if (!user) return
     setSaving(true)
-    await supabase.from('profiles').upsert({
+    setSaveError(null)
+    const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       full_name: profile.full_name,
       phone: profile.phone,
@@ -172,6 +174,10 @@ export default function Settings() {
       address: profile.address,
     })
     setSaving(false)
+    if (error) {
+      setSaveError(error.message)
+      return
+    }
     setSaved({ ...profile })
     setSavedOk(true)
     setEditing(false)
@@ -332,6 +338,12 @@ export default function Settings() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f0fdf4', border: '1px solid #a7f3d0', borderRadius: 12, padding: '10px 14px', marginBottom: 10, color: '#065f46', fontSize: 13, fontWeight: 600 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               Profile saved
+            </div>
+          )}
+          {saveError && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 12, padding: '10px 14px', marginBottom: 10, color: '#991b1b', fontSize: 13, fontWeight: 600 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {saveError}
             </div>
           )}
           <button

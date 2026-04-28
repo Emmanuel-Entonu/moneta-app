@@ -24,3 +24,7 @@ as $$
     and wallet_balance >= delta
   returning wallet_balance;
 $$;
+
+-- Grant execute to authenticated users so supabase.rpc() calls succeed.
+grant execute on function public.increment_wallet(uuid, numeric) to authenticated;
+grant execute on function public.decrement_wallet(uuid, numeric) to authenticated;

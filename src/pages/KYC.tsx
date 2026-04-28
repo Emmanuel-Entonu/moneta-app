@@ -139,11 +139,12 @@ export default function KYC() {
 
       // BVN verified — immediately mark KYC as verified and provision broker account
       if (user) {
-        await supabase.from('profiles').upsert({
+        const { error: upsertErr } = await supabase.from('profiles').upsert({
           id: user.id,
           full_name: fullName || `${profile.firstName} ${profile.surname}`.trim(),
           kyc_status: 'verified',
         })
+        if (upsertErr) throw new Error(upsertErr.message)
 
         // Provision broker account
         let pacAccountId: string
@@ -157,7 +158,8 @@ export default function KYC() {
             bvn,
           })
         }
-        await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+        const { error: updateErr } = await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+        if (updateErr) throw new Error(`Failed to save broker account: ${updateErr.message}`)
         await loadProfile()
       }
 
@@ -233,7 +235,8 @@ export default function KYC() {
       }
 
       // 3. Store the broker account ID in the user's profile
-      await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+      const { error: updateErr } = await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+      if (updateErr) throw new Error(`Failed to save broker account: ${updateErr.message}`)
 
       // 4. Refresh auth store so pacAccountId is available immediately
       await loadProfile()

@@ -221,14 +221,15 @@ export async function getMarketData(): Promise<PacMarketData[]> {
   const results = await Promise.allSettled(
     TRACKED_SYMBOLS.map((sym) => getPriceQuote(sym))
   )
-  const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-  if (failures.length > 0) {
-    // Surface first error so the UI can display it
-    throw new Error(failures[0].reason?.message ?? 'Unknown MDS error')
-  }
-  return results
+  const successful = results
     .filter((r): r is PromiseFulfilledResult<PacMarketData> => r.status === 'fulfilled')
     .map((r) => r.value)
+  // Only throw if every single symbol failed — partial failures are dropped silently
+  if (successful.length === 0) {
+    const first = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
+    throw new Error(first?.reason?.message ?? 'All MDS calls failed')
+  }
+  return successful
 }
 
 /** Single security price */
@@ -372,7 +373,7 @@ function normalizePosition(d: unknown): PacPosition {
     currentPrice:         cur,
     marketValue:          val,
     unrealizedPnL:        pnl,
-    unrealizedPnLPercent: avg > 0 ? (pnl / (avg * qty)) * 100 : 0,
+    unrealizedPnLPercent: avg > 0 && qty > 0 ? (pnl / (avg * qty)) * 100 : 0,
   }
 }
 

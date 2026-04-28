@@ -41,7 +41,11 @@ export default function PaymentCallback() {
   useEffect(() => {
     if (isInsideCustomTab) return
     if (authLoading) return
-    if (!useAuthStore.getState().user) return
+    if (!useAuthStore.getState().user) {
+      setStatus('failed')
+      setMessage('Session expired. Please sign in and use "Payment debited but wallet not updated?" on the Portfolio page to recover your funds.')
+      return
+    }
     if (ran.current) return
     ran.current = true
 

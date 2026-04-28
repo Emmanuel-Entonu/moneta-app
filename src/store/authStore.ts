@@ -61,7 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get()
     if (!user) return
 
-    const { data: profile } = await supabase
+    const { data: profile, error: fetchError } = await supabase
       .from('profiles')
       .select('pac_account_id, kyc_status, wallet_balance')
       .eq('id', user.id)
@@ -73,8 +73,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         kycStatus: (profile.kyc_status as AuthState['kycStatus']) ?? 'pending',
         walletBalance: profile.wallet_balance ?? 0,
       })
-    } else {
-      // No profile row yet (user skipped KYC or signup trigger missing) — create it now
+    } else if (!fetchError || fetchError.code === 'PGRST116') {
+      // PGRST116 = no rows found — genuinely new user, safe to create profile
+      // Any other error (network failure, RLS) must NOT create a profile row,
+      // because upsert with wallet_balance:0 would wipe an existing balance.
       await supabase.from('profiles').upsert({
         id: user.id,
         kyc_status: 'pending',

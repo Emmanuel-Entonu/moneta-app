@@ -30,6 +30,7 @@ export default function Profile() {
   const [savedProfile, setSavedProfile] = useState<ProfileData>(empty)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [tab, setTab] = useState<'profile' | 'kyc'>('profile')
   const [editing, setEditing] = useState(false)
 
@@ -47,7 +48,8 @@ export default function Profile() {
   async function saveProfile() {
     if (!user) return
     setSaving(true)
-    await supabase.from('profiles').upsert({
+    setSaveError(null)
+    const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       full_name: profile.full_name,
       phone: profile.phone,
@@ -55,6 +57,10 @@ export default function Profile() {
       address: profile.address,
     })
     setSaving(false)
+    if (error) {
+      setSaveError(error.message)
+      return
+    }
     setSavedProfile({ ...profile })
     setSaved(true)
     setEditing(false)
@@ -255,6 +261,20 @@ export default function Profile() {
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
               Profile saved successfully
+            </div>
+          )}
+
+          {saveError && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: '#fff5f5', border: '1.5px solid #fecaca',
+              borderRadius: 12, padding: '12px 16px', marginBottom: 14,
+              color: '#991b1b', fontSize: 13, fontWeight: 600,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {saveError}
             </div>
           )}
 

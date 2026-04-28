@@ -327,12 +327,12 @@ export default function Trade() {
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: '14px', background: '#f8fafc', border: '1.5px solid var(--border)', borderRadius: 16, color: 'var(--text)', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               <button
-                disabled={monetaLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)}
+                disabled={monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)}
                 onClick={async () => {
                   if (side === 'BUY' && paySource === 'moneta') {
                     setMonetaLoading(true); setMonetaError(null)
                     try {
-                      localStorage.setItem('moneta_pending_order', JSON.stringify({ accountId: pacAccountId ?? 'demo', symbol: stock.symbol, side: 'BUY', quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined }))
+                      localStorage.setItem('moneta_pending_order', JSON.stringify({ accountId: pacAccountId ?? 'demo', symbol: stock.symbol, side: 'BUY', quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal }))
                       const { reference, authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
                       localStorage.setItem('moneta_pending_ref', reference)
                       localStorage.setItem('moneta_pending_amount', String(estimatedTotal))
@@ -359,9 +359,9 @@ export default function Trade() {
                   placeOrder({ accountId: pacAccountId ?? 'demo', symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
                   setShowConfirm(false)
                 }}
-                style={{ flex: 2, padding: '14px', background: (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}
+                style={{ flex: 2, padding: '14px', background: (monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}
               >
-                {monetaLoading ? 'Redirecting…' : `Confirm ${side}`}
+                {monetaLoading ? 'Redirecting…' : orderLoading ? 'Placing Order…' : `Confirm ${side}`}
               </button>
             </div>
           </div>

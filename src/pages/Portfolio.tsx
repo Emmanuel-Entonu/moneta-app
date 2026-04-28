@@ -39,6 +39,7 @@ function FundWalletSheet({ onClose }: { onClose: () => void }) {
     setLoading(true); setError(null)
     try {
       const { reference, authorizationUrl } = await initializePayment(userEmail, num, method)
+      localStorage.removeItem('moneta_pending_order') // don't carry over a stale trade order
       localStorage.setItem('moneta_pending_ref', reference)
       localStorage.setItem('moneta_pending_amount', String(num))
       if (Capacitor.isNativePlatform()) {
@@ -252,6 +253,7 @@ export default function Portfolio() {
     setOrdersLoading(true)
     supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50)
       .then(({ data }) => { setOrders((data as OrderRecord[]) ?? []); setOrdersLoading(false) })
+      .catch(() => setOrdersLoading(false))
   }, [tab, userId])
 
   const sorted = [...positions].sort((a, b) => b.marketValue - a.marketValue)

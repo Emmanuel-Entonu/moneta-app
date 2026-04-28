@@ -78,7 +78,9 @@ export default function PaymentCallback() {
       .then(async (result) => {
         if (!result.success) {
           setStatus('failed')
-          setMessage(result.message || 'Payment was not completed.')
+          setMessage(
+            'Your payment could not be confirmed yet. If money was debited, use "Payment debited but wallet not updated?" on the Portfolio page to recover your funds.',
+          )
           return
         }
 

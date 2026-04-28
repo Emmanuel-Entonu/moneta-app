@@ -88,23 +88,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   creditWallet: async (amountNaira) => {
     const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single()
-    const current = data?.wallet_balance ?? 0
-    const newBalance = current + amountNaira
-    const { error } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id)
+    // Atomic increment — avoids SELECT→UPDATE race that can double-credit
+    const { data, error } = await supabase.rpc('increment_wallet', {
+      user_id: user.id,
+      delta: amountNaira,
+    })
     if (error) throw new Error(error.message)
-    set({ walletBalance: newBalance })
+    set({ walletBalance: data as number })
   },
 
   debitWallet: async (amountNaira) => {
     const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', user.id).single()
-    const current = data?.wallet_balance ?? 0
-    if (current < amountNaira) throw new Error('Insufficient wallet balance')
-    const newBalance = current - amountNaira
-    const { error } = await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', user.id)
+    // Atomic decrement — returns null if balance would go negative (insufficient funds)
+    const { data, error } = await supabase.rpc('decrement_wallet', {
+      user_id: user.id,
+      delta: amountNaira,
+    })
     if (error) throw new Error(error.message)
-    set({ walletBalance: newBalance })
+    if (data === null) throw new Error('Insufficient wallet balance')
+    set({ walletBalance: data as number })
   },
 }))

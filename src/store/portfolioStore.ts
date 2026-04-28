@@ -67,7 +67,6 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   loadAccount: async (accountId) => {
-    set({ loadingPortfolio: true })
     try {
       if (USE_MOCK_BROKER) {
         const balance = useAuthStore.getState().walletBalance
@@ -89,8 +88,6 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       }
     } catch (e) {
       console.error('loadAccount error:', e)
-    } finally {
-      set({ loadingPortfolio: false })
     }
   },
 

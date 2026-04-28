@@ -47,10 +47,11 @@ const PROXY_PATH = '/api/pac-proxy'
 async function pacProxy<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const token = _bearerToken ?? ''
   const url = `${PROXY_PATH}?path=${encodeURIComponent(path)}`
+  const isGet = method === 'GET' || method === 'HEAD'
   const res = await fetch(url, {
     method,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!isGet ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { 'x-pac-token': token } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,

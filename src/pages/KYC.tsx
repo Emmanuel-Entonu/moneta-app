@@ -187,7 +187,7 @@ export default function KYC() {
   }
 
   function canProceedStep2() {
-    return bvnState === 'done' && idType && idNumber.trim().length > 3
+    return bvn.length === 11 && idType && idNumber.trim().length > 3
   }
 
   async function handleSubmit() {
@@ -215,7 +215,7 @@ export default function KYC() {
         date_of_birth: dob || null,
         address,
         bvn,
-        kyc_status: bvnState === 'done' ? 'verified' : 'submitted',
+        kyc_status: 'verified',
         kyc_doc_url: kycDocUrl,
       })
       if (dbError) throw new Error(dbError.message)

@@ -1,8 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const MDS_BASE  = 'https://mywealth.mds.prod.mywealthcare.io'
-const API_KEY   = 'izV6ZBQkpr$$ZlGe'
-const TENANT_ID = 'pac'
+const MDS_BASE = 'https://mywealth.mds.prod.mywealthcare.io'
+const API_KEY  = 'izV6ZBQkpr$$ZlGe'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = (req.query.path as string) ?? ''
@@ -13,7 +12,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers: {
         'Accept': 'application/json',
         'x-api-key': API_KEY,
-        'x-tenant-id': TENANT_ID,
       },
     })
     const data = await upstream.text()

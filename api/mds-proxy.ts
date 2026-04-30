@@ -1,17 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const MDS_BASE = 'https://mywealth.mds.prod.mywealthcare.io'
-const API_KEY  = process.env.VITE_PAC_PASSWORD ?? ''
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const path = (req.query.path as string) ?? ''
+  const path    = (req.query.path as string) ?? ''
+  const apiKey  = (req.headers['x-mds-key'] as string) ?? ''
 
   try {
-    console.log(`[mds-proxy] GET ${path}`)
+    console.log(`[mds-proxy] GET ${path} | key=${apiKey ? apiKey.substring(0, 6) + '...' : 'NONE'}`)
     const upstream = await fetch(`${MDS_BASE}${path}`, {
       headers: {
         'Accept': 'application/json',
-        'x-api-key': API_KEY,
+        'x-api-key': apiKey,
       },
     })
     const data = await upstream.text()

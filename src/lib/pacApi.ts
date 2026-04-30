@@ -83,7 +83,9 @@ async function getBearerToken(): Promise<string> {
 // ─── Request helpers ──────────────────────────────────────────────────────────
 
 async function mdsGet<T>(path: string): Promise<T> {
-  const res = await fetch(`/api/mds-proxy?path=${encodeURIComponent(path)}`)
+  const res = await fetch(`/api/mds-proxy?path=${encodeURIComponent(path)}`, {
+    headers: { 'x-mds-key': PASSWORD },
+  })
   if (!res.ok) throw new Error(`MDS ${res.status}: ${await res.text()}`)
   return res.json()
 }

@@ -187,7 +187,7 @@ export default function KYC() {
   }
 
   function canProceedStep2() {
-    return bvn.length === 11 && idType && idNumber.trim().length > 3
+    return bvnState === 'done' && idType && idNumber.trim().length > 3
   }
 
   async function handleSubmit() {
@@ -215,7 +215,7 @@ export default function KYC() {
         date_of_birth: dob || null,
         address,
         bvn,
-        kyc_status: 'verified',
+        kyc_status: bvnState === 'done' ? 'verified' : 'submitted',
         kyc_doc_url: kycDocUrl,
       })
       if (dbError) throw new Error(dbError.message)
@@ -225,17 +225,12 @@ export default function KYC() {
       if (USE_MOCK_BROKER) {
         pacAccountId = `PAC-${user.id.slice(0, 8).toUpperCase()}`
       } else {
-        try {
-          pacAccountId = await createBrokerAccount({
-            fullName,
-            email: user.email ?? '',
-            phone,
-            bvn,
-          })
-        } catch {
-          // Prod broker requires NIBSS-verified BVN — fall back to placeholder until onboarded
-          pacAccountId = `DEMO-${user.id.slice(0, 8).toUpperCase()}`
-        }
+        pacAccountId = await createBrokerAccount({
+          fullName,
+          email: user.email ?? '',
+          phone,
+          bvn,
+        })
       }
 
       // 3. Store the broker account ID in the user's profile

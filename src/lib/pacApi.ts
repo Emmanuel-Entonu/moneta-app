@@ -5,8 +5,6 @@
  * Broker (PAC)        → OAuth 2.0 Bearer token  (sandbox: mywealth.mds.sandbox.mywealthcare.io)
  */
 
-const MDS_BASE    = (import.meta.env.VITE_MDS_BASE_URL    as string | undefined) || ''
-const MDS_API_KEY = (import.meta.env.VITE_MDS_API_KEY     as string | undefined) || ''
 const BROKER_BASE = (import.meta.env.VITE_BROKER_BASE_URL as string | undefined) || 'https://api.dev.mywealthcare.io'
 export const BROKER_BASE_DISPLAY = BROKER_BASE
 const USERNAME    = (import.meta.env.VITE_PAC_USERNAME    as string | undefined) || 'api.test'

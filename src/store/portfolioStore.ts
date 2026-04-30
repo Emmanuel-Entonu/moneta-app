@@ -112,17 +112,13 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   loadMarketData: async () => {
-    set({ loadingMarket: true })
+    set({ loadingMarket: true, apiStatus: null })
     try {
-      if (USE_MOCK_MARKET) {
-        set({ marketData: MOCK_MARKET_DATA })
-      } else {
-        const marketData = await getMarketData()
-        set({ marketData: marketData.length > 0 ? marketData : MOCK_MARKET_DATA })
-      }
+      const marketData = await getMarketData()
+      set({ marketData })
     } catch (e) {
       const msg = (e as Error).message ?? String(e)
-      set({ marketData: MOCK_MARKET_DATA, apiStatus: `Market data error: ${msg}` })
+      set({ marketData: [], apiStatus: `Market data error: ${msg}` })
     } finally {
       set({ loadingMarket: false })
     }

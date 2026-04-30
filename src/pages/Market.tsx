@@ -166,7 +166,7 @@ function SkeletonCard({ borderRight }: { borderRight: boolean }) {
 }
 
 export default function Market() {
-  const { marketData, loadingMarket, loadMarketData } = usePortfolioStore()
+  const { marketData, loadingMarket, loadMarketData, apiStatus } = usePortfolioStore()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
   const navigate = useNavigate()
@@ -285,6 +285,13 @@ export default function Market() {
 
       {/* ── DARK BODY ── */}
       <div style={{ background: '#ffffff', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
+
+        {/* API error banner */}
+        {apiStatus && (
+          <div style={{ margin: '16px 12px 0', padding: '12px 14px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 12, fontSize: 12, color: '#991b1b', fontWeight: 600 }}>
+            {apiStatus}
+          </div>
+        )}
 
         {/* Top Movers section */}
         {!loadingMarket && topGainer && topLoser && mostActive && (

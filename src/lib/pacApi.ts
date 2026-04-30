@@ -83,8 +83,9 @@ async function getBearerToken(): Promise<string> {
 // ─── Request helpers ──────────────────────────────────────────────────────────
 
 async function mdsGet<T>(path: string): Promise<T> {
-  await getBearerToken()
-  return pacProxy<T>(path, 'GET')
+  const res = await fetch(`/api/mds-proxy?path=${encodeURIComponent(path)}`)
+  if (!res.ok) throw new Error(`MDS ${res.status}: ${await res.text()}`)
+  return res.json()
 }
 
 async function brokerGet<T>(path: string): Promise<T> {

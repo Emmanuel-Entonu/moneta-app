@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const PAC_BASE = 'https://api.dev.mywealthcare.io'
+const PAC_BASE  = 'https://api.prod.mywealthcare.io'
+const TENANT_ID = 'pac-sec'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path   = (req.query.path as string) ?? ''
@@ -10,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isGet = method === 'GET' || method === 'HEAD'
   const headers: Record<string, string> = {
     'Accept': 'application/json',
-    'x-tenant-id': 'pac',
+    'x-tenant-id': TENANT_ID,
     ...(!isGet ? { 'Content-Type': 'application/json' } : {}),
   }
   if (token) headers['Authorization'] = `Bearer ${token}`

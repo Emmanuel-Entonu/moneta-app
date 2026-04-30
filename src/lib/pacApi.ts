@@ -85,19 +85,8 @@ async function getBearerToken(): Promise<string> {
 // ─── Request helpers ──────────────────────────────────────────────────────────
 
 async function mdsGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${MDS_BASE}${path}`, {
-    headers: {
-      'x-api-key': MDS_API_KEY,
-      'x-tenant-id': TENANT_ID,
-      'Prefer': 'code=200',
-      Accept: 'application/json',
-    },
-  })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`MDS ${res.status}: ${text}`)
-  }
-  return res.json()
+  await getBearerToken()
+  return pacProxy<T>(path, 'GET')
 }
 
 async function brokerGet<T>(path: string): Promise<T> {

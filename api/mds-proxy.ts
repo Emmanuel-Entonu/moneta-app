@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const MDS_BASE = 'https://mywealth.mds.prod.mywealthcare.io'
-const API_KEY  = 'izV6ZBQkpr$$ZlGe'
+const API_KEY  = process.env.VITE_PAC_PASSWORD ?? ''
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = (req.query.path as string) ?? ''

@@ -4,7 +4,7 @@ const MDS_BASE = 'https://mywealth.mds.prod.mywealthcare.io'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path    = (req.query.path as string) ?? ''
-  const apiKey  = (req.headers['x-mds-key'] as string) ?? ''
+  const apiKey  = (req.headers['x-mds-key'] as string) || 'TEST_KEY_123'
 
   try {
     console.log(`[mds-proxy] GET ${path} | key=${apiKey ? apiKey.substring(0, 6) + '...' : 'NONE'}`)

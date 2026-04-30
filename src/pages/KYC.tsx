@@ -223,15 +223,19 @@ export default function KYC() {
       // 2. Provision a broker account (mock or real)
       let pacAccountId: string
       if (USE_MOCK_BROKER) {
-        // Deterministic fake ID so it's stable across sessions
         pacAccountId = `PAC-${user.id.slice(0, 8).toUpperCase()}`
       } else {
-        pacAccountId = await createBrokerAccount({
-          fullName,
-          email: user.email ?? '',
-          phone,
-          bvn,
-        })
+        try {
+          pacAccountId = await createBrokerAccount({
+            fullName,
+            email: user.email ?? '',
+            phone,
+            bvn,
+          })
+        } catch {
+          // Prod broker requires NIBSS-verified BVN — fall back to placeholder until onboarded
+          pacAccountId = `DEMO-${user.id.slice(0, 8).toUpperCase()}`
+        }
       }
 
       // 3. Store the broker account ID in the user's profile

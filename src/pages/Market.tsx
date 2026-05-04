@@ -6,21 +6,6 @@ import { usePortfolioStore } from '../store/portfolioStore'
 import { generateSparklineArea } from '../lib/sparkline'
 import type { PacMarketData } from '../lib/pacApi'
 
-// TEMP DEBUG — shows raw MDS JSON for first symbol so we can verify field names
-function MdsDebugPanel() {
-  const [raw, setRaw] = useState<string | null>(null)
-  useEffect(() => {
-    fetch('/api/mds-proxy?path=' + encodeURIComponent('/api/v1/price/quote?marketCode=NGX&secId=DANGCEM'))
-      .then(r => r.text()).then(setRaw).catch(e => setRaw(String(e)))
-  }, [])
-  if (!raw) return null
-  return (
-    <div style={{ margin: '12px', padding: '10px 12px', background: '#111', borderRadius: 10, border: '1px solid #333', overflowX: 'auto' }}>
-      <p style={{ color: '#10b981', fontSize: 10, fontWeight: 800, marginBottom: 6 }}>DEBUG — raw MDS response (DANGCEM):</p>
-      <pre style={{ fontSize: 9, color: '#ccc', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{raw}</pre>
-    </div>
-  )
-}
 
 const TICKER_COLORS: Record<string, string> = {
   DANGCEM: '#f59e0b', GTCO: '#ef4444', ZENITHBANK: '#8b5cf6',
@@ -107,7 +92,9 @@ function MoverCard({ label, stock, accent, onPress }: {
 }
 
 function StockCard({ stock, borderRight, onClick }: { stock: PacMarketData; borderRight: boolean; onClick: () => void }) {
-  const up = stock.changePercent >= 0
+  const pct = stock.changePercent
+  const up = pct > 0
+  const flat = pct === 0
   const color = getColor(stock.symbol)
   return (
     <button
@@ -133,8 +120,8 @@ function StockCard({ stock, borderRight, onClick }: { stock: PacMarketData; bord
       <div style={{ position: 'absolute', top: 12, right: 12 }}>
         <span style={{
           fontSize: 10, fontWeight: 800,
-          color: up ? '#34d399' : '#f87171',
-        }}>{up ? '↑' : '↓'}</span>
+          color: flat ? 'rgba(255,255,255,0.3)' : up ? '#34d399' : '#f87171',
+        }}>{flat ? '–' : up ? '↑' : '↓'}</span>
       </div>
 
       {/* Ticker */}
@@ -147,7 +134,7 @@ function StockCard({ stock, borderRight, onClick }: { stock: PacMarketData; bord
 
       {/* Sparkline — full width */}
       <div style={{ width: '100%', marginBottom: 10 }}>
-        <Sparkline symbol={stock.symbol} isUp={up} w={130} h={44} />
+        <Sparkline symbol={stock.symbol} isUp={flat ? true : up} w={130} h={44} />
       </div>
 
       {/* Price */}
@@ -158,12 +145,12 @@ function StockCard({ stock, borderRight, onClick }: { stock: PacMarketData; bord
       {/* % Badge */}
       <span style={{
         fontSize: 10, fontWeight: 700, alignSelf: 'flex-start',
-        color: up ? '#34d399' : '#f87171',
-        background: up ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
-        border: `1px solid ${up ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+        color: flat ? 'rgba(255,255,255,0.35)' : up ? '#34d399' : '#f87171',
+        background: flat ? 'rgba(255,255,255,0.06)' : up ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
+        border: `1px solid ${flat ? 'rgba(255,255,255,0.1)' : up ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
         padding: '2px 8px', borderRadius: 20,
       }}>
-        {up ? '▲' : '▼'} {Math.abs(stock.changePercent).toFixed(2)}%
+        {flat ? '–' : up ? '▲' : '▼'} {Math.abs(pct).toFixed(2)}%
       </span>
     </button>
   )
@@ -191,6 +178,7 @@ export default function Market() {
 
   const gainers = marketData.filter((s) => s.changePercent > 0)
   const losers  = marketData.filter((s) => s.changePercent < 0)
+  const neutral = marketData.filter((s) => s.changePercent === 0)
   const marketOpen = isMarketOpen()
   const nseChange = +(marketData.reduce((a, s) => a + s.changePercent, 0) / (marketData.length || 1)).toFixed(2)
   const nseUp = nseChange >= 0
@@ -274,10 +262,14 @@ export default function Market() {
               </span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 20 }}>
+          <div style={{ display: 'flex', gap: 16 }}>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Up</p>
               <p style={{ fontSize: 24, fontWeight: 900, color: '#34d399', letterSpacing: -0.5 }}>{gainers.length}</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Flat</p>
+              <p style={{ fontSize: 24, fontWeight: 900, color: 'rgba(255,255,255,0.4)', letterSpacing: -0.5 }}>{neutral.length}</p>
             </div>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>Down</p>
@@ -301,9 +293,6 @@ export default function Market() {
 
       {/* ── DARK BODY ── */}
       <div style={{ background: '#ffffff', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
-
-        {/* TEMP DEBUG PANEL */}
-        <MdsDebugPanel />
 
         {/* API error banner */}
         {apiStatus && (

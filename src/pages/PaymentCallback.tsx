@@ -80,10 +80,12 @@ export default function PaymentCallback() {
 
     verifyWithRetry()
       .then(async (result) => {
-        if (!result.success) {
+        if (!result.success || result.amountNaira === 0) {
           setStatus('failed')
           setMessage(
-            'Your payment could not be confirmed yet. If money was debited, use "Payment debited but wallet not updated?" on the Portfolio page to recover your funds.',
+            result.amountNaira === 0 && result.success
+              ? 'Payment was not completed — no funds were collected.'
+              : 'Your payment could not be confirmed yet. If money was debited, use "Payment debited but wallet not updated?" on the Portfolio page to recover your funds.',
           )
           return
         }
@@ -96,7 +98,7 @@ export default function PaymentCallback() {
           return
         }
 
-        const amountToCredit = savedAmount > 0 ? savedAmount : result.amountNaira
+        const amountToCredit = result.amountNaira > 0 ? result.amountNaira : savedAmount
         await creditWallet(amountToCredit)
 
         if (pendingRaw) {

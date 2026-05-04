@@ -14,6 +14,12 @@ app.use((req, res, next) => {
   next()
 })
 
+app.get('/ip', async (req, res) => {
+  const r = await fetch('https://api.ipify.org?format=json')
+  const data = await r.json()
+  res.json(data)
+})
+
 app.all('/api/v2/*', async (req, res) => {
   const url = `https://api.moneta.ng${req.path}${req.url.includes('?') ? '?' + req.url.split('?')[1] : ''}`
   try {

@@ -79,11 +79,20 @@ interface StockLogoProps {
   radius?: number
 }
 
+// Google's favicon service returns a genuine logo for known domains,
+// or a tiny 16px generic globe for unknown ones — we detect the generic
+// globe via naturalWidth ≤ 16 in onLoad and fall back to the avatar.
+function googleLogoUrl(domain: string, px: number) {
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${px}`
+}
+
 export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoProps) {
   const [imgError, setImgError] = useState(false)
   const domain = SYMBOL_DOMAIN[symbol]
   const color = tickerColor(symbol)
   const initials = symbol.replace(/[^A-Z]/gi, '').slice(0, 3).toUpperCase()
+
+  const px = size >= 40 ? 64 : 32
 
   if (domain && !imgError) {
     return (
@@ -96,9 +105,13 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
         boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
       }}>
         <img
-          src={`https://logo.clearbit.com/${domain}`}
+          src={googleLogoUrl(domain, px)}
           alt={symbol}
-          style={{ width: '80%', height: '80%', objectFit: 'contain' }}
+          style={{ width: '75%', height: '75%', objectFit: 'contain' }}
+          onLoad={(e) => {
+            // Google returns a 16×16 generic globe when it has no custom logo
+            if (e.currentTarget.naturalWidth <= 16) setImgError(true)
+          }}
           onError={() => setImgError(true)}
         />
       </div>

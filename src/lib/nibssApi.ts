@@ -1,16 +1,6 @@
-/**
- * Moneta NIBSS — BVN Verification
- * Routes through Fly.io static IP proxy (same as payment calls)
- *
- * Flow:
- *   1. initBvnVerification(bvn) → customer_reference + OTP sent to user's phone
- *   2. verifyBvnOtp(ref, otp)   → OTP confirmed
- *   3. getBvnDetails(ref)        → profile data (waits 6s as required by API)
- */
-
 import { getServiceToken } from './monetaApi'
 
-const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) ?? 'https://api.moneta.ng'
+const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) ?? 'https://moneta-proxy.fly.dev'
 
 function nibssUrl(path: string) {
   return `${PROXY_URL}/api/v2${path}`
@@ -25,7 +15,6 @@ async function headers() {
   }
 }
 
-/** Step 1 — Initiate BVN query. Returns customer_reference and triggers OTP to user's phone. */
 export async function initBvnVerification(bvn: string, phone?: string): Promise<string> {
   const res = await fetch(nibssUrl('/bvn/query'), {
     method: 'POST',
@@ -48,7 +37,6 @@ export async function initBvnVerification(bvn: string, phone?: string): Promise<
   return ref
 }
 
-/** Step 2 — Submit OTP received on user's phone. */
 export async function verifyBvnOtp(customerReference: string, otp: string): Promise<void> {
   const res = await fetch(nibssUrl('/bvn/verify/otp'), {
     method: 'POST',
@@ -67,7 +55,6 @@ export interface BvnProfile {
   address:   string
 }
 
-/** Step 3 — Retrieve BVN profile. Waits 6s as required by the API before calling. */
 export async function getBvnDetails(customerReference: string): Promise<BvnProfile> {
   await new Promise((r) => setTimeout(r, 6000))
   const res = await fetch(nibssUrl('/bvn/details'), {

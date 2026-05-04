@@ -2,13 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
-const SVC_KEY    = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
+const NIBSS_SVC  = process.env.VITE_MONETA_NIBSS_TOKEN   ?? '' // NIBSS-scoped service key
 
 let _token: string | null = null
 
 async function getServiceToken(): Promise<string> {
   if (_token) return _token
-  const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${SVC_KEY}`).toString('base64')
+  const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
   const res = await fetch('https://api.moneta.ng/api/v2/generate-access-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },

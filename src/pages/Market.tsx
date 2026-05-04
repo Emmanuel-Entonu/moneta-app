@@ -11,15 +11,32 @@ const TICKER_COLORS: Record<string, string> = {
   DANGCEM: '#f59e0b', GTCO: '#ef4444', ZENITHBANK: '#8b5cf6',
   MTNN: '#eab308', AIRTELAFRI: '#ec4899', FBNH: '#3b82f6',
   BUACEMENT: '#f97316', ACCESS: '#10b981', NESTLE: '#d97706', SEPLAT: '#6366f1',
+  UBA: '#0ea5e9', STANBIC: '#14b8a6', FCMB: '#a855f7', FIDELITYBK: '#f43f5e',
+  WEMABANK: '#84cc16', STERLINGBANK: '#06b6d4', JAIZBANK: '#10b981',
+  TRANSCORP: '#f59e0b', OANDO: '#6366f1', PRESCO: '#22c55e',
+  CADBURY: '#a16207', UNILEVER: '#0284c7', FLOURMILL: '#ca8a04',
+  DANGSUGAR: '#dc2626', CORONATION: '#7c3aed', LIVESTOCK: '#16a34a',
+  NB: '#b45309', CHAMPAGNE: '#92400e', VITAFOAM: '#065f46',
 }
-const getColor = (s: string) => TICKER_COLORS[s] ?? '#10b981'
+const COLOR_POOL = [
+  '#f59e0b','#ef4444','#8b5cf6','#eab308','#ec4899','#3b82f6',
+  '#f97316','#10b981','#d97706','#6366f1','#0ea5e9','#14b8a6',
+  '#a855f7','#f43f5e','#84cc16','#06b6d4','#22c55e','#dc2626',
+]
+function getColor(sym: string): string {
+  if (TICKER_COLORS[sym]) return TICKER_COLORS[sym]
+  let hash = 0
+  for (let i = 0; i < sym.length; i++) hash = sym.charCodeAt(i) + ((hash << 5) - hash)
+  return COLOR_POOL[Math.abs(hash) % COLOR_POOL.length]
+}
 
-const CATEGORIES = ['All', 'Gainers', 'Losers', 'Banking', 'Cement', 'Telecom', 'Energy']
+const CATEGORIES = ['All', 'Gainers', 'Losers', 'Banking', 'Cement', 'Telecom', 'Energy', 'Consumer']
 const CATEGORY_MAP: Record<string, string[]> = {
-  Banking: ['GTCO', 'ZENITHBANK', 'FBNH', 'ACCESS'],
-  Cement:  ['DANGCEM', 'BUACEMENT'],
-  Telecom: ['MTNN', 'AIRTELAFRI'],
-  Energy:  ['SEPLAT'],
+  Banking:  ['GTCO', 'ZENITHBANK', 'FBNH', 'ACCESS', 'UBA', 'STANBIC', 'FCMB', 'FIDELITYBK', 'WEMABANK', 'STERLINGBANK', 'JAIZBANK'],
+  Cement:   ['DANGCEM', 'BUACEMENT', 'LAFARGE'],
+  Telecom:  ['MTNN', 'AIRTELAFRI'],
+  Energy:   ['SEPLAT', 'OANDO', 'TOTAL', 'ARDOVA'],
+  Consumer: ['NESTLE', 'CADBURY', 'UNILEVER', 'FLOURMILL', 'DANGSUGAR', 'NB', 'VITAFOAM'],
 }
 
 function fmt(n: number) {
@@ -357,7 +374,7 @@ export default function Market() {
           <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', letterSpacing: 0.7 }}>
             {category === 'All' ? 'All Equities' : category}
           </span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.35)' }}>{filtered.length} securities</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.35)' }}>{filtered.length} {filtered.length === 1 ? 'security' : 'securities'}</span>
         </div>
 
         {/* Stock list — floating card */}

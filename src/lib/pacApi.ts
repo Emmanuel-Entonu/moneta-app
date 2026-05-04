@@ -182,17 +182,51 @@ async function getPriceQuote(secId: string): Promise<PacMarketData> {
 }
 
 export async function getMarketData(): Promise<PacMarketData[]> {
-  const results = await Promise.allSettled(
-    TRACKED_SYMBOLS.map((sym) => getPriceQuote(sym))
-  )
-  const successful = results
-    .filter((r): r is PromiseFulfilledResult<PacMarketData> => r.status === 'fulfilled')
-    .map((r) => r.value)
-  if (successful.length === 0) {
-    const first = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
-    throw new Error(first?.reason?.message ?? 'All MDS calls failed')
+  // Run all sources in parallel
+  const [quotesSettled, gainersResult, losersResult, activeResult] = await Promise.allSettled([
+    Promise.allSettled(TRACKED_SYMBOLS.map(getPriceQuote)),
+    getTopGainers(),
+    getTopLosers(),
+    getMostActive(),
+  ])
+
+  const seen = new Set<string>()
+  const all: PacMarketData[] = []
+
+  function add(stocks: PacMarketData[], limit = Infinity) {
+    let count = 0
+    for (const s of stocks) {
+      if (!s.symbol || seen.has(s.symbol) || s.price <= 0) continue
+      if (count++ >= limit) break
+      seen.add(s.symbol)
+      all.push(s)
+    }
   }
-  return successful
+
+  // Priority order: gainers/losers have the best percent-change data
+  if (gainersResult.status === 'fulfilled') add(gainersResult.value, 25)
+  if (losersResult.status === 'fulfilled')  add(losersResult.value,  25)
+  if (activeResult.status === 'fulfilled')  add(activeResult.value,  20)
+
+  // Fixed symbols as fallback / baseline
+  if (quotesSettled.status === 'fulfilled') {
+    const quotes = quotesSettled.value
+      .filter((r): r is PromiseFulfilledResult<PacMarketData> => r.status === 'fulfilled')
+      .map(r => r.value)
+    add(quotes)
+  }
+
+  if (all.length === 0) throw new Error('No market data available')
+
+  // Sort: biggest movers first, flat stocks alphabetically at the bottom
+  return all.sort((a, b) => {
+    const aFlat = a.changePercent === 0
+    const bFlat = b.changePercent === 0
+    if (aFlat && bFlat) return a.symbol.localeCompare(b.symbol)
+    if (aFlat) return 1
+    if (bFlat) return -1
+    return Math.abs(b.changePercent) - Math.abs(a.changePercent)
+  })
 }
 
 export async function getSecurityData(symbol: string): Promise<PacMarketData> {

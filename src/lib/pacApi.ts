@@ -275,7 +275,7 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
 }
 
 function normalizePriceQuote(d: MdsPriceQuote): PacMarketData {
-  const raw       = d as Record<string, unknown>
+  const raw       = d as unknown as Record<string, unknown>
   const price     = Number(d.lastPx ?? d.close ?? raw.lastPrice ?? raw.last ?? raw.price ?? 0)
   const open      = Number(d.open ?? raw.openPx ?? raw.openPrice ?? raw.openingPrice ?? 0)
   const prevClose = Number(raw.prevClose ?? raw.previousClose ?? raw.prevClosingPrice ?? raw.previousClosePrice ?? 0)

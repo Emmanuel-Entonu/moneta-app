@@ -10,7 +10,7 @@
 
 import { getServiceToken } from './monetaApi'
 
-const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) ?? 'https://moneta-proxy.fly.dev'
+const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) ?? 'https://api.moneta.ng'
 
 function nibssUrl(path: string) {
   return `${PROXY_URL}/api/v2${path}`

@@ -44,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           'Accept':          'application/json',
           'X-Service-Token': token,
         },
-        body: JSON.stringify({ reference, otp }),
+        body: JSON.stringify({ customer_reference: reference, otp }),
       })
       const text = await upstream.text()
       console.log(`[nibss-bvn verify-otp] ${upstream.status}: ${text}`)

@@ -56,6 +56,7 @@ function findReference(obj: unknown, depth = 0): string {
 
   // Priority 1 — well-known exact key names
   const priorityKeys = [
+    'customer_reference', 'customerReference',
     'reference', 'ref', 'requestId', 'request_id', 'trackingId', 'tracking_id',
     'sessionId', 'session_id', 'verificationRef', 'referenceId', 'reference_id',
     'transRef', 'transactionRef', 'otpRef', 'bvnRef', 'refCode', 'correlationId',

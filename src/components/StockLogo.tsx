@@ -4,27 +4,27 @@ const SYMBOL_DOMAIN: Record<string, string> = {
   // Banks
   GTCO:         'gtbank.com',
   ZENITHBANK:   'zenithbank.com',
-  ACCESS:       'accessbankplc.com',
-  ACCESSCORP:   'accessbankplc.com',
+  ACCESS:       'accessbank.com',
+  ACCESSCORP:   'accessbank.com',
   FBNH:         'firstbanknigeria.com',
   UBA:          'ubagroup.com',
   FIDELITYBK:   'fidelitybank.ng',
   STANBIC:      'stanbicibtc.com',
   FCMB:         'fcmb.com',
   WEMABANK:     'wemabank.com',
-  STERLINGBANK: 'sterlingbank.com',
+  STERLINGBANK: 'sterling.ng',
   JAIZBANK:     'jaizbank.com',
   UNITYBNK:     'unitybankng.com',
   ETI:          'ecobank.com',
   // Cement / Construction
   DANGCEM:      'dangote.com',
   BUACEMENT:    'buacement.com',
-  WAPCO:        'holcim.com',
-  LAFARGE:      'holcim.com',
+  WAPCO:        'lafarge.com',
+  LAFARGE:      'lafarge.com',
   JBERGER:      'julius-berger.com',
   // Telecom
-  MTNN:         'mtn.com',
-  AIRTELAFRI:   'airtel.com',
+  MTNN:         'mtn.ng',
+  AIRTELAFRI:   'airtel.africa',
   // Energy / Oil
   SEPLAT:       'seplatpetroleum.com',
   OANDO:        'oandoplc.com',
@@ -36,8 +36,8 @@ const SYMBOL_DOMAIN: Record<string, string> = {
   DANGSUGAR:    'dangote.com',
   BUAFOODS:     'buagroup.com',
   NB:           'nbplc.com',
-  GUINNESS:     'diageo.com',
-  CADBURY:      'mondelezinternational.com',
+  GUINNESS:     'guinness.com',
+  CADBURY:      'cadbury.co.uk',
   UNILEVER:     'unilever.com',
   FLOURMILL:    'flourmillsng.com',
   HONYFLOUR:    'honeyflourmill.com',
@@ -79,22 +79,19 @@ interface StockLogoProps {
   radius?: number
 }
 
-// Google's favicon service returns a genuine logo for known domains,
-// or a tiny 16px generic globe for unknown ones — we detect the generic
-// globe via naturalWidth ≤ 16 in onLoad and fall back to the avatar.
-function googleLogoUrl(domain: string, px: number) {
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=${px}`
-}
-
 export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoProps) {
-  const [imgError, setImgError] = useState(false)
+  // stage 0 = try unavatar, stage 1 = try Google favicon, stage 2 = avatar
+  const [stage, setStage] = useState(0)
   const domain = SYMBOL_DOMAIN[symbol]
   const color = tickerColor(symbol)
   const initials = symbol.replace(/[^A-Z]/gi, '').slice(0, 3).toUpperCase()
 
-  const px = size >= 40 ? 64 : 32
+  const src =
+    stage === 0 ? `https://unavatar.io/${domain}?fallback=false` :
+    stage === 1 ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` :
+    null
 
-  if (domain && !imgError) {
+  if (domain && src) {
     return (
       <div style={{
         width: size, height: size, borderRadius: radius, flexShrink: 0,
@@ -105,14 +102,15 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
         boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
       }}>
         <img
-          src={googleLogoUrl(domain, px)}
+          key={src}
+          src={src}
           alt={symbol}
           style={{ width: '75%', height: '75%', objectFit: 'contain' }}
           onLoad={(e) => {
-            // Google returns a 16×16 generic globe when it has no custom logo
-            if (e.currentTarget.naturalWidth <= 16) setImgError(true)
+            // Google returns a 16×16 generic globe for unknown domains
+            if (stage === 1 && e.currentTarget.naturalWidth <= 16) setStage(2)
           }}
-          onError={() => setImgError(true)}
+          onError={() => setStage((s) => s + 1)}
         />
       </div>
     )

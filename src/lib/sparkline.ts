@@ -1,7 +1,3 @@
-/**
- * Generates a deterministic sparkline SVG path from a stock symbol.
- * The trend direction matches the stock's actual price change.
- */
 export function generateSparklinePath(symbol: string, isUp: boolean, w = 64, h = 32): string {
   const seed = symbol.split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 0)
 
@@ -18,7 +14,6 @@ export function generateSparklinePath(symbol: string, isUp: boolean, w = 64, h =
     points.push([i, val])
   }
 
-  // Smooth bezier line
   const xS = w / (n - 1)
   const yS = h / 100
 
@@ -35,17 +30,12 @@ export function generateSparklinePath(symbol: string, isUp: boolean, w = 64, h =
   return d
 }
 
-/** Also returns the area fill path (closed shape for gradient fill) */
 export function generateSparklineArea(symbol: string, isUp: boolean, w = 64, h = 32): { line: string; area: string } {
   const line = generateSparklinePath(symbol, isUp, w, h)
   const area = line + ` L ${w} ${h} L 0 ${h} Z`
   return { line, area }
 }
 
-/**
- * Generates a full intraday price chart (30 points) for the trade screen.
- * Returns normalized points and SVG paths.
- */
 export function generateIntradayChart(
   symbol: string,
   currentPrice: number,
@@ -56,7 +46,6 @@ export function generateIntradayChart(
   const seed = symbol.split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 3), 0)
   const n = 32
 
-  // Generate price deltas (pct from open)
   const rawPrices: number[] = []
   const openPct = isUp ? -0.025 : 0.025
   let pct = openPct
@@ -69,7 +58,6 @@ export function generateIntradayChart(
     pct = Math.max(-0.08, Math.min(0.08, pct + drift + noise))
     rawPrices.push(currentPrice * (1 + pct))
   }
-  // End near currentPrice
   rawPrices[n - 1] = currentPrice
 
   const minP = Math.min(...rawPrices)

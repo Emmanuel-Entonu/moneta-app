@@ -1,50 +1,24 @@
-import { getServiceToken } from './monetaApi'
+const CLIENT_ID  = (import.meta.env.VITE_MONETA_CLIENT_ID     as string | undefined) ?? ''
+const CLIENT_SEC = (import.meta.env.VITE_MONETA_CLIENT_SECRET as string | undefined) ?? ''
 
-const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) ?? 'https://moneta-proxy.fly.dev'
+let _nibssToken: string | null = null
 
-function nibssUrl(path: string) {
-  return `${PROXY_URL}/api/v2${path}`
-}
-
-async function headers() {
-  const token = await getServiceToken()
-  return {
-    'Content-Type':    'application/json',
-    'Accept':          'application/json',
-    'X-Service-Token': token,
-  }
-}
-
-export async function initBvnVerification(bvn: string, phone?: string): Promise<string> {
-  const res = await fetch(nibssUrl('/bvn/query'), {
-    method: 'POST',
-    headers: await headers(),
-    body: JSON.stringify({
-      scope: 'profile',
-      bvn,
-      channel_code: 'mobile_app',
-      ...(phone && { otp_method: phone }),
-    }),
+async function getNibssToken(): Promise<string> {
+  if (_nibssToken) return _nibssToken
+  const basic = btoa(`${CLIENT_ID}:${CLIENT_SEC}`)
+  const res = await fetch('https://www.nips.moneta.ng/api/access-token', {
+    headers: { 'Authorization': `Basic ${basic}`, 'Accept': 'application/json' },
   })
-  const data = await res.json() as {
-    status: boolean
-    data: Array<{ customer_reference: string }>
-    message?: string
-  }
-  if (!res.ok || !data.status) throw new Error(data.message ?? `BVN query failed (${res.status})`)
-  const ref = data.data?.[0]?.customer_reference
-  if (!ref) throw new Error('No customer reference returned')
-  return ref
+  if (!res.ok) throw new Error(`NIBSS auth failed (${res.status})`)
+  const data = await res.json() as { token?: string; access_token?: string; data?: string }
+  _nibssToken = data.token ?? data.access_token ?? (typeof data.data === 'string' ? data.data : '') ?? ''
+  if (!_nibssToken) throw new Error('No NIBSS token returned')
+  return _nibssToken
 }
 
-export async function verifyBvnOtp(customerReference: string, otp: string): Promise<void> {
-  const res = await fetch(nibssUrl('/bvn/verify/otp'), {
-    method: 'POST',
-    headers: await headers(),
-    body: JSON.stringify({ customer_reference: customerReference, otp }),
-  })
-  const data = await res.json() as { status: boolean; message?: string }
-  if (!res.ok || !data.status) throw new Error(data.message ?? `OTP verification failed (${res.status})`)
+function genRef(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
 export interface BvnProfile {
@@ -52,33 +26,50 @@ export interface BvnProfile {
   surname:   string
   dob:       string
   gender:    string
-  address:   string
+  phone:     string
 }
 
-export async function getBvnDetails(customerReference: string): Promise<BvnProfile> {
-  await new Promise((r) => setTimeout(r, 6000))
-  const res = await fetch(nibssUrl('/bvn/details'), {
+export async function queryBvn(bvn: string): Promise<BvnProfile> {
+  const token = await getNibssToken()
+  const res = await fetch('https://app.moneta.ng/api/bvn/bvn_query', {
     method: 'POST',
-    headers: await headers(),
-    body: JSON.stringify({ scope: 'profile', customer_reference: customerReference }),
+    headers: {
+      'Content-Type':  'application/json',
+      'Accept':        'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      bvn,
+      bvn_query_type:     'igree',
+      customer_reference: genRef(),
+      scope:              'profile',
+      channel_code:       'mobile_app',
+    }),
   })
   const data = await res.json() as {
-    status: boolean
+    status:   boolean | string
     data?: {
-      first_name?: string
-      surname?:    string
+      firstName?:   string
+      first_name?:  string
+      surname?:     string
+      lastName?:    string
+      last_name?:   string
+      dateOfBirth?: string
       DateOfBirth?: string
-      gender?:     string
-      address?:    string
+      dob?:         string
+      gender?:      string
+      phoneNumber?: string
+      phone?:       string
     }
     message?: string
   }
-  if (!res.ok || !data.status) throw new Error(data.message ?? `BVN details failed (${res.status})`)
+  const ok = data.status === true || data.status === 'success'
+  if (!res.ok || !ok) throw new Error(data.message ?? `BVN query failed (${res.status})`)
   return {
-    firstName: data.data?.first_name ?? '',
-    surname:   data.data?.surname    ?? '',
-    dob:       data.data?.DateOfBirth ?? '',
-    gender:    data.data?.gender     ?? '',
-    address:   data.data?.address    ?? '',
+    firstName: data.data?.firstName   ?? data.data?.first_name ?? '',
+    surname:   data.data?.surname     ?? data.data?.lastName   ?? data.data?.last_name ?? '',
+    dob:       data.data?.dateOfBirth ?? data.data?.DateOfBirth ?? data.data?.dob ?? '',
+    gender:    data.data?.gender      ?? '',
+    phone:     data.data?.phoneNumber ?? data.data?.phone ?? '',
   }
 }

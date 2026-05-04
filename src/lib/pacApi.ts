@@ -1,20 +1,11 @@
-/**
- * MyWealth Platform API Client
- *
- * Market Data Service → x-api-key header auth  (prod: mywealth.mds.prod.mywealthcare.io)
- * Broker (PAC)        → OAuth 2.0 Bearer token  (sandbox: mywealth.mds.sandbox.mywealthcare.io)
- */
-
 const BROKER_BASE = (import.meta.env.VITE_BROKER_BASE_URL as string | undefined) || 'https://api.dev.mywealthcare.io'
 export const BROKER_BASE_DISPLAY = BROKER_BASE
 const USERNAME    = (import.meta.env.VITE_PAC_USERNAME    as string | undefined) || 'api.test'
 const PASSWORD    = (import.meta.env.VITE_PAC_PASSWORD    as string | undefined) || '8QUYVaa9J5j#'
 const TENANT_ID   = (import.meta.env.VITE_PAC_TENANT_ID   as string | undefined) || 'pac'
 
-// NGX = Nigerian Exchange Group (formerly NSE)
 const MARKET_CODE = 'NGX'
 
-// All NGX securities we track — secId matches the NGX ticker
 const TRACKED_SYMBOLS = [
   'DANGCEM', 'GTCO', 'ZENITHBANK', 'MTNN', 'AIRTELAFRI',
   'FBNH', 'BUACEMENT', 'ACCESS', 'NESTLE', 'SEPLAT',
@@ -33,14 +24,10 @@ const SECURITY_NAMES: Record<string, string> = {
   SEPLAT:     'Seplat Energy Plc',
 }
 
-// ─── OAuth Token Manager ──────────────────────────────────────────────────────
-
 let _bearerToken: string | null = null
 let _tokenExpiry = 0
 let _tokenPromise: Promise<string> | null = null
 
-// Route all PAC broker calls through /api/pac-proxy (Vercel serverless function).
-// This avoids CORS preflight issues — the proxy runs server-side with no origin restrictions.
 const PROXY_PATH = '/api/pac-proxy'
 
 async function pacProxy<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
@@ -61,7 +48,6 @@ async function pacProxy<T>(path: string, method = 'GET', body?: unknown): Promis
 
 async function getBearerToken(): Promise<string> {
   if (_bearerToken && Date.now() < _tokenExpiry) return _bearerToken
-  // Coalesce concurrent callers onto one in-flight request — avoids double auth calls
   if (!_tokenPromise) {
     _tokenPromise = pacProxy<{ token?: string; access_token?: string; expires_in?: number }>(
       '/administration/api/v1/users/token/daemon',
@@ -80,8 +66,6 @@ async function getBearerToken(): Promise<string> {
   return _tokenPromise
 }
 
-// ─── Request helpers ──────────────────────────────────────────────────────────
-
 async function mdsGet<T>(path: string): Promise<T> {
   const res = await fetch(`/api/mds-proxy?path=${encodeURIComponent(path)}`)
   if (!res.ok) throw new Error(`MDS ${res.status}: ${await res.text()}`)
@@ -89,7 +73,7 @@ async function mdsGet<T>(path: string): Promise<T> {
 }
 
 async function brokerGet<T>(path: string): Promise<T> {
-  await getBearerToken() // ensure token is fresh
+  await getBearerToken()
   return pacProxy<T>(path, 'GET')
 }
 
@@ -97,8 +81,6 @@ async function brokerPost<T>(path: string, body: unknown): Promise<T> {
   await getBearerToken()
   return pacProxy<T>(path, 'POST', body)
 }
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PacMarketData {
   symbol: string
@@ -152,8 +134,6 @@ export interface PacOrderResponse {
   message?: string
 }
 
-// ─── Raw MDS response shape ───────────────────────────────────────────────────
-
 interface MdsPriceQuote {
   marketCode: string
   secId: string
@@ -188,12 +168,6 @@ interface MdsMover {
   changePercent?: number
 }
 
-// ─── Market Data endpoints ────────────────────────────────────────────────────
-
-/**
- * Fetch a single security's price quote from NGX.
- * GET /api/v1/price/quote?marketCode=NGX&secId={symbol}
- */
 async function getPriceQuote(secId: string): Promise<PacMarketData> {
   const data = await mdsGet<MdsPriceQuote>(
     `/api/v1/price/quote?marketCode=${MARKET_CODE}&secId=${secId}`
@@ -201,10 +175,6 @@ async function getPriceQuote(secId: string): Promise<PacMarketData> {
   return normalizePriceQuote(data)
 }
 
-/**
- * All tracked securities — parallel price quote calls.
- * Falls back gracefully per-stock if one fails.
- */
 export async function getMarketData(): Promise<PacMarketData[]> {
   const results = await Promise.allSettled(
     TRACKED_SYMBOLS.map((sym) => getPriceQuote(sym))
@@ -212,7 +182,6 @@ export async function getMarketData(): Promise<PacMarketData[]> {
   const successful = results
     .filter((r): r is PromiseFulfilledResult<PacMarketData> => r.status === 'fulfilled')
     .map((r) => r.value)
-  // Only throw if every single symbol failed — partial failures are dropped silently
   if (successful.length === 0) {
     const first = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
     throw new Error(first?.reason?.message ?? 'All MDS calls failed')
@@ -220,12 +189,10 @@ export async function getMarketData(): Promise<PacMarketData[]> {
   return successful
 }
 
-/** Single security price */
 export async function getSecurityData(symbol: string): Promise<PacMarketData> {
   return getPriceQuote(symbol)
 }
 
-/** Top gaining securities */
 export async function getTopGainers(): Promise<PacMarketData[]> {
   const data = await mdsGet<MdsMover[]>(
     `/api/v1/price/top-gainers?marketCode=${MARKET_CODE}`
@@ -233,7 +200,6 @@ export async function getTopGainers(): Promise<PacMarketData[]> {
   return data.map(normalizeMover)
 }
 
-/** Top losing securities */
 export async function getTopLosers(): Promise<PacMarketData[]> {
   const data = await mdsGet<MdsMover[]>(
     `/api/v1/price/top-losers?marketCode=${MARKET_CODE}`
@@ -241,7 +207,6 @@ export async function getTopLosers(): Promise<PacMarketData[]> {
   return data.map(normalizeMover)
 }
 
-/** Most active securities */
 export async function getMostActive(): Promise<PacMarketData[]> {
   const data = await mdsGet<MdsMover[]>(
     `/api/v1/price/most-active?marketCode=${MARKET_CODE}`
@@ -249,21 +214,16 @@ export async function getMostActive(): Promise<PacMarketData[]> {
   return data.map(normalizeMover)
 }
 
-/** Historical prices for chart */
 export async function getHistoricalPrices(symbol: string, from: string, to: string) {
   return mdsGet(
     `/api/v1/price/history?marketCode=${MARKET_CODE}&secId=${symbol}&from=${from}&to=${to}`
   )
 }
 
-/** NSE/NGX Index data */
 export async function getIndexData() {
   return mdsGet(`/api/v1/index?marketCode=${MARKET_CODE}`)
 }
 
-// ─── Broker endpoints ─────────────────────────────────────────────────────────
-
-/** Get investment account by ID — derived from the positions report */
 export async function getAccountById(accountId: string): Promise<PacAccount> {
   const data = await brokerGet<Record<string, unknown>>(
     `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${new Date().toISOString().split('T')[0]}`
@@ -278,7 +238,6 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
   }
 }
 
-/** Get trading positions for an investment account */
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
   const valueDate = new Date().toISOString().split('T')[0]
   const data = await brokerGet<{
@@ -290,7 +249,6 @@ export async function getClientPositions(accountId: string): Promise<PacPosition
   return (list as unknown[]).map(normalizePosition)
 }
 
-/** Place a buy or sell order */
 export async function placeOrder(order: PacOrderRequest): Promise<PacOrderResponse> {
   const body = {
     accountId:    order.accountId,
@@ -308,8 +266,6 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
   }
   return brokerPost('/investing/api/v1/orders', body)
 }
-
-// ─── Normalizers ──────────────────────────────────────────────────────────────
 
 function normalizePriceQuote(d: MdsPriceQuote): PacMarketData {
   const price  = d.lastPx ?? d.close ?? 0
@@ -366,7 +322,6 @@ function normalizePosition(d: unknown): PacPosition {
 }
 
 
-/** Register a new client with the broker and return their account ID */
 export async function createBrokerAccount(details: {
   fullName: string
   email: string
@@ -387,8 +342,6 @@ export async function createBrokerAccount(details: {
   if (!id) throw new Error('Broker did not return an account ID')
   return String(id)
 }
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
 
 export const MOCK_MARKET_DATA: PacMarketData[] = [
   { symbol: 'DANGCEM',    name: 'Dangote Cement Plc',      price: 582.00, change: 12.50,  changePercent: 2.19,  volume: 1243000, high: 590.00, low: 568.00, open: 570.00 },

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { createBrokerAccount } from '../lib/pacApi'
 import { USE_MOCK_BROKER } from '../store/portfolioStore'
 import MonetaLogo from '../components/MonetaLogo'
-import { initBvnVerification, verifyBvnOtp, getBvnDetails } from '../lib/nibssApi'
+import { queryBvn } from '../lib/nibssApi'
 
 type Step = 1 | 2 | 3
 
@@ -108,66 +108,18 @@ export default function KYC() {
   const [idNumber, setIdNumber] = useState('')
 
   // BVN verification flow
-  type BvnState = 'idle' | 'sending' | 'otp' | 'verifying' | 'done' | 'error'
+  type BvnState = 'idle' | 'querying' | 'done' | 'error'
   const [bvnState, setBvnState] = useState<BvnState>('idle')
-  const [bvnRef, setBvnRef] = useState('')
-  const [bvnOtp, setBvnOtp] = useState('')
   const [bvnError, setBvnError] = useState<string | null>(null)
 
-  async function sendBvnOtp() {
-    setBvnState('sending')
+  async function handleBvnQuery() {
+    setBvnState('querying')
     setBvnError(null)
     try {
-      const ref = await initBvnVerification(bvn, phone || undefined)
-      setBvnRef(ref)
-      setBvnState('otp')
-    } catch (e: unknown) {
-      setBvnError((e as Error).message)
-      setBvnState('error')
-    }
-  }
-
-  async function confirmBvnOtp() {
-    setBvnState('verifying')
-    setBvnError(null)
-    try {
-      await verifyBvnOtp(bvnRef, bvnOtp)
-      const profile = await getBvnDetails(bvnRef)
-      // Pre-fill name and DOB from BVN if step 1 fields are empty
+      const profile = await queryBvn(bvn)
       if (!fullName.trim() && profile.firstName) setFullName(`${profile.firstName} ${profile.surname}`.trim())
       if (!dob && profile.dob) setDob(profile.dob)
-
-      // BVN verified — immediately mark KYC as verified and provision broker account
-      if (user) {
-        const { error: upsertErr } = await supabase.from('profiles').upsert({
-          id: user.id,
-          full_name: fullName || `${profile.firstName} ${profile.surname}`.trim(),
-          kyc_status: 'verified',
-        })
-        if (upsertErr) throw new Error(upsertErr.message)
-
-        // Provision broker account
-        let pacAccountId: string
-        if (USE_MOCK_BROKER) {
-          pacAccountId = `PAC-${user.id.slice(0, 8).toUpperCase()}`
-        } else {
-          pacAccountId = await createBrokerAccount({
-            fullName: fullName || `${profile.firstName} ${profile.surname}`.trim(),
-            email: user.email ?? '',
-            phone,
-            bvn,
-          })
-        }
-        const { error: updateErr } = await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
-        if (updateErr) throw new Error(`Failed to save broker account: ${updateErr.message}`)
-        await loadProfile()
-      }
-
       setBvnState('done')
-
-      // Navigate immediately — trading is now unlocked
-      const dest = localStorage.getItem(`moneta_onboarded_${user?.id}`) ? '/market' : '/onboarding'
-      navigate(dest)
     } catch (e: unknown) {
       setBvnError((e as Error).message)
       setBvnState('error')
@@ -402,7 +354,7 @@ export default function KYC() {
                 />
                 {bvnState === 'idle' || bvnState === 'error' ? (
                   <button
-                    onClick={sendBvnOtp}
+                    onClick={handleBvnQuery}
                     disabled={bvn.length !== 11}
                     style={{
                       padding: '0 16px', borderRadius: 12, border: 'none', cursor: bvn.length !== 11 ? 'not-allowed' : 'pointer',
@@ -411,10 +363,10 @@ export default function KYC() {
                       fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
                     }}
                   >
-                    Send OTP
+                    Verify BVN
                   </button>
-                ) : bvnState === 'sending' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, color: '#059669', fontWeight: 600 }}>Sending…</div>
+                ) : bvnState === 'querying' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 12, color: '#059669', fontWeight: 600 }}>Verifying…</div>
                 ) : bvnState === 'done' ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', fontSize: 12, color: '#059669', fontWeight: 700 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -423,44 +375,6 @@ export default function KYC() {
                 ) : null}
               </div>
               <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Dial *565*0# on any Nigerian network to retrieve your BVN</p>
-
-              {/* OTP input */}
-              {(bvnState === 'otp' || bvnState === 'verifying') && (
-                <div style={{ marginTop: 10, padding: '14px', background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: '#065f46', marginBottom: 10 }}>
-                    OTP sent to your BVN-registered phone. Enter it below:
-                  </p>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="input-field"
-                      type="tel"
-                      value={bvnOtp}
-                      onChange={(e) => setBvnOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="6-digit OTP"
-                      maxLength={6}
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      onClick={confirmBvnOtp}
-                      disabled={bvnOtp.length !== 6 || bvnState === 'verifying'}
-                      style={{
-                        padding: '0 16px', borderRadius: 12, border: 'none',
-                        cursor: bvnOtp.length !== 6 || bvnState === 'verifying' ? 'not-allowed' : 'pointer',
-                        background: bvnOtp.length !== 6 || bvnState === 'verifying' ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
-                        color: bvnOtp.length !== 6 || bvnState === 'verifying' ? '#94a3b8' : '#fff',
-                        fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {bvnState === 'verifying' ? 'Verifying…' : 'Confirm'}
-                    </button>
-                  </div>
-                  {bvnState === 'verifying' && (
-                    <p style={{ fontSize: 11, color: '#059669', marginTop: 8, fontWeight: 500 }}>
-                      Retrieving BVN details, please wait…
-                    </p>
-                  )}
-                </div>
-              )}
 
               {/* Error */}
               {bvnError && (

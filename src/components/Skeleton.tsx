@@ -64,7 +64,6 @@ export function PortfolioCardSkeleton() {
   )
 }
 
-// Inject keyframe CSS once
 const styleId = 'skeleton-shimmer'
 if (typeof document !== 'undefined' && !document.getElementById(styleId)) {
   const style = document.createElement('style')

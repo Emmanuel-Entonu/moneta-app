@@ -178,7 +178,6 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   clearOrderResult: () => set({ orderResult: null }),
 
   fundWallet: async (amountNaira) => {
-    // Persist to Supabase via authStore, then sync local display balance
     await useAuthStore.getState().creditWallet(amountNaira)
     const newBalance = useAuthStore.getState().walletBalance
     const current = get().account
@@ -186,7 +185,6 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   deductBalance: async (amountNaira) => {
-    // Persist to Supabase via authStore, then sync local display balance
     await useAuthStore.getState().debitWallet(amountNaira)
     const newBalance = useAuthStore.getState().walletBalance
     const current = get().account

@@ -9,7 +9,7 @@ app.use(express.json())
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Auth-Token,X-Service-Token')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Auth-Token,X-Service-Token,Authorization')
   if (req.method === 'OPTIONS') return res.status(204).end()
   next()
 })
@@ -18,6 +18,26 @@ app.get('/ip', async (req, res) => {
   const r = await fetch('https://api.ipify.org?format=json')
   const data = await r.json()
   res.json(data)
+})
+
+app.all('/nibss-app/*', async (req, res) => {
+  const path = req.path.replace('/nibss-app', '')
+  const url = `https://app.moneta.ng${path}`
+  try {
+    const upstream = await fetch(url, {
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(req.headers['authorization'] && { 'Authorization': req.headers['authorization'] }),
+      },
+      body: req.method !== 'GET' && req.body ? JSON.stringify(req.body) : undefined,
+    })
+    const data = await upstream.json()
+    res.status(upstream.status).json(data)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
 })
 
 app.all('/api/v2/*', async (req, res) => {

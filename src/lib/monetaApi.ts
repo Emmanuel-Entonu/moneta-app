@@ -1,19 +1,7 @@
-/**
- * Moneta Payment Gateway — Production API
- * https://api.moneta.ng/api/v2
- *
- * Auth:
- *   1. btoa(client_id:client_secret:service_key) → POST /generate-access-token
- *   2. Use returned token as X-Service-Token on all subsequent requests
- *
- * Hash: HMAC-SHA512(email + amount + payment_type + callback_url, mac_key)
- */
-
 import { Capacitor } from '@capacitor/core'
 
 const PROXY_URL = (import.meta.env.VITE_MONETA_PROXY_URL as string | undefined) || 'https://moneta-proxy.fly.dev'
 
-// All environments: route through Fly.io static IP proxy → api.moneta.ng
 function monetaUrl(endpoint: string) {
   return `${PROXY_URL}/api/v2${endpoint}`
 }
@@ -22,15 +10,9 @@ const CLIENT_SEC = import.meta.env.VITE_MONETA_CLIENT_SECRET as string
 const SVC_KEY    = import.meta.env.VITE_MONETA_SERVICE_KEY   as string
 const MAC_KEY    = import.meta.env.VITE_MONETA_MAC_KEY       as string
 
-// On native, tag the callback URL so PaymentCallback knows when it's being
-// loaded inside the in-app browser (Custom Tab) vs the Capacitor WebView.
-// Custom Tab sees source=native + isNativePlatform()=false → shows "return to app", no processing.
-// WebView    sees source=native + isNativePlatform()=true  → processes normally.
 const CALLBACK_URL = Capacitor.isNativePlatform()
   ? `${window.location.origin}/payment/callback?source=native`
   : `${window.location.origin}/payment/callback`
-
-// ─── Token exchange ───────────────────────────────────────────────────────────
 
 let _token: string | null = null
 
@@ -57,8 +39,6 @@ export async function getServiceToken(): Promise<string> {
   return _token
 }
 
-// ─── HMAC-SHA512 hash ─────────────────────────────────────────────────────────
-
 async function generateHash(email: string, amount: number, paymentType: string): Promise<string> {
   const message = email + amount + paymentType + CALLBACK_URL
   const encoder = new TextEncoder()
@@ -75,23 +55,15 @@ async function generateHash(email: string, amount: number, paymentType: string):
     .join('')
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export type PaymentType = 'card' | 'bank-transfer' | 'ussd'
 
-// ─── Initialize payment ───────────────────────────────────────────────────────
-
-/**
- * Initialize a payment. Returns the Moneta authorization URL to redirect the user to.
- * amountNaira is in Naira — converted to kobo internally.
- */
 export async function initializePayment(
   email: string,
   amountNaira: number,
   paymentType: PaymentType,
 ): Promise<{ reference: string; authorizationUrl: string }> {
   const token  = await getServiceToken()
-  const amount = Math.round(amountNaira * 100) // naira → kobo
+  const amount = Math.round(amountNaira * 100)
   const hash   = await generateHash(email, amount, paymentType)
 
   const res = await fetch(monetaUrl('/transaction/initialize'), {
@@ -106,18 +78,16 @@ export async function initializePayment(
       payment_type: paymentType,
       hash,
       callback_url: CALLBACK_URL,
-      json: true, // return JSON instead of doing a server-side redirect
+      json: true,
     }),
   })
 
   if (!res.ok) {
-    // Clear cached token on auth failure so next attempt re-exchanges
     if (res.status === 401 || res.status === 422) _token = null
     const text = await res.text()
     throw new Error(`Payment init failed (${res.status}): ${text}`)
   }
 
-  // Response: { status: "success", responseCode: "00", ref_no: "...", authorization_url: "..." }
   const data = await res.json() as {
     status: string | boolean
     responseCode?: string
@@ -133,15 +103,12 @@ export async function initializePayment(
   const reference = data.ref_no ?? data.reference ?? ''
   let authorizationUrl = data.authorization_url ?? ''
 
-  // authorization_url can be a relative path — prefix with production base
   if (authorizationUrl && !authorizationUrl.startsWith('http')) {
     authorizationUrl = `https://api.moneta.ng${authorizationUrl}`
   }
 
   return { reference, authorizationUrl }
 }
-
-// ─── Verify payment ───────────────────────────────────────────────────────────
 
 export async function verifyPayment(reference: string): Promise<{
   success: boolean
@@ -172,7 +139,7 @@ export async function verifyPayment(reference: string): Promise<{
   const success = data.status === 'success' || data.status === true
   return {
     success,
-    amountNaira: data.data?.amount ?? 0, // Moneta verify returns naira directly (not kobo)
+    amountNaira: data.data?.amount ?? 0,
     message: data.message ?? (success ? 'Payment successful' : 'Payment failed'),
   }
 }

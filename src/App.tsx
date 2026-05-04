@@ -50,14 +50,12 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  // New user: KYC first (skip if already on /kyc or user explicitly skipped)
   if ((!kycStatus || kycStatus === 'pending')
     && location.pathname !== '/kyc'
     && !localStorage.getItem(`moneta_kyc_skipped_${user.id}`)) {
     return <Navigate to="/kyc" replace />
   }
 
-  // After KYC: onboarding (skip check if on /kyc so KYC can navigate itself)
   if (!localStorage.getItem(`moneta_onboarded_${user.id}`) && location.pathname !== '/kyc') {
     return <Navigate to="/onboarding" replace />
   }
@@ -80,7 +78,6 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Refresh balance from Supabase whenever the app comes to foreground
   useEffect(() => {
     async function onVisible() {
       if (document.visibilityState !== 'visible') return
@@ -94,11 +91,9 @@ export default function App() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
 
-    // Claim pending payment from localStorage and navigate to callback.
-    // Returns false if nothing to claim (prevents double-navigation).
     function claimAndNavigate(ref: string): boolean {
       const stored = localStorage.getItem('moneta_pending_ref')
-      if (!stored) return false // already claimed by another handler
+      if (!stored) return false
       const amount = localStorage.getItem('moneta_pending_amount') ?? ''
       localStorage.removeItem('moneta_pending_ref')
       localStorage.removeItem('moneta_pending_amount')
@@ -107,8 +102,6 @@ export default function App() {
       return true
     }
 
-    // moneta:// deep link — fired when Custom Tab redirects to moneta:// scheme.
-    // Remove localStorage FIRST so browserFinished (which may also fire) is a no-op.
     const urlListener = CapApp.addListener('appUrlOpen', (data: { url: string }) => {
       if (!data.url.startsWith('moneta://payment/callback')) return
       const url = new URL(data.url.replace('moneta://', 'https://moneta.app/'))
@@ -117,7 +110,6 @@ export default function App() {
       claimAndNavigate(ref)
     })
 
-    // Fallback: user manually closes the Custom Tab before moneta:// fires.
     const finishedListener = Browser.addListener('browserFinished', () => {
       const ref = localStorage.getItem('moneta_pending_ref') ?? ''
       if (ref) claimAndNavigate(ref)
@@ -132,14 +124,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/kyc" element={<RequireAuth><KYC /></RequireAuth>} />
         <Route path="/payment/callback" element={<PaymentCallback />} />
 
-        {/* Protected */}
         <Route path="/market" element={<RequireAuth><Market /></RequireAuth>} />
         <Route path="/portfolio" element={<RequireAuth><Portfolio /></RequireAuth>} />
         <Route path="/trade/:symbol" element={<RequireAuth><Trade /></RequireAuth>} />
@@ -147,7 +137,6 @@ export default function App() {
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
 
-        {/* Default */}
         <Route path="*" element={<Navigate to="/market" replace />} />
       </Routes>
     </BrowserRouter>

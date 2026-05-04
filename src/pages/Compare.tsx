@@ -16,7 +16,6 @@ function fmtVol(n: number) {
   return n.toString()
 }
 
-/** Generates n points that start at 0% and drift toward the stock's actual changePercent */
 function getComparePoints(symbol: string, changePercent: number, n = 32): number[] {
   const seed = symbol.split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 0)
   const target = changePercent / 100

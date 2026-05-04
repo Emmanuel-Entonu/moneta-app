@@ -17,9 +17,7 @@ interface AuthState {
   signOut: () => Promise<void>
   loadProfile: () => Promise<void>
 
-  /** Credit the wallet after a successful payment — updates Supabase */
   creditWallet: (amountNaira: number) => Promise<void>
-  /** Debit the wallet for a stock purchase — updates Supabase */
   debitWallet: (amountNaira: number) => Promise<void>
 }
 
@@ -74,9 +72,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         walletBalance: profile.wallet_balance ?? 0,
       })
     } else if (!fetchError || fetchError.code === 'PGRST116') {
-      // PGRST116 = no rows found — genuinely new user, safe to create profile
-      // Any other error (network failure, RLS) must NOT create a profile row,
-      // because upsert with wallet_balance:0 would wipe an existing balance.
       await supabase.from('profiles').upsert({
         id: user.id,
         kyc_status: 'pending',
@@ -90,7 +85,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   creditWallet: async (amountNaira) => {
     const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    // Atomic increment — avoids SELECT→UPDATE race that can double-credit
     const { data, error } = await supabase.rpc('increment_wallet', {
       user_id: user.id,
       delta: amountNaira,
@@ -102,7 +96,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   debitWallet: async (amountNaira) => {
     const { user } = get()
     if (!user) throw new Error('Not authenticated')
-    // Atomic decrement — returns null if balance would go negative (insufficient funds)
     const { data, error } = await supabase.rpc('decrement_wallet', {
       user_id: user.id,
       delta: amountNaira,

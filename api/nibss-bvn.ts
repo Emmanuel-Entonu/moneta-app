@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
   try {
-    const upstream = await fetch('https://app.moneta.ng/api/bvn/bvn_query', {
+    const upstream = await fetch('https://staging-nips.moneta.ng/api/bvn/bvn_query', {
       method: 'POST',
       headers: {
         'Content-Type':  'application/json',

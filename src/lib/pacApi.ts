@@ -70,7 +70,7 @@ async function mdsGet<T>(path: string): Promise<T> {
   const res = await fetch(`/api/mds-proxy?path=${encodeURIComponent(path)}`)
   if (!res.ok) throw new Error(`MDS ${res.status}: ${await res.text()}`)
   const json = await res.json()
-  if (import.meta.env.DEV) console.log('[mds raw]', path.split('?')[0], JSON.stringify(json).slice(0, 600))
+  console.log('[mds raw]', path.split('?')[0], JSON.stringify(json).slice(0, 800))
   return json
 }
 
@@ -174,9 +174,10 @@ async function getPriceQuote(secId: string): Promise<PacMarketData> {
   const raw = await mdsGet<unknown>(
     `/api/v1/price/quote?marketCode=${MARKET_CODE}&secId=${secId}`
   )
-  // Unwrap common API envelope shapes: {data:{...}}, {result:{...}}, [{...}]
+  // Unwrap common API envelope shapes: {data:{...}}, {data:[{...}]}, {result:{...}}, [{...}]
   const r = raw as Record<string, unknown>
-  const d = (r?.data ?? r?.result ?? (Array.isArray(raw) ? raw[0] : raw)) as MdsPriceQuote
+  const inner = r?.data ?? r?.result ?? raw
+  const d = (Array.isArray(inner) ? inner[0] : inner) as MdsPriceQuote
   return normalizePriceQuote(d)
 }
 

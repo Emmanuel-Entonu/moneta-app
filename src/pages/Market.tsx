@@ -6,6 +6,22 @@ import { usePortfolioStore } from '../store/portfolioStore'
 import { generateSparklineArea } from '../lib/sparkline'
 import type { PacMarketData } from '../lib/pacApi'
 
+// TEMP DEBUG — shows raw MDS JSON for first symbol so we can verify field names
+function MdsDebugPanel() {
+  const [raw, setRaw] = useState<string | null>(null)
+  useEffect(() => {
+    fetch('/api/mds-proxy?path=' + encodeURIComponent('/api/v1/price/quote?marketCode=NGX&secId=DANGCEM'))
+      .then(r => r.text()).then(setRaw).catch(e => setRaw(String(e)))
+  }, [])
+  if (!raw) return null
+  return (
+    <div style={{ margin: '12px', padding: '10px 12px', background: '#111', borderRadius: 10, border: '1px solid #333', overflowX: 'auto' }}>
+      <p style={{ color: '#10b981', fontSize: 10, fontWeight: 800, marginBottom: 6 }}>DEBUG — raw MDS response (DANGCEM):</p>
+      <pre style={{ fontSize: 9, color: '#ccc', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{raw}</pre>
+    </div>
+  )
+}
+
 const TICKER_COLORS: Record<string, string> = {
   DANGCEM: '#f59e0b', GTCO: '#ef4444', ZENITHBANK: '#8b5cf6',
   MTNN: '#eab308', AIRTELAFRI: '#ec4899', FBNH: '#3b82f6',
@@ -285,6 +301,9 @@ export default function Market() {
 
       {/* ── DARK BODY ── */}
       <div style={{ background: '#ffffff', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
+
+        {/* TEMP DEBUG PANEL */}
+        <MdsDebugPanel />
 
         {/* API error banner */}
         {apiStatus && (

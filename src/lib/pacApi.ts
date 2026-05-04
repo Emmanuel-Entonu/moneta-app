@@ -268,18 +268,23 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
 }
 
 function normalizePriceQuote(d: MdsPriceQuote): PacMarketData {
-  const price  = d.lastPx ?? d.close ?? 0
-  const open   = d.open ?? 0
-  const change = price - open
+  const raw       = d as Record<string, unknown>
+  const price     = Number(d.lastPx ?? d.close ?? 0)
+  const open      = Number(d.open ?? raw.openPx ?? raw.openPrice ?? 0)
+  const prevClose = Number(raw.prevClose ?? raw.previousClose ?? raw.prevClosingPrice ?? 0)
+  const ref       = open || prevClose
+  const change    = ref > 0 ? price - ref : 0
+  const apiPct    = Number(d.percChange ?? raw.percentageChange ?? raw.changePercent ?? raw.pctChange ?? 0)
+  const changePercent = apiPct !== 0 ? apiPct : (ref > 0 ? (change / ref) * 100 : 0)
   return {
     symbol:        d.secId ?? '',
     name:          SECURITY_NAMES[d.secId] ?? d.secId ?? '',
     price,
     change,
-    changePercent: d.percChange ?? 0,
-    volume:        d.volTraded  ?? 0,
-    high:          d.high       ?? 0,
-    low:           d.low        ?? 0,
+    changePercent,
+    volume:        Number(d.volTraded ?? 0),
+    high:          Number(d.high ?? 0),
+    low:           Number(d.low  ?? 0),
     open,
   }
 }

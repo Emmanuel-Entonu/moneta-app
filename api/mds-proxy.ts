@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     })
     const data = await upstream.text()
-    console.log(`[mds-proxy] response ${upstream.status}`)
+    console.log(`[mds-proxy] response ${upstream.status}: ${data.slice(0, 400)}`)
     res.status(upstream.status).setHeader('Content-Type', 'application/json').send(data)
   } catch (e) {
     res.status(500).json({ error: String(e) })

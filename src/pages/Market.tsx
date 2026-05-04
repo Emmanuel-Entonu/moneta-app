@@ -91,79 +91,81 @@ function MoverCard({ label, stock, accent, onPress }: {
   )
 }
 
-function StockCard({ stock, borderRight, onClick }: { stock: PacMarketData; borderRight: boolean; onClick: () => void }) {
+function StockRow({ stock, isLast, onClick }: { stock: PacMarketData; isLast: boolean; onClick: () => void }) {
   const pct = stock.changePercent
   const up = pct > 0
   const flat = pct === 0
   const color = getColor(stock.symbol)
+  const initials = stock.symbol.slice(0, 3)
   return (
     <button
       onClick={onClick}
       style={{
-        background: '#0a1525',
-        padding: '14px 13px',
-        display: 'flex', flexDirection: 'column',
-        textAlign: 'left', cursor: 'pointer',
-        position: 'relative', overflow: 'hidden',
-        borderRight: borderRight ? '1px solid rgba(255,255,255,0.05)' : 'none',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        background: 'transparent',
+        padding: '13px 16px',
+        display: 'flex', alignItems: 'center', gap: 13,
+        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
+        width: '100%', textAlign: 'left', cursor: 'pointer',
         transition: 'background 0.12s',
-        width: '100%',
       }}
-      onPointerEnter={(e) => (e.currentTarget.style.background = '#0d1b2e')}
-      onPointerLeave={(e) => (e.currentTarget.style.background = '#0a1525')}
+      onPointerEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+      onPointerLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
-      {/* Corner color glow */}
-      <div style={{ position: 'absolute', top: -16, right: -16, width: 72, height: 72, borderRadius: '50%', background: `radial-gradient(circle, ${color}28 0%, transparent 70%)`, pointerEvents: 'none' }} />
-
-      {/* Direction badge top-right */}
-      <div style={{ position: 'absolute', top: 12, right: 12 }}>
-        <span style={{
-          fontSize: 10, fontWeight: 800,
-          color: flat ? 'rgba(255,255,255,0.3)' : up ? '#34d399' : '#f87171',
-        }}>{flat ? '–' : up ? '↑' : '↓'}</span>
-      </div>
-
-      {/* Ticker */}
-      <p style={{ fontSize: 13, fontWeight: 900, color: '#ffffff', letterSpacing: -0.3, marginBottom: 2, paddingRight: 16 }}>
-        {stock.symbol}
-      </p>
-      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)', fontWeight: 600, marginBottom: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
-        {stock.name.split(' ').slice(0, 2).join(' ')}
-      </p>
-
-      {/* Sparkline — full width */}
-      <div style={{ width: '100%', marginBottom: 10 }}>
-        <Sparkline symbol={stock.symbol} isUp={flat ? true : up} w={130} h={44} />
-      </div>
-
-      {/* Price */}
-      <p style={{ fontSize: 13, fontWeight: 800, color: '#ffffff', letterSpacing: -0.3, marginBottom: 5 }}>
-        {fmt(stock.price)}
-      </p>
-
-      {/* % Badge */}
-      <span style={{
-        fontSize: 10, fontWeight: 700, alignSelf: 'flex-start',
-        color: flat ? 'rgba(255,255,255,0.35)' : up ? '#34d399' : '#f87171',
-        background: flat ? 'rgba(255,255,255,0.06)' : up ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
-        border: `1px solid ${flat ? 'rgba(255,255,255,0.1)' : up ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
-        padding: '2px 8px', borderRadius: 20,
+      {/* Logo avatar */}
+      <div style={{
+        width: 46, height: 46, borderRadius: 14, flexShrink: 0,
+        background: `linear-gradient(145deg, ${color}30, ${color}14)`,
+        border: `1.5px solid ${color}45`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: `0 2px 10px ${color}18`,
       }}>
-        {flat ? '–' : up ? '▲' : '▼'} {Math.abs(pct).toFixed(2)}%
-      </span>
+        <span style={{ fontSize: 11, fontWeight: 900, color, letterSpacing: -0.5 }}>{initials}</span>
+      </div>
+
+      {/* Symbol + name */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 14, fontWeight: 800, color: '#ffffff', letterSpacing: -0.3, marginBottom: 3 }}>
+          {stock.symbol}
+        </p>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.36)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {stock.name}
+        </p>
+      </div>
+
+      {/* Mini sparkline */}
+      <Sparkline symbol={stock.symbol} isUp={flat ? true : up} w={58} h={30} />
+
+      {/* Price + % */}
+      <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 78 }}>
+        <p style={{ fontSize: 14, fontWeight: 800, color: '#ffffff', letterSpacing: -0.3, marginBottom: 5 }}>
+          {fmt(stock.price)}
+        </p>
+        <span style={{
+          fontSize: 10, fontWeight: 700,
+          color: flat ? 'rgba(255,255,255,0.35)' : up ? '#34d399' : '#f87171',
+          background: flat ? 'rgba(255,255,255,0.06)' : up ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+          padding: '2px 8px', borderRadius: 20, display: 'inline-block',
+        }}>
+          {flat ? '–' : up ? '▲' : '▼'} {Math.abs(pct).toFixed(2)}%
+        </span>
+      </div>
     </button>
   )
 }
 
-function SkeletonCard({ borderRight }: { borderRight: boolean }) {
+function SkeletonRow() {
   return (
-    <div style={{ background: '#0a1525', padding: '14px 13px', borderRight: borderRight ? '1px solid rgba(255,255,255,0.05)' : 'none', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-      <div style={{ width: 70, height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.07)', marginBottom: 6 }} />
-      <div style={{ width: 90, height: 9, borderRadius: 6, background: 'rgba(255,255,255,0.04)', marginBottom: 14 }} />
-      <div style={{ width: '100%', height: 44, borderRadius: 8, background: 'rgba(255,255,255,0.04)', marginBottom: 10 }} />
-      <div style={{ width: 80, height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.07)', marginBottom: 6 }} />
-      <div style={{ width: 52, height: 20, borderRadius: 20, background: 'rgba(255,255,255,0.06)' }} />
+    <div style={{ padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 13, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.07)', flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <div style={{ width: 72, height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.08)', marginBottom: 7 }} />
+        <div style={{ width: 110, height: 9, borderRadius: 6, background: 'rgba(255,255,255,0.04)' }} />
+      </div>
+      <div style={{ width: 58, height: 30, borderRadius: 6, background: 'rgba(255,255,255,0.04)' }} />
+      <div style={{ textAlign: 'right', minWidth: 78 }}>
+        <div style={{ width: 72, height: 13, borderRadius: 6, background: 'rgba(255,255,255,0.08)', marginBottom: 7 }} />
+        <div style={{ width: 54, height: 20, borderRadius: 20, background: 'rgba(255,255,255,0.06)' }} />
+      </div>
     </div>
   )
 }
@@ -358,12 +360,12 @@ export default function Market() {
           <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.35)' }}>{filtered.length} securities</span>
         </div>
 
-        {/* Stock grid — floating card */}
+        {/* Stock list — floating card */}
         <div style={{ margin: '0 12px', background: '#0d1a2b', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, overflow: 'hidden' }}>
           {loadingMarket ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-              {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} borderRight={i % 2 === 0} />)}
-            </div>
+            <>
+              {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+            </>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '56px 20px', textAlign: 'center' }}>
               <div style={{ width: 60, height: 60, borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -378,16 +380,16 @@ export default function Market() {
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            <>
               {filtered.map((stock, i) => (
-                <StockCard
+                <StockRow
                   key={stock.symbol}
                   stock={stock}
-                  borderRight={i % 2 === 0}
+                  isLast={i === filtered.length - 1}
                   onClick={() => navigate(`/trade/${stock.symbol}`)}
                 />
               ))}
-            </div>
+            </>
           )}
         </div>
       </div>

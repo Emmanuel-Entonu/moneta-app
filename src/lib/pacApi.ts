@@ -69,7 +69,9 @@ async function getBearerToken(): Promise<string> {
 async function mdsGet<T>(path: string): Promise<T> {
   const res = await fetch(`/api/mds-proxy?path=${encodeURIComponent(path)}`)
   if (!res.ok) throw new Error(`MDS ${res.status}: ${await res.text()}`)
-  return res.json()
+  const json = await res.json()
+  if (import.meta.env.DEV) console.log('[mds raw]', path.split('?')[0], JSON.stringify(json).slice(0, 600))
+  return json
 }
 
 async function brokerGet<T>(path: string): Promise<T> {
@@ -169,10 +171,13 @@ interface MdsMover {
 }
 
 async function getPriceQuote(secId: string): Promise<PacMarketData> {
-  const data = await mdsGet<MdsPriceQuote>(
+  const raw = await mdsGet<unknown>(
     `/api/v1/price/quote?marketCode=${MARKET_CODE}&secId=${secId}`
   )
-  return normalizePriceQuote(data)
+  // Unwrap common API envelope shapes: {data:{...}}, {result:{...}}, [{...}]
+  const r = raw as Record<string, unknown>
+  const d = (r?.data ?? r?.result ?? (Array.isArray(raw) ? raw[0] : raw)) as MdsPriceQuote
+  return normalizePriceQuote(d)
 }
 
 export async function getMarketData(): Promise<PacMarketData[]> {
@@ -193,25 +198,26 @@ export async function getSecurityData(symbol: string): Promise<PacMarketData> {
   return getPriceQuote(symbol)
 }
 
+function unwrapList(raw: unknown): MdsMover[] {
+  if (Array.isArray(raw)) return raw as MdsMover[]
+  const r = raw as Record<string, unknown>
+  const list = r?.data ?? r?.result ?? r?.items ?? []
+  return Array.isArray(list) ? list as MdsMover[] : []
+}
+
 export async function getTopGainers(): Promise<PacMarketData[]> {
-  const data = await mdsGet<MdsMover[]>(
-    `/api/v1/price/top-gainers?marketCode=${MARKET_CODE}`
-  )
-  return data.map(normalizeMover)
+  const raw = await mdsGet<unknown>(`/api/v1/price/top-gainers?marketCode=${MARKET_CODE}`)
+  return unwrapList(raw).map(normalizeMover)
 }
 
 export async function getTopLosers(): Promise<PacMarketData[]> {
-  const data = await mdsGet<MdsMover[]>(
-    `/api/v1/price/top-losers?marketCode=${MARKET_CODE}`
-  )
-  return data.map(normalizeMover)
+  const raw = await mdsGet<unknown>(`/api/v1/price/top-losers?marketCode=${MARKET_CODE}`)
+  return unwrapList(raw).map(normalizeMover)
 }
 
 export async function getMostActive(): Promise<PacMarketData[]> {
-  const data = await mdsGet<MdsMover[]>(
-    `/api/v1/price/most-active?marketCode=${MARKET_CODE}`
-  )
-  return data.map(normalizeMover)
+  const raw = await mdsGet<unknown>(`/api/v1/price/most-active?marketCode=${MARKET_CODE}`)
+  return unwrapList(raw).map(normalizeMover)
 }
 
 export async function getHistoricalPrices(symbol: string, from: string, to: string) {
@@ -269,22 +275,26 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
 
 function normalizePriceQuote(d: MdsPriceQuote): PacMarketData {
   const raw       = d as Record<string, unknown>
-  const price     = Number(d.lastPx ?? d.close ?? 0)
-  const open      = Number(d.open ?? raw.openPx ?? raw.openPrice ?? 0)
-  const prevClose = Number(raw.prevClose ?? raw.previousClose ?? raw.prevClosingPrice ?? 0)
+  const price     = Number(d.lastPx ?? d.close ?? raw.lastPrice ?? raw.last ?? raw.price ?? 0)
+  const open      = Number(d.open ?? raw.openPx ?? raw.openPrice ?? raw.openingPrice ?? 0)
+  const prevClose = Number(raw.prevClose ?? raw.previousClose ?? raw.prevClosingPrice ?? raw.previousClosePrice ?? 0)
   const ref       = open || prevClose
   const change    = ref > 0 ? price - ref : 0
-  const apiPct    = Number(d.percChange ?? raw.percentageChange ?? raw.changePercent ?? raw.pctChange ?? 0)
+  const apiPct    = Number(
+    d.percChange ?? raw.percentageChange ?? raw.changePercent ??
+    raw.pctChange ?? raw.pctChg ?? raw.priceChangePct ?? raw.dailyChangePct ?? 0
+  )
   const changePercent = apiPct !== 0 ? apiPct : (ref > 0 ? (change / ref) * 100 : 0)
+  const sym = d.secId ?? String(raw.symbol ?? raw.ticker ?? raw.secId ?? '')
   return {
-    symbol:        d.secId ?? '',
-    name:          SECURITY_NAMES[d.secId] ?? d.secId ?? '',
+    symbol:        sym,
+    name:          SECURITY_NAMES[sym] ?? sym,
     price,
     change,
     changePercent,
-    volume:        Number(d.volTraded ?? 0),
-    high:          Number(d.high ?? 0),
-    low:           Number(d.low  ?? 0),
+    volume:        Number(d.volTraded ?? raw.volume ?? raw.totalVolume ?? 0),
+    high:          Number(d.high ?? raw.highPrice ?? 0),
+    low:           Number(d.low  ?? raw.lowPrice  ?? 0),
     open,
   }
 }

@@ -97,9 +97,16 @@ export async function initiateBvn(bvn: string): Promise<BvnInitResult> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ bvn }),
   })
-  const raw = await res.json() as Record<string, unknown>
+  const text = await res.text()
   console.log('[nibss initiate] status:', res.status)
-  console.log('[nibss initiate] raw:', JSON.stringify(raw))
+  console.log('[nibss initiate] raw text:', text)
+
+  let raw: Record<string, unknown>
+  try {
+    raw = JSON.parse(text) as Record<string, unknown>
+  } catch {
+    throw new Error(`BVN query returned non-JSON (${res.status}): ${text.slice(0, 300)}`)
+  }
 
   const ok = raw.status === true || raw.status === 'success' || raw.status === 'SUCCESSFUL'
     || (res.ok && raw.message !== undefined)
@@ -137,9 +144,18 @@ export async function confirmBvnOtp(reference: string, otp: string): Promise<Bvn
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'verify-otp', reference, otp }),
   })
-  const raw = await res.json() as Record<string, unknown>
+
+  const text = await res.text()
   console.log('[nibss confirm] status:', res.status)
-  console.log('[nibss confirm] raw:', JSON.stringify(raw))
+  console.log('[nibss confirm] raw text:', text)
+
+  let raw: Record<string, unknown>
+  try {
+    raw = JSON.parse(text) as Record<string, unknown>
+  } catch {
+    // Not JSON — surface the raw text so we know the real problem
+    throw new Error(`OTP verify returned non-JSON (${res.status}): ${text.slice(0, 300)}`)
+  }
 
   const ok = raw.status === true || raw.status === 'success' || raw.status === 'SUCCESSFUL'
   if (!res.ok || !ok) {

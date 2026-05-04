@@ -9,7 +9,7 @@ let _token: string | null = null
 async function getServiceToken(): Promise<string> {
   if (_token) return _token
   const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
-  const res = await fetch('https://api.moneta.ng/api/v2/generate-access-token', {
+  const res = await fetch('https://moneta-proxy.fly.dev/api/v2/generate-access-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
   })
@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const token = await getServiceToken()
-    const upstream = await fetch('https://api.moneta.ng/api/v2/bvn/query', {
+    const upstream = await fetch('https://moneta-proxy.fly.dev/api/v2/bvn/query', {
       method: 'POST',
       headers: {
         'Content-Type':    'application/json',

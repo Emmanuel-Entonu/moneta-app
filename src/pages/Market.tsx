@@ -2,33 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import Aurora from '../components/Aurora'
+import StockLogo, { tickerColor } from '../components/StockLogo'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { generateSparklineArea } from '../lib/sparkline'
 import type { PacMarketData } from '../lib/pacApi'
-
-
-const TICKER_COLORS: Record<string, string> = {
-  DANGCEM: '#f59e0b', GTCO: '#ef4444', ZENITHBANK: '#8b5cf6',
-  MTNN: '#eab308', AIRTELAFRI: '#ec4899', FBNH: '#3b82f6',
-  BUACEMENT: '#f97316', ACCESS: '#10b981', NESTLE: '#d97706', SEPLAT: '#6366f1',
-  UBA: '#0ea5e9', STANBIC: '#14b8a6', FCMB: '#a855f7', FIDELITYBK: '#f43f5e',
-  WEMABANK: '#84cc16', STERLINGBANK: '#06b6d4', JAIZBANK: '#10b981',
-  TRANSCORP: '#f59e0b', OANDO: '#6366f1', PRESCO: '#22c55e',
-  CADBURY: '#a16207', UNILEVER: '#0284c7', FLOURMILL: '#ca8a04',
-  DANGSUGAR: '#dc2626', CORONATION: '#7c3aed', LIVESTOCK: '#16a34a',
-  NB: '#b45309', CHAMPAGNE: '#92400e', VITAFOAM: '#065f46',
-}
-const COLOR_POOL = [
-  '#f59e0b','#ef4444','#8b5cf6','#eab308','#ec4899','#3b82f6',
-  '#f97316','#10b981','#d97706','#6366f1','#0ea5e9','#14b8a6',
-  '#a855f7','#f43f5e','#84cc16','#06b6d4','#22c55e','#dc2626',
-]
-function getColor(sym: string): string {
-  if (TICKER_COLORS[sym]) return TICKER_COLORS[sym]
-  let hash = 0
-  for (let i = 0; i < sym.length; i++) hash = sym.charCodeAt(i) + ((hash << 5) - hash)
-  return COLOR_POOL[Math.abs(hash) % COLOR_POOL.length]
-}
 
 const CATEGORIES = ['All', 'Gainers', 'Losers', 'Banking', 'Cement', 'Telecom', 'Energy', 'Consumer']
 const CATEGORY_MAP: Record<string, string[]> = {
@@ -87,7 +64,10 @@ function MoverCard({ label, stock, accent, onPress }: {
       }}
     >
       <div style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: '50%', background: `radial-gradient(circle, ${accent}25 0%, transparent 70%)`, pointerEvents: 'none' }} />
-      <p style={{ fontSize: 9, fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{label}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <StockLogo symbol={stock.symbol} size={28} radius={8} />
+        <p style={{ fontSize: 9, fontWeight: 800, color: accent, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</p>
+      </div>
       <p style={{ fontSize: 18, fontWeight: 900, color: '#ffffff', letterSpacing: -0.6, marginBottom: 1 }}>{stock.symbol}</p>
       <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 500, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {stock.name.split(' ').slice(0, 3).join(' ')}
@@ -112,8 +92,6 @@ function StockRow({ stock, isLast, onClick }: { stock: PacMarketData; isLast: bo
   const pct = stock.changePercent
   const up = pct > 0
   const flat = pct === 0
-  const color = getColor(stock.symbol)
-  const initials = stock.symbol.slice(0, 3)
   return (
     <button
       onClick={onClick}
@@ -128,16 +106,7 @@ function StockRow({ stock, isLast, onClick }: { stock: PacMarketData; isLast: bo
       onPointerEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
       onPointerLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
-      {/* Logo avatar */}
-      <div style={{
-        width: 46, height: 46, borderRadius: 14, flexShrink: 0,
-        background: `linear-gradient(145deg, ${color}30, ${color}14)`,
-        border: `1.5px solid ${color}45`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 2px 10px ${color}18`,
-      }}>
-        <span style={{ fontSize: 11, fontWeight: 900, color, letterSpacing: -0.5 }}>{initials}</span>
-      </div>
+      <StockLogo symbol={stock.symbol} size={46} radius={14} />
 
       {/* Symbol + name */}
       <div style={{ flex: 1, minWidth: 0 }}>

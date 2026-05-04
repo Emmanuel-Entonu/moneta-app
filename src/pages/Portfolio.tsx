@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import SoftAurora from '../components/SoftAurora'
 import { PortfolioCardSkeleton } from '../components/Skeleton'
+import StockLogo from '../components/StockLogo'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
@@ -222,7 +223,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 
 export default function Portfolio() {
   const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus } = usePortfolioStore()
-  const { pacAccountId, walletBalance, loadProfile } = useAuthStore()
+  const { pacAccountId, walletBalance, loadProfile, kycStatus } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
   const [showFund, setShowFund]         = useState(false)
@@ -275,6 +276,22 @@ export default function Portfolio() {
             </div>
           </div>
           <button onClick={() => setCreditBanner(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', padding: 4 }}>×</button>
+        </div>
+      )}
+
+      {/* KYC prompt banner */}
+      {kycStatus !== 'verified' && (
+        <div style={{ margin: '12px 16px 0', background: 'linear-gradient(135deg, #7c2d12, #b45309)', borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 4px 16px rgba(180,83,9,0.25)' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ color: '#fff', fontWeight: 800, fontSize: 13, margin: 0 }}>KYC Verification Required</p>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Complete your identity check to trade stocks on the NGX</p>
+          </div>
+          <button onClick={() => navigate('/kyc')} style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#b45309', fontWeight: 800, fontSize: 12, border: 'none', cursor: 'pointer', flexShrink: 0 }}>Verify Now</button>
         </div>
       )}
 
@@ -499,9 +516,7 @@ export default function Portfolio() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 14, background: dotColor + '18', border: `1.5px solid ${dotColor}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 9, fontWeight: 900, color: dotColor, letterSpacing: -0.5 }}>{pos.symbol.slice(0, 4)}</span>
-                      </div>
+                      <StockLogo symbol={pos.symbol} size={44} radius={14} />
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
                           <p style={{ fontWeight: 800, fontSize: 15, color: '#ffffff', letterSpacing: -0.2 }}>{pos.symbol}</p>
@@ -547,9 +562,7 @@ export default function Portfolio() {
               const color = ALLOC_COLORS[idx % ALLOC_COLORS.length]
               return (
                 <div key={pos.symbol} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 11, background: color + '18', border: `1.5px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: 8, fontWeight: 900, color, letterSpacing: -0.5 }}>{pos.symbol.slice(0, 4)}</span>
-                  </div>
+                  <StockLogo symbol={pos.symbol} size={36} radius={11} />
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#ffffff' }}>{pos.symbol}</span>

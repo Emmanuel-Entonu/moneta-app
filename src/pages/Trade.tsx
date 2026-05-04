@@ -102,12 +102,14 @@ export default function Trade() {
   const navigate = useNavigate()
   const { marketData, positions, orderLoading, orderResult, placeOrder, clearOrderResult, loadMarketData } = usePortfolioStore()
   const { pacAccountId } = useAuthStore()
+  const kycStatus = useAuthStore((s) => s.kycStatus)
 
   const [side, setSide] = useState<Side>('BUY')
   const [orderType, setOrderType] = useState<OrderType>('MARKET')
   const [quantity, setQuantity] = useState('')
   const [limitPrice, setLimitPrice] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showKycGate, setShowKycGate] = useState(false)
   const [paySource, setPaySource] = useState<'wallet' | 'moneta'>('wallet')
   const [monetaLoading, setMonetaLoading] = useState(false)
   const [monetaError, setMonetaError] = useState<string | null>(null)
@@ -277,10 +279,37 @@ export default function Trade() {
         )}
 
         {/* CTA */}
-        <button onClick={() => setShowConfirm(true)} disabled={!qty || qty <= 0 || orderLoading} style={{ padding: '16px', borderRadius: 16, fontWeight: 900, fontSize: 17, letterSpacing: 0.2, cursor: (!qty || qty <= 0 || orderLoading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', background: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.08)' : side === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)', color: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.25)' : '#fff', boxShadow: (!qty || qty <= 0 || orderLoading) ? 'none' : side === 'BUY' ? '0 6px 24px rgba(5,150,105,0.38)' : '0 6px 24px rgba(220,38,38,0.32)' }}>
+        <button
+          onClick={() => kycStatus !== 'verified' ? setShowKycGate(true) : setShowConfirm(true)}
+          disabled={!qty || qty <= 0 || orderLoading}
+          style={{ padding: '16px', borderRadius: 16, fontWeight: 900, fontSize: 17, letterSpacing: 0.2, cursor: (!qty || qty <= 0 || orderLoading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', background: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.08)' : side === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)', color: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.25)' : '#fff', boxShadow: (!qty || qty <= 0 || orderLoading) ? 'none' : side === 'BUY' ? '0 6px 24px rgba(5,150,105,0.38)' : '0 6px 24px rgba(220,38,38,0.32)' }}
+        >
           {orderLoading ? 'Placing Order…' : `Place ${side} Order`}
         </button>
       </div>
+
+      {/* KYC Gate Modal — centered */}
+      {showKycGate && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '0 20px' }} onClick={() => setShowKycGate(false)}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#fff', borderRadius: 24, padding: '28px 24px 24px', boxShadow: '0 24px 64px rgba(0,0,0,0.3)', animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff7ed', border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', textAlign: 'center', marginBottom: 10, letterSpacing: -0.4 }}>KYC Required</h3>
+            <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: 24, fontWeight: 500 }}>
+              You must complete identity verification before you can buy or sell stocks. This is required by the <strong style={{ color: '#0f172a' }}>SEC Nigeria</strong> and CBN.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowKycGate(false)} style={{ flex: 1, padding: '14px', borderRadius: 16, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Maybe Later</button>
+              <button onClick={() => navigate('/kyc')} style={{ flex: 2, padding: '14px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(5,150,105,0.32)', border: 'none' }}>Complete KYC</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm sheet — stays light so it contrasts with dark page */}
       {showConfirm && (

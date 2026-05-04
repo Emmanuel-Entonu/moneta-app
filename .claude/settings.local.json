@@ -31,7 +31,31 @@
       "Bash(cmd /c \"studio64.exe\" \"C:\\\\Users\\\\ALEX\\\\Desktop\\\\Moneta Stock  Trading App Alpha\\\\android\")",
       "Bash(powershell -Command \"Start-Process 'C:\\\\Program Files\\\\Android\\\\Android Studio\\\\bin\\\\studio64.exe' -ArgumentList 'C:\\\\Users\\\\ALEX\\\\Desktop\\\\Moneta Stock  Trading App Alpha\\\\android'\")",
       "Read(//c/Users/ALEX/Desktop/Moneta Stock Trading App Alpha/node_modules/@capacitor-community/http/android/**)",
-      "Bash(npx vercel *)"
+      "Bash(npx vercel *)",
+      "Read(//c/Users/ALEX/.claude/projects/c--Users-ALEX-Desktop-Moneta-Stock--Trading-App-Alpha/memory/**)",
+      "Read(//c/Users/ALEX/Desktop/Moneta Stock Trading App Alpha/src/store/**)",
+      "Read(//c/Users/ALEX/Desktop/Moneta Stock Trading App Alpha/src/pages/**)",
+      "Read(//c/Users/ALEX/Desktop/Moneta Stock Trading App Alpha/src/**)",
+      "Read(//c/Users/ALEX/Desktop/**)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(cat api/pac-proxy.js)",
+      "Bash(cat api/pac-broker.js)",
+      "Bash(git revert *)",
+      "Bash(curl --request POST --url https://api.dev.mywealthcare.io/administration/api/v1/users/token/daemon --header 'Content-Type: application/json' --header 'x-tenant-id: pac' --data '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\",\"tenant\":\"pac\"}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['access_token']\\)\")",
+      "Bash(curl --request GET --url 'https://api.dev.mywealthcare.io/position/api/v1/ledgers/report/trading/account/0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e?valueDate=2026-04-20' --header 'Accept: application/json' --header 'x-tenant-id: pac' --header 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJQS1hWSWFHT0puMzRsYlEyV2N6MThVSUpmVllPSFRwNDVrLXdVcThMT3NnIn0.eyJleHAiOjE3NzY2OTI3MDksImlhdCI6MTc3NjY5MDkwOSwianRpIjoiZDZmY2E2MTUtMjljOS00ZjUwLWI2YjctNDNhZTUzZTM3NDkzIiwiaXNzIjoiaHR0cHM6Ly9vaWRjLmRldi5teXdlYWx0aGNhcmUuaW8vcmVhbG1zL3BhYyIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiI5ZGY3YmM3My00MmRiLTQ2YmYtYjU4ZC01ZjBlOGM4NjM1MjkiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJiYWNrb2ZmaWNlIiwic2Vzc2lvbl9zdGF0ZSI6ImFmMzA1OTE3LWJlYmUtNGFhMy1hNWMzLTNlMGE3YmRmMjBhNiIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiKiJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib3JkZXJfY29udHJhY3Rfbm90ZV92aWV3Iiwib3JkZXJfY29udHJhY3Rfbm90ZV9jcmVhdGUiLCJpbnZlc3RtZW50X2FjY291bnRfbGlzdCIsImludmVzdG1lbnRfYWNjb3VudF92aWV3Iiwib3JkZXJfY29udHJhY3Rfbm90ZV9wb3N0IiwiYWR2aXNvcl9ncm91cF9saXN0IiwiYWNjb3VudF9ncm91cF9saXN0IiwiYWNjb3VudF9ncm91cF92aWV3IiwiZGVmYXVsdC1yb2xlcy1wYWMiLCJpbnZlc3RtZW50X3Byb2R1Y3RfbGlzdCIsInBvc2l0aW9uX2xlZGdlcl92aWV3IiwicG9zaXRpb25fbGVkZ2VyX3Bvc3QiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwib3JkZXJfY29udHJhY3Rfbm90ZV9saXN0Iiwib3JkZXJfdmlldyIsInBvc2l0aW9uX2xlZGdlcl9jcmVhdGUiLCJvcmRlcl9hcHByb3ZlIiwib3JkZXJfY3JlYXRlIiwib3JkZXJfcG9zdCIsIm9yZGVyX2NvbnRyYWN0X25vdGVfYXBwcm92ZSIsImludmVzdG1lbnRfcHJvZHVjdF92aWV3IiwicG9zaXRpb25fbGVkZ2VyX2xpc3QiLCJwb3NpdGlvbl9sZWdkZXJfcmV2ZXJzZSIsInBvc2l0aW9uX2xlZGdlcl91cGRhdGUiLCJwb3NpdGlvbl9sZWRnZXJfYXBwcm92ZSIsIm9yZGVyX2NvbnRyYWN0X25vdGVfcmV2ZXJzZSIsIm9yZGVyX2xpc3QiLCJvcmRlcl9jb250cmFjdF9ub3RlX3VwZGF0ZSIsImFkdmlzb3JfZ3JvdXBfdmlldyJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsInNpZCI6ImFmMzA1OTE3LWJlYmUtNGFhMy1hNWMzLTNlMGE3YmRmMjBhNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiQXBpIFRlc3QiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhcGkudGVzdCIsImdpdmVuX25hbWUiOiJBcGkiLCJmYW1pbHlfbmFtZSI6IlRlc3QiLCJlbWFpbCI6InBsYWNlaG9sZGVyQHBhYy5jb20ifQ.YNiPujT3psEXlHXJ9_mtcJfMeOk0DpjU5g0GoioyCGfCh-V55VwymuJYnH9plklRehxDdCi9p4E9wYcYg_ml39eEFDN12BZLNXkjhsZAViiNhIFAv99WZXlS1yQ5vmRUsDPU6pMOBx74eWlXXuB0els-uyTMWZ5grKYUam-cRtDiU5nawXRW_DTa4He6dcX5UwaEiRZJC525BRmsCcm0OEeysqs8SCBa3ROhvCBcet0EsWGN98NDiyc94bevbNAg78fqf3WYR46w467pRKUtlFPb3RIov1TlHyQTXvMOyTMEuC1KjydFik8jHFpv4l3KqaPAk8tmcbc-S7rfkVfhfw')",
+      "Bash(curl -s --request POST --url https://api.dev.mywealthcare.io/administration/api/v1/users/token/daemon --header 'Content-Type: application/json' --header 'x-tenant-id: pac' --data '{\"username\":\"api.test\",\"password\":\"8QUYVaa9J5j#\",\"tenant\":\"pac\"}')",
+      "Bash(curl --request GET \"https://mywealth.mds.prod.mywealthcare.io/api/v1/price/quote\" --header \"Accept: application/json\" --header \"x-api-key: 123\")",
+      "Bash(curl --request GET 'https://mywealth.mds.prod.mywealthcare.io/api/v1/price/quote?marketCode=NGX&secId=DANGCEM' --header 'Accept: application/json' --header 'x-api-key: izV6ZBQkpr$$ZlGe' --header 'x-tenant-id: pac-sec')",
+      "Bash(curl --request GET 'https://mywealth.mds.prod.mywealthcare.io/api/v1/price/quote?marketCode=NGX&secId=DANGCEM' --header 'Accept: application/json' --header 'x-api-key: izV6ZBQkpr$$ZlGe' --header 'x-tenant-id: pac')",
+      "Bash(curl --request GET \"https://mywealth.mds.prod.mywealthcare.io/api/v1/price/quote?marketCode=NGX&secId=DANGCEM\" --header \"Accept: application/json\" --header \"x-api-key: 8QUYVaa9J5j#\" --header \"x-tenant-id: pac-sec\")",
+      "Bash(curl -s https://moneta-proxy.fly.dev/api/v2/generate-access-token -X POST -H \"Content-Type: application/json\" -d \"{}\")",
+      "Bash(git commit --allow-empty -m ' *)",
+      "PowerShell(iwr https://fly.io/install.ps1 -useb | iex)",
+      "Bash(fly deploy *)",
+      "Bash(curl -s https://moneta-proxy.fly.dev/ip)",
+      "Bash(git commit -m 'Fix TS2352 cast error in normalizePriceQuote *)"
     ]
   }
 }

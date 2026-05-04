@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: JSON.stringify({ reference, otp }),
       })
       const text = await upstream.text()
-      console.log(`[nibss-bvn verify-otp] ${upstream.status}: ${text.slice(0, 400)}`)
+      console.log(`[nibss-bvn verify-otp] ${upstream.status}: ${text}`)
       try {
         return res.status(upstream.status).json(JSON.parse(text))
       } catch {
@@ -73,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     })
     const text = await upstream.text()
-    console.log(`[nibss-bvn query] ${upstream.status}: ${text.slice(0, 400)}`)
+    console.log(`[nibss-bvn query] ${upstream.status}: ${text}`)
     try {
       return res.status(upstream.status).json(JSON.parse(text))
     } catch {

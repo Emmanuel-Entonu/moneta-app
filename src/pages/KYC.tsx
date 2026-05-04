@@ -273,8 +273,8 @@ export default function KYC() {
         <div style={{
           position: 'fixed', inset: 0, zIndex: 100,
           background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-          padding: '0 0 32px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '0 20px',
         }}>
           <div style={{
             background: '#fff', borderRadius: 24, padding: '28px 24px 24px',

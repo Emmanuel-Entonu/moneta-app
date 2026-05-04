@@ -142,7 +142,7 @@ export async function confirmBvnOtp(reference: string, otp: string): Promise<Bvn
   const res = await fetch('/api/nibss-bvn', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'verify-otp', reference, otp }),
+    body: JSON.stringify({ action: 'get-bvn-details', reference, otp }),
   })
 
   const text = await res.text()

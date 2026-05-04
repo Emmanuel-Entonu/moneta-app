@@ -2,11 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const NIBSS_TOKEN = process.env.VITE_MONETA_NIBSS_TOKEN ?? ''
 
-function genRef(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -18,23 +13,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
   try {
-    const upstream = await fetch('https://staging-nips.moneta.ng/api/bvn/bvn_query', {
+    const upstream = await fetch('https://api.moneta.ng/api/v2/bvn/query', {
       method: 'POST',
       headers: {
-        'Content-Type':  'application/json',
-        'Accept':        'application/json',
-        'Authorization': `Bearer ${NIBSS_TOKEN}`,
+        'Content-Type':    'application/json',
+        'Accept':          'application/json',
+        'X-Service-Token': NIBSS_TOKEN,
       },
       body: JSON.stringify({
+        scope:        'profile',
         bvn,
-        bvn_query_type:     'igree',
-        customer_reference: genRef(),
-        scope:              'profile',
-        channel_code:       'mobile_app',
+        channel_code: 'mobile_app',
       }),
     })
-    const data = await upstream.json()
-    res.status(upstream.status).json(data)
+    const text = await upstream.text()
+    console.log(`[nibss-bvn] ${upstream.status}: ${text.slice(0, 300)}`)
+    try {
+      res.status(upstream.status).json(JSON.parse(text))
+    } catch {
+      res.status(upstream.status).json({ error: text.slice(0, 500) })
+    }
   } catch (e) {
     res.status(500).json({ error: String(e) })
   }

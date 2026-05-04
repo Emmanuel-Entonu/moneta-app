@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
-const NIBSS_SVC  = process.env.VITE_MONETA_NIBSS_TOKEN   ?? '' // NIBSS-scoped service key
+const NIBSS_SVC  = process.env.VITE_MONETA_NIBSS_TOKEN   ?? ''
 
 let _token: string | null = null
 
@@ -27,11 +27,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(204).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { bvn } = req.body as { bvn?: string }
-  if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
+  const body = req.body as { bvn?: string; action?: string; reference?: string; otp?: string }
 
   try {
     const token = await getServiceToken()
+
+    // Step 2: OTP verification
+    if (body.action === 'verify-otp') {
+      const { reference, otp } = body
+      if (!reference || !otp) return res.status(400).json({ error: 'reference and otp are required' })
+
+      const upstream = await fetch('https://moneta-proxy.fly.dev/api/v2/bvn/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type':    'application/json',
+          'Accept':          'application/json',
+          'X-Service-Token': token,
+        },
+        body: JSON.stringify({ reference, otp }),
+      })
+      const text = await upstream.text()
+      console.log(`[nibss-bvn verify-otp] ${upstream.status}: ${text.slice(0, 400)}`)
+      try {
+        return res.status(upstream.status).json(JSON.parse(text))
+      } catch {
+        return res.status(upstream.status).json({ error: text.slice(0, 500) })
+      }
+    }
+
+    // Step 1: Initiate BVN query → OTP sent to user's phone
+    const { bvn } = body
+    if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
+
     const upstream = await fetch('https://moneta-proxy.fly.dev/api/v2/bvn/query', {
       method: 'POST',
       headers: {
@@ -46,14 +73,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     })
     const text = await upstream.text()
-    console.log(`[nibss-bvn] ${upstream.status}: ${text.slice(0, 300)}`)
+    console.log(`[nibss-bvn query] ${upstream.status}: ${text.slice(0, 400)}`)
     try {
-      res.status(upstream.status).json(JSON.parse(text))
+      return res.status(upstream.status).json(JSON.parse(text))
     } catch {
-      res.status(upstream.status).json({ error: text.slice(0, 500) })
+      return res.status(upstream.status).json({ error: text.slice(0, 500) })
     }
   } catch (e) {
     _token = null
-    res.status(500).json({ error: String(e) })
+    return res.status(500).json({ error: String(e) })
   }
 }

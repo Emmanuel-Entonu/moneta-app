@@ -80,18 +80,16 @@ interface StockLogoProps {
 }
 
 export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoProps) {
-  // stage 0 = try unavatar, stage 1 = try Google favicon, stage 2 = avatar
-  const [stage, setStage] = useState(0)
+  const [failed, setFailed] = useState(false)
   const domain = SYMBOL_DOMAIN[symbol]
   const color = tickerColor(symbol)
   const initials = symbol.replace(/[^A-Z]/gi, '').slice(0, 3).toUpperCase()
 
-  const src =
-    stage === 0 ? `https://unavatar.io/${domain}?fallback=false` :
-    stage === 1 ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` :
-    null
-
-  if (domain && src) {
+  if (domain && !failed) {
+    // Google's S2 favicon service: returns the real favicon at sz=64,
+    // or a 16×16 generic globe (ignoring sz) when it has nothing — we
+    // detect the generic globe via naturalWidth and fall back to avatar.
+    const src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
     return (
       <div style={{
         width: size, height: size, borderRadius: radius, flexShrink: 0,
@@ -102,15 +100,13 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
         boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
       }}>
         <img
-          key={src}
           src={src}
           alt={symbol}
-          style={{ width: '75%', height: '75%', objectFit: 'contain' }}
+          style={{ width: '78%', height: '78%', objectFit: 'contain' }}
           onLoad={(e) => {
-            // Google returns a 16×16 generic globe for unknown domains
-            if (stage === 1 && e.currentTarget.naturalWidth <= 16) setStage(2)
+            if (e.currentTarget.naturalWidth <= 16) setFailed(true)
           }}
-          onError={() => setStage((s) => s + 1)}
+          onError={() => setFailed(true)}
         />
       </div>
     )

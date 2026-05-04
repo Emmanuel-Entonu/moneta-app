@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+// Map NGX ticker → company domain. Use the most globally recognised domain
+// so Google's favicon service has it well-indexed.
 const SYMBOL_DOMAIN: Record<string, string> = {
   // Banks
   GTCO:         'gtbank.com',
@@ -23,8 +25,8 @@ const SYMBOL_DOMAIN: Record<string, string> = {
   LAFARGE:      'lafarge.com',
   JBERGER:      'julius-berger.com',
   // Telecom
-  MTNN:         'mtn.ng',
-  AIRTELAFRI:   'airtel.africa',
+  MTNN:         'mtn.com',
+  AIRTELAFRI:   'airtel.com',
   // Energy / Oil
   SEPLAT:       'seplatpetroleum.com',
   OANDO:        'oandoplc.com',
@@ -86,10 +88,13 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
   const initials = symbol.replace(/[^A-Z]/gi, '').slice(0, 3).toUpperCase()
 
   if (domain && !failed) {
-    // Google's S2 favicon service: returns the real favicon at sz=64,
-    // or a 16×16 generic globe (ignoring sz) when it has nothing — we
-    // detect the generic globe via naturalWidth and fall back to avatar.
-    const src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+    // Use Google's higher-quality FaviconV2 endpoint (used by Chrome / Workspace).
+    // Returns the best available logo at up to 128px. Falls back to colored avatar
+    // only on a real network error (onError).
+    const src =
+      `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON` +
+      `&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`
+
     return (
       <div style={{
         width: size, height: size, borderRadius: radius, flexShrink: 0,
@@ -102,10 +107,7 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
         <img
           src={src}
           alt={symbol}
-          style={{ width: '78%', height: '78%', objectFit: 'contain' }}
-          onLoad={(e) => {
-            if (e.currentTarget.naturalWidth <= 16) setFailed(true)
-          }}
+          style={{ width: '80%', height: '80%', objectFit: 'contain' }}
           onError={() => setFailed(true)}
         />
       </div>

@@ -66,8 +66,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .single()
 
     if (profile) {
+      // '0f4ce611-...' was a hardcoded fallback that was accidentally saved — clear it
+      const BAD_UUID = '0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e'
+      let pacAccountId = profile.pac_account_id ?? null
+      if (pacAccountId === BAD_UUID) {
+        pacAccountId = null
+        await supabase.from('profiles').update({ pac_account_id: null }).eq('id', user.id)
+      }
       set({
-        pacAccountId: profile.pac_account_id ?? null,
+        pacAccountId,
         kycStatus: (profile.kyc_status as AuthState['kycStatus']) ?? 'pending',
         walletBalance: profile.wallet_balance ?? 0,
       })

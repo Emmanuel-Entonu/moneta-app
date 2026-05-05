@@ -352,15 +352,21 @@ export default function Trade() {
                 {monetaError && <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, background: '#fff5f5', border: '1px solid #fecaca', fontSize: 11, color: '#991b1b', fontWeight: 600 }}>{monetaError}</div>}
               </div>
             )}
+            {!pacAccountId && (
+              <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10, background: '#fff7ed', border: '1px solid #fed7aa', fontSize: 12, color: '#92400e', fontWeight: 600 }}>
+                No broker account linked. Complete KYC to enable trading.
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: '14px', background: '#f8fafc', border: '1.5px solid var(--border)', borderRadius: 16, color: 'var(--text)', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               <button
-                disabled={monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)}
+                disabled={!pacAccountId || monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)}
                 onClick={async () => {
+                  if (!pacAccountId) return
                   if (side === 'BUY' && paySource === 'moneta') {
                     setMonetaLoading(true); setMonetaError(null)
                     try {
-                      localStorage.setItem('moneta_pending_order', JSON.stringify({ accountId: pacAccountId ?? 'demo', symbol: stock.symbol, side: 'BUY', quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal }))
+                      localStorage.setItem('moneta_pending_order', JSON.stringify({ accountId: pacAccountId, symbol: stock.symbol, side: 'BUY', quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal }))
                       const { reference, authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
                       localStorage.setItem('moneta_pending_ref', reference)
                       localStorage.setItem('moneta_pending_amount', String(estimatedTotal))
@@ -379,15 +385,15 @@ export default function Trade() {
                     return
                   }
                   if (side === 'BUY' && paySource === 'wallet') {
-                    await placeOrder({ accountId: pacAccountId ?? 'demo', symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
+                    await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
                     const result = usePortfolioStore.getState().orderResult
                     if (result?.success) { try { await debitWallet(estimatedTotal) } catch (e: unknown) { setMonetaError((e as Error).message) } }
                     setShowConfirm(false); return
                   }
-                  placeOrder({ accountId: pacAccountId ?? 'demo', symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
+                  placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
                   setShowConfirm(false)
                 }}
-                style={{ flex: 2, padding: '14px', background: (monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}
+                style={{ flex: 2, padding: '14px', background: (!pacAccountId || monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (!pacAccountId || monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: !pacAccountId ? 'not-allowed' : 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}
               >
                 {monetaLoading ? 'Redirecting…' : orderLoading ? 'Placing Order…' : `Confirm ${side}`}
               </button>

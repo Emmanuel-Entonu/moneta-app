@@ -151,6 +151,41 @@ export interface PacOrderResponse {
   totalValue?: number
 }
 
+export interface PacOrderListItem {
+  id:                string
+  orderNo:           string
+  secId:             string
+  side:              'BUY' | 'SELL'
+  orderStatus:       string
+  routingStatus:     string
+  routingMessage?:   string
+  executionMessage?: string
+  requestedQty:      number
+  displayQty:        number
+  filledQty:         number
+  openQuantity?:     number
+  limitPrice?:       number
+  consideration:     number
+  commission:        number
+  fees:              number
+  totalValue:        number
+  accountId:         string
+  accountNo:         string
+  accountLabel:      string
+  createdAt:         string
+  updatedAt:         string
+  requestTime:       string
+  currency:          string
+  marketCode:        string
+  tif:               string
+  assetType:         string
+  idemPotencyId?:    string
+  orderDesc?:        string
+  channel?:          string
+  tradingAccountNo?: string
+  deleted:           boolean
+}
+
 interface MdsPriceQuote {
   marketCode: string
   secId: string
@@ -361,6 +396,89 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
 export async function cancelOrder(pacOrderId: string): Promise<PacOrderResponse> {
   console.log('[cancelOrder] orderId', pacOrderId)
   return brokerPatch(`/investing/api/v1/orders/cancel/${pacOrderId}`)
+}
+
+export interface PacOrderFill {
+  id:               string
+  orderId:          string
+  orderNo:          string
+  secId:            string
+  side:             'BUY' | 'SELL'
+  lastPx:           number
+  lastQty:          number
+  cumQty:           number
+  avgPx:            number
+  leavesQty:        number
+  orderQty:         number
+  grossTradeAmt:    number
+  fillStatus:       string
+  ordStatus:        string
+  tradeDate:        string
+  createdAt:        string
+  tradingAccountNo: string
+  execId?:          string
+  deleted:          boolean
+}
+
+export async function listFills(orderId: string): Promise<PacOrderFill[]> {
+  const data = await brokerGet<PacOrderFill[]>(
+    `/investing/api/v1/orders/list/fill/${orderId}`
+  )
+  return Array.isArray(data) ? data.filter(f => !f.deleted) : []
+}
+
+export async function listOrders(
+  accountId: string,
+  options?: { page?: number; size?: number }
+): Promise<PacOrderListItem[]> {
+  const params = new URLSearchParams({
+    order: 'desc',
+    page:  String(options?.page ?? 0),
+    size:  String(options?.size ?? 100),
+    sort:  'updatedAt',
+  })
+  const data = await brokerGet<{ content?: PacOrderListItem[] }>(
+    `/investing/api/v1/orders/list/account/${accountId}?${params}`
+  )
+  return (data.content ?? []).filter(o => !o.deleted)
+}
+
+export interface PacValidationResult {
+  consideration:  number
+  commission:     number
+  commissionRate: number
+  fees:           number
+  totalValue:     number
+  orderDesc?:     string
+}
+
+export async function validateOrder(order: PacOrderRequest): Promise<PacValidationResult> {
+  const body = {
+    accountId:    order.accountId,
+    secId:        order.symbol,
+    side:         order.side,
+    requestedQty: order.quantity,
+    tif:          'DAY',
+    marketCode:   'NGX',
+    currency:     'NGN',
+    numberOfLegs: 1,
+    assetType:    'EQUITY',
+    allOrNone:    false,
+    autoApprove:  true,
+    channel:      'MOBILE',
+    ...(order.orderType === 'LIMIT' && order.limitPrice ? { limitPrice: order.limitPrice } : {}),
+  }
+  const data = await brokerPost<Record<string, unknown>>(
+    '/investing/api/v1/orders/validate', body
+  )
+  return {
+    consideration:  Number(data.consideration  ?? 0),
+    commission:     Number(data.commission     ?? 0),
+    commissionRate: Number(data.commissionRate ?? 0),
+    fees:           Number(data.fees           ?? 0),
+    totalValue:     Number(data.totalValue     ?? 0),
+    orderDesc:      data.orderDesc as string | undefined,
+  }
 }
 
 function normalizePriceQuote(d: MdsPriceQuote): PacMarketData {

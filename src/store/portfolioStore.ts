@@ -5,10 +5,14 @@ import {
   getAccountById,
   placeOrder,
   cancelOrder,
+  listOrders,
+  listFills,
   type PacPosition,
   type PacMarketData,
   type PacAccount,
   type PacOrderRequest,
+  type PacOrderListItem,
+  type PacOrderFill,
 } from '../lib/pacApi'
 import { useAuthStore } from './authStore'
 
@@ -22,11 +26,18 @@ interface PortfolioState {
   orderLoading: boolean
   orderResult: { success: boolean; message: string } | null
 
+  pacOrders: PacOrderListItem[]
+  loadingOrders: boolean
+  orderFills: Record<string, PacOrderFill[]>
+  loadingFillsId: string | null
+
   loadAccount: (accountId: string) => Promise<void>
   loadPositions: (accountId: string) => Promise<void>
   loadMarketData: () => Promise<void>
+  loadOrders: (accountId: string) => Promise<void>
+  loadFills: (orderId: string) => Promise<void>
   placeOrder: (order: PacOrderRequest) => Promise<void>
-  cancelOrder: (pacOrderId: string, supabaseOrderId: string) => Promise<void>
+  cancelOrder: (pacOrderId: string, supabaseOrderId: string | null) => Promise<void>
   clearOrderResult: () => void
   fundWallet: (amountNaira: number) => Promise<void>
   deductBalance: (amountNaira: number) => Promise<void>
@@ -40,8 +51,12 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   account: null,
   positions: [],
   marketData: [],
+  pacOrders: [],
+  orderFills: {},
   loadingPortfolio: false,
   loadingMarket: false,
+  loadingOrders: false,
+  loadingFillsId: null,
   orderLoading: false,
   orderResult: null,
   apiStatus: null,
@@ -86,6 +101,32 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       }
     } finally {
       set({ loadingPortfolio: false })
+    }
+  },
+
+  loadOrders: async (accountId) => {
+    set({ loadingOrders: true })
+    try {
+      const pacOrders = await listOrders(accountId)
+      set({ pacOrders })
+    } catch (e) {
+      console.error('[loadOrders] error:', e)
+      set({ pacOrders: [] })
+    } finally {
+      set({ loadingOrders: false })
+    }
+  },
+
+  loadFills: async (orderId) => {
+    set({ loadingFillsId: orderId })
+    try {
+      const fills = await listFills(orderId)
+      set(state => ({ orderFills: { ...state.orderFills, [orderId]: fills } }))
+    } catch (e) {
+      console.error('[loadFills] error:', e)
+      set(state => ({ orderFills: { ...state.orderFills, [orderId]: [] } }))
+    } finally {
+      set({ loadingFillsId: null })
     }
   },
 
@@ -141,15 +182,23 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     }
   },
 
-  cancelOrder: async (pacOrderId: string, supabaseOrderId: string) => {
+  cancelOrder: async (pacOrderId: string, supabaseOrderId: string | null) => {
     try {
       await cancelOrder(pacOrderId)
-      // Update local Supabase record to cancelled
-      try {
-        const { supabase } = await import('../lib/supabase')
-        await supabase.from('orders').update({ status: 'cancelled' }).eq('id', supabaseOrderId)
-      } catch (logErr) {
-        console.error('[cancelOrder] Supabase update failed:', logErr)
+      // Optimistically update live orders list
+      set(state => ({
+        pacOrders: state.pacOrders.map(o =>
+          o.id === pacOrderId ? { ...o, orderStatus: 'PENDING_CANCEL' } : o
+        ),
+      }))
+      // Update Supabase record if we have the ID
+      if (supabaseOrderId) {
+        try {
+          const { supabase } = await import('../lib/supabase')
+          await supabase.from('orders').update({ status: 'cancelled' }).eq('id', supabaseOrderId)
+        } catch (logErr) {
+          console.error('[cancelOrder] Supabase update failed:', logErr)
+        }
       }
     } catch (e: unknown) {
       throw new Error((e as Error).message)

@@ -6,6 +6,7 @@ import { generateIntradayChart } from '../lib/sparkline'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { initializePayment } from '../lib/monetaApi'
+import { validateOrder, type PacValidationResult } from '../lib/pacApi'
 
 type Side = 'BUY' | 'SELL'
 type OrderType = 'MARKET' | 'LIMIT'
@@ -112,6 +113,9 @@ export default function Trade() {
   const [paySource, setPaySource] = useState<'wallet' | 'moneta'>('wallet')
   const [monetaLoading, setMonetaLoading] = useState(false)
   const [monetaError, setMonetaError] = useState<string | null>(null)
+  const [validating, setValidating] = useState(false)
+  const [validation, setValidation] = useState<PacValidationResult | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const walletBalance = useAuthStore((s) => s.walletBalance)
   const debitWallet = useAuthStore((s) => s.debitWallet)
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
@@ -123,6 +127,24 @@ export default function Trade() {
       return () => clearTimeout(t)
     }
   }, [orderResult])
+
+  useEffect(() => {
+    if (!showConfirm) {
+      setValidation(null); setValidationError(null); setValidating(false)
+      return
+    }
+    if (!pacAccountId || qty <= 0) return
+    const currentStock = marketData.find(s => s.symbol === symbol)
+    if (!currentStock) return
+    let cancelled = false
+    setValidating(true); setValidation(null); setValidationError(null)
+    const effectivePx = orderType === 'LIMIT' && limitPrice ? parseFloat(limitPrice) : currentStock.price
+    validateOrder({ accountId: pacAccountId, symbol: currentStock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePx : undefined })
+      .then(v => { if (!cancelled) setValidation(v) })
+      .catch(e => { if (!cancelled) setValidationError((e as Error).message) })
+      .finally(() => { if (!cancelled) setValidating(false) })
+    return () => { cancelled = true }
+  }, [showConfirm])
 
   const stock = marketData.find((s) => s.symbol === symbol)
   const holding = positions.find((p) => p.symbol === symbol)
@@ -142,6 +164,7 @@ export default function Trade() {
   const effectivePrice = orderType === 'LIMIT' && limitPrice ? parseFloat(limitPrice) : stock.price
   const qty = parseInt(quantity) || 0
   const estimatedTotal = effectivePrice * qty
+  const orderTotal = validation?.totalValue ?? estimatedTotal
 
   return (
     <div style={{ minHeight: '100svh', background: '#070e1a', display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
@@ -329,6 +352,32 @@ export default function Trade() {
                 </div>
               ))}
             </div>
+            {validating && (
+              <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12, background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.2)' }}>
+                <div style={{ width: 14, height: 14, border: '2px solid #059669', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Calculating fees…</span>
+              </div>
+            )}
+            {validation && (
+              <div style={{ marginBottom: 14, borderRadius: 14, border: '1.5px solid rgba(5,150,105,0.3)', background: 'rgba(5,150,105,0.06)', padding: '12px 16px' }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Fees & Charges</p>
+                {([
+                  ['Consideration', fmt(validation.consideration)],
+                  ['Commission + Fees', fmt(validation.commission + validation.fees)],
+                  ['Total Due', fmt(validation.totalValue)],
+                ] as [string, string][]).map(([label, value]) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: label === 'Total Due' ? 0 : 5 }}>
+                    <span style={{ fontSize: 12, color: label === 'Total Due' ? 'var(--text)' : 'var(--text-muted)', fontWeight: label === 'Total Due' ? 700 : 500 }}>{label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: label === 'Total Due' ? '#059669' : 'var(--text)' }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {validationError && !validation && (
+              <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: '#fff5f5', border: '1px solid #fecaca', fontSize: 12, color: '#991b1b', fontWeight: 600 }}>
+                Fee estimate unavailable — proceed to place order
+              </div>
+            )}
             {side === 'BUY' && (
               <div style={{ marginBottom: 14 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Pay With</p>
@@ -343,7 +392,7 @@ export default function Trade() {
                     </button>
                   ))}
                 </div>
-                {paySource === 'wallet' && walletBalance < estimatedTotal && (
+                {paySource === 'wallet' && walletBalance < orderTotal && (
                   <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#fff5f5', border: '1px solid #fecaca', fontSize: 12, color: '#991b1b', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>Insufficient funds</span>
                     <button onClick={() => { setShowConfirm(false); navigate('/portfolio') }} style={{ fontSize: 11, fontWeight: 700, color: '#059669', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Fund Wallet</button>
@@ -360,7 +409,7 @@ export default function Trade() {
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: '14px', background: '#f8fafc', border: '1.5px solid var(--border)', borderRadius: 16, color: 'var(--text)', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               <button
-                disabled={!pacAccountId || monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)}
+                disabled={!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)}
                 onClick={async () => {
                   if (!pacAccountId) return
                   if (side === 'BUY' && paySource === 'moneta') {
@@ -387,15 +436,15 @@ export default function Trade() {
                   if (side === 'BUY' && paySource === 'wallet') {
                     await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
                     const result = usePortfolioStore.getState().orderResult
-                    if (result?.success) { try { await debitWallet(estimatedTotal) } catch (e: unknown) { setMonetaError((e as Error).message) } }
+                    if (result?.success) { try { await debitWallet(orderTotal) } catch (e: unknown) { setMonetaError((e as Error).message) } }
                     setShowConfirm(false); return
                   }
-                  placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
+                  await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
                   setShowConfirm(false)
                 }}
-                style={{ flex: 2, padding: '14px', background: (!pacAccountId || monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (!pacAccountId || monetaLoading || orderLoading || (side === 'BUY' && paySource === 'wallet' && walletBalance < estimatedTotal)) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: !pacAccountId ? 'not-allowed' : 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}
+                style={{ flex: 2, padding: '14px', background: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: (!pacAccountId || validating) ? 'not-allowed' : 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}
               >
-                {monetaLoading ? 'Redirecting…' : orderLoading ? 'Placing Order…' : `Confirm ${side}`}
+                {monetaLoading ? 'Redirecting…' : validating ? 'Checking…' : orderLoading ? 'Placing Order…' : `Confirm ${side}`}
               </button>
             </div>
           </div>

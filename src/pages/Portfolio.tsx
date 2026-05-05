@@ -167,6 +167,23 @@ function VerifyPaymentSheet({ onClose, onCredited }: { onClose: () => void; onCr
   )
 }
 
+const CANCELLABLE = new Set(['PENDING', 'NEW', 'APPROVED', 'PARTIALLY_FILLED'])
+
+function pacOrderStatus(s: string): { label: string; color: string; bg: string } {
+  switch (s) {
+    case 'FILLED':           return { label: '✓ Filled',     color: '#34d399', bg: 'rgba(16,185,129,0.15)' }
+    case 'PARTIALLY_FILLED': return { label: '◑ Partial',    color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' }
+    case 'PENDING':
+    case 'NEW':              return { label: '◷ Pending',     color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' }
+    case 'APPROVED':         return { label: '◷ Approved',    color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' }
+    case 'PENDING_CANCEL':   return { label: '◷ Cancelling',  color: '#fb923c', bg: 'rgba(251,146,60,0.15)' }
+    case 'CANCELED':         return { label: '✕ Cancelled',   color: '#94a3b8', bg: 'rgba(148,163,184,0.15)' }
+    case 'REJECTED':         return { label: '✕ Rejected',    color: '#f87171', bg: 'rgba(239,68,68,0.15)' }
+    case 'EXPIRED':          return { label: '⌛ Expired',     color: '#94a3b8', bg: 'rgba(148,163,184,0.15)' }
+    default:                 return { label: s,              color: '#94a3b8', bg: 'rgba(148,163,184,0.15)' }
+  }
+}
+
 const ALLOC_COLORS = ['#059669', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9', '#ef4444']
 
 function fmt(n: number) {
@@ -223,7 +240,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 }
 
 export default function Portfolio() {
-  const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus, cancelOrder } = usePortfolioStore()
+  const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus, cancelOrder, pacOrders, loadingOrders, loadOrders, orderFills, loadingFillsId, loadFills } = usePortfolioStore()
   const { pacAccountId, walletBalance, loadProfile, kycStatus } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
@@ -236,6 +253,8 @@ export default function Portfolio() {
   const [brokerLinkError, setBrokerLinkError] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelErrors, setCancelErrors] = useState<Record<string, string>>({})
+  const [supabaseIdMap, setSupabaseIdMap] = useState<Record<string, string>>({})
+  const [expandedFillId, setExpandedFillId] = useState<string | null>(null)
   const userId = useAuthStore((s) => s.user?.id)
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
@@ -257,14 +276,29 @@ export default function Portfolio() {
 
 
   useEffect(() => {
-    if (tab !== 'orders' || !userId) return
-    setOrdersLoading(true)
-    supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50)
-      .then(
-        ({ data }) => { setOrders((data as OrderRecord[]) ?? []); setOrdersLoading(false) },
-        () => setOrdersLoading(false),
-      )
-  }, [tab, userId])
+    if (tab !== 'orders') return
+    if (pacAccountId) {
+      loadOrders(pacAccountId)
+      if (userId) {
+        supabase.from('orders').select('id, pac_order_id').eq('user_id', userId)
+          .then(({ data }) => {
+            const map: Record<string, string> = {}
+            ;(data as { id: string; pac_order_id: string | null }[] ?? []).forEach(r => {
+              if (r.pac_order_id) map[r.pac_order_id] = r.id
+            })
+            setSupabaseIdMap(map)
+          })
+          .catch(() => {})
+      }
+    } else if (userId) {
+      setOrdersLoading(true)
+      supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50)
+        .then(
+          ({ data }) => { setOrders((data as OrderRecord[]) ?? []); setOrdersLoading(false) },
+          () => setOrdersLoading(false),
+        )
+    }
+  }, [tab, pacAccountId, userId])
 
   async function retryBrokerLink() {
     if (!userId) return
@@ -639,8 +673,12 @@ export default function Portfolio() {
         {/* Orders tab */}
         {tab === 'orders' && (
           <div style={{ padding: '0 12px 16px' }} className="animate-in">
-            {ordersLoading && <div style={{ padding: '40px 0', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Loading orders…</div>}
-            {!ordersLoading && orders.length === 0 && (
+            {(pacAccountId ? loadingOrders : ordersLoading) && (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Loading orders…</div>
+            )}
+
+            {/* Empty state */}
+            {!loadingOrders && !ordersLoading && (pacAccountId ? pacOrders.length === 0 : orders.length === 0) && (
               <div style={{ padding: '48px 20px', textAlign: 'center' }}>
                 <div style={{ width: 72, height: 72, borderRadius: 24, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -649,7 +687,133 @@ export default function Portfolio() {
                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, lineHeight: 1.5 }}>Your placed buy and sell orders will appear here</p>
               </div>
             )}
-            {!ordersLoading && orders.map((o) => {
+
+            {/* Live PAC orders — shown when broker account is linked */}
+            {!loadingOrders && pacAccountId && pacOrders.map((o) => {
+              const isBuy = o.side === 'BUY'
+              const { label: statusLabel, color: statusColor, bg: statusBg } = pacOrderStatus(o.orderStatus)
+              const canCancel = CANCELLABLE.has(o.orderStatus)
+              const supabaseId = supabaseIdMap[o.id] ?? null
+              const date = new Date(o.requestTime || o.createdAt)
+              const dateStr = date.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+              const timeStr = date.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
+              const fillPct = o.requestedQty > 0 ? (o.filledQty / o.requestedQty) * 100 : 0
+              const totalAmt = o.totalValue > 0 ? o.totalValue : o.consideration
+              return (
+                <div key={o.id} onClick={() => navigate(`/trade/${o.secId}`)} role="button" style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: '#0e1c2f', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '14px 16px', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: isBuy ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="16" height="16" viewBox="0 0 8 8" fill={isBuy ? '#34d399' : '#f87171'}>{isBuy ? <polygon points="4,0 8,8 0,8" /> : <polygon points="0,0 8,0 4,8" />}</svg>
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
+                          <p style={{ fontWeight: 800, fontSize: 14, color: '#ffffff' }}>{o.secId}</p>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: isBuy ? '#34d399' : '#f87171', background: isBuy ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', padding: '2px 7px', borderRadius: 20 }}>{o.side}</span>
+                        </div>
+                        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', fontWeight: 500 }}>
+                          {o.requestedQty.toLocaleString()} units{o.limitPrice ? ` · ₦${o.limitPrice.toFixed(2)} LIMIT` : ' · MARKET'}
+                        </p>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      {totalAmt > 0 && <p style={{ fontWeight: 800, fontSize: 14, color: '#ffffff', letterSpacing: -0.3 }}>{fmt(totalAmt)}</p>}
+                      <span style={{ fontSize: 10, fontWeight: 700, color: statusColor, background: statusBg, padding: '2px 7px', borderRadius: 20, marginTop: 4, display: 'inline-block' }}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Partial fill progress bar */}
+                  {fillPct > 0 && fillPct < 100 && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.3 }}>Fill Progress</span>
+                        <span style={{ fontSize: 9, color: '#60a5fa', fontWeight: 700 }}>{o.filledQty.toLocaleString()} / {o.requestedQty.toLocaleString()}</span>
+                      </div>
+                      <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${fillPct}%`, background: '#60a5fa', borderRadius: 3 }} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>{dateStr} · {timeStr} · {o.orderNo}</p>
+                    {(o.commission + o.fees) > 0 && (
+                      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontWeight: 500 }}>Fees: ₦{(o.commission + o.fees).toFixed(2)}</p>
+                    )}
+                  </div>
+
+                  {/* View Fills — lazy loaded for FILLED / PARTIALLY_FILLED orders */}
+                  {(o.orderStatus === 'FILLED' || o.orderStatus === 'PARTIALLY_FILLED') && (
+                    <div style={{ marginTop: 10 }} onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => {
+                          if (expandedFillId === o.id) { setExpandedFillId(null); return }
+                          setExpandedFillId(o.id)
+                          if (!orderFills[o.id]) loadFills(o.id)
+                        }}
+                        style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid rgba(96,165,250,0.4)', background: 'rgba(96,165,250,0.08)', color: '#60a5fa', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        {expandedFillId === o.id ? 'Hide Fills' : 'View Fills'}
+                      </button>
+                      {expandedFillId === o.id && (
+                        <div style={{ marginTop: 8, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(96,165,250,0.15)' }}>
+                          {loadingFillsId === o.id && (
+                            <div style={{ padding: '10px 14px', fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Loading fills…</div>
+                          )}
+                          {loadingFillsId !== o.id && (orderFills[o.id] ?? []).length === 0 && (
+                            <div style={{ padding: '10px 14px', fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>No fills recorded yet</div>
+                          )}
+                          {(orderFills[o.id] ?? []).map((f, i) => (
+                            <div key={f.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, padding: '9px 12px', background: i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent', borderBottom: i < (orderFills[o.id].length - 1) ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                              <div>
+                                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 }}>Qty</p>
+                                <p style={{ fontSize: 11, fontWeight: 700, color: '#ffffff' }}>{f.lastQty.toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 }}>Price</p>
+                                <p style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa' }}>₦{f.lastPx.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 }}>Status</p>
+                                <p style={{ fontSize: 10, fontWeight: 700, color: f.fillStatus === 'POSTED' ? '#34d399' : f.fillStatus === 'REVERSED' ? '#f87171' : '#fbbf24' }}>{f.fillStatus}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {canCancel && (
+                    <div style={{ marginTop: 10 }} onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={async () => {
+                          setCancellingId(o.id)
+                          setCancelErrors(prev => { const n = { ...prev }; delete n[o.id]; return n })
+                          try {
+                            await cancelOrder(o.id, supabaseId)
+                          } catch (err: unknown) {
+                            setCancelErrors(prev => ({ ...prev, [o.id]: (err as Error).message }))
+                          } finally {
+                            setCancellingId(null)
+                          }
+                        }}
+                        disabled={cancellingId === o.id}
+                        style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 11, fontWeight: 700, cursor: cancellingId === o.id ? 'wait' : 'pointer' }}
+                      >
+                        {cancellingId === o.id ? 'Cancelling…' : 'Cancel Order'}
+                      </button>
+                      {cancelErrors[o.id] && <p style={{ fontSize: 10, color: '#f87171', marginTop: 4, fontWeight: 600 }}>{cancelErrors[o.id]}</p>}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Supabase fallback — shown when no broker account is linked yet */}
+            {!ordersLoading && !pacAccountId && orders.map((o) => {
               const isBuy = o.side === 'BUY'
               const isCancelled = o.status === 'cancelled'
               const isFailed    = o.status === 'failed'
@@ -681,7 +845,7 @@ export default function Portfolio() {
                       </span>
                     </div>
                   </div>
-                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 500, marginTop: 10 }}>{dateStr} · {timeStr}{o.pac_order_id ? ` · ID: ${o.pac_order_id}` : ''}</p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 500, marginTop: 10 }}>{dateStr} · {timeStr}{o.pac_order_id ? ` · ${o.pac_order_id.slice(0, 8)}` : ''}</p>
                   {o.status === 'placed' && o.pac_order_id && (
                     <div style={{ marginTop: 10 }} onClick={e => e.stopPropagation()}>
                       <button

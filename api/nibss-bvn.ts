@@ -79,18 +79,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
+    // Docs: customer_reference must be exactly 12 characters
+    const customerReference = (Date.now().toString(36) + Math.random().toString(36).slice(2))
+      .slice(0, 12).toUpperCase()
+
     const { status, json } = await proxyPost('bvn/query', token, {
       bvn,
-      bvn_query_type: 'igree',
-      scope:          'profile',
-      channel_code:   'mobile_app',
+      bvn_query_type:     'igree',
+      scope:              'profile',
+      channel_code:       'mobile_app',
+      customer_reference: customerReference,
     })
 
-    // Moneta returns the reference inside data.customer_reference —
-    // bubble it up to the top level so the client reads it directly.
+    // Inject our 12-char reference so the client passes the exact same value to Step 2
     if (status >= 200 && status < 300 && json && typeof json === 'object') {
-      const nested = (json.data as Record<string, unknown> | undefined)?.customer_reference
-      if (nested) json.customer_reference = nested
+      json.customer_reference = customerReference
     }
 
     return res.status(status).json(json)

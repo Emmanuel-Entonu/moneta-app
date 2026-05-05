@@ -235,7 +235,7 @@ export default function Portfolio() {
   const [brokerLinking, setBrokerLinking] = useState(false)
   const [brokerLinkError, setBrokerLinkError] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
-  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [cancelErrors, setCancelErrors] = useState<Record<string, string>>({})
   const userId = useAuthStore((s) => s.user?.id)
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
@@ -651,12 +651,16 @@ export default function Portfolio() {
             )}
             {!ordersLoading && orders.map((o) => {
               const isBuy = o.side === 'BUY'
-              const isPlaced = o.status === 'placed'
+              const isCancelled = o.status === 'cancelled'
+              const isFailed    = o.status === 'failed'
+              const statusColor = isCancelled ? '#94a3b8' : isFailed ? '#f87171' : '#34d399'
+              const statusBg    = isCancelled ? 'rgba(148,163,184,0.15)' : isFailed ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'
+              const statusLabel = isCancelled ? '✕ Cancelled' : isFailed ? 'Failed' : '✓ Placed'
               const date = new Date(o.created_at)
               const dateStr = date.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
               const timeStr = date.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })
               return (
-                <button key={o.id} onClick={() => navigate(`/trade/${o.symbol}`)} style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: '#0e1c2f', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '14px 16px', marginBottom: 10 }}>
+                <div key={o.id} onClick={() => navigate(`/trade/${o.symbol}`)} role="button" style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: '#0e1c2f', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '14px 16px', marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 40, height: 40, borderRadius: 12, flexShrink: 0, background: isBuy ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -672,23 +676,23 @@ export default function Portfolio() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       {o.estimated_total != null && <p style={{ fontWeight: 800, fontSize: 14, color: '#ffffff', letterSpacing: -0.3 }}>{fmt(o.estimated_total)}</p>}
-                      <span style={{ fontSize: 10, fontWeight: 700, color: isPlaced ? '#34d399' : '#f87171', background: isPlaced ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', padding: '2px 7px', borderRadius: 20, marginTop: 4, display: 'inline-block' }}>
-                        {isPlaced ? '✓ Placed' : 'Failed'}
+                      <span style={{ fontSize: 10, fontWeight: 700, color: statusColor, background: statusBg, padding: '2px 7px', borderRadius: 20, marginTop: 4, display: 'inline-block' }}>
+                        {statusLabel}
                       </span>
                     </div>
                   </div>
                   <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 500, marginTop: 10 }}>{dateStr} · {timeStr}{o.pac_order_id ? ` · ID: ${o.pac_order_id}` : ''}</p>
                   {o.status === 'placed' && o.pac_order_id && (
-                    <div style={{ marginTop: 10 }}>
+                    <div style={{ marginTop: 10 }} onClick={e => e.stopPropagation()}>
                       <button
-                        onClick={async (e) => {
-                          e.stopPropagation()
-                          setCancellingId(o.id); setCancelError(null)
+                        onClick={async () => {
+                          setCancellingId(o.id)
+                          setCancelErrors(prev => { const n = { ...prev }; delete n[o.id]; return n })
                           try {
                             await cancelOrder(o.pac_order_id!, o.id)
                             setOrders(prev => prev.map(x => x.id === o.id ? { ...x, status: 'cancelled' } : x))
                           } catch (err: unknown) {
-                            setCancelError((err as Error).message)
+                            setCancelErrors(prev => ({ ...prev, [o.id]: (err as Error).message }))
                           } finally {
                             setCancellingId(null)
                           }
@@ -698,10 +702,10 @@ export default function Portfolio() {
                       >
                         {cancellingId === o.id ? 'Cancelling…' : 'Cancel Order'}
                       </button>
-                      {cancelError && cancellingId === null && <p style={{ fontSize: 10, color: '#f87171', marginTop: 4, fontWeight: 600 }}>{cancelError}</p>}
+                      {cancelErrors[o.id] && <p style={{ fontSize: 10, color: '#f87171', marginTop: 4, fontWeight: 600 }}>{cancelErrors[o.id]}</p>}
                     </div>
                   )}
-                </button>
+                </div>
               )
             })}
           </div>

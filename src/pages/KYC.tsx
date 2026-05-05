@@ -106,9 +106,12 @@ export default function KYC() {
   const [idType, setIdType] = useState('')
   const [idNumber, setIdNumber] = useState('')
 
-  const [bvnDone, setBvnDone]       = useState(false)
-  const [bvnLoading, setBvnLoading] = useState(false)
-  const [bvnError, setBvnError]     = useState<string | null>(null)
+  const [bvnDone, setBvnDone]         = useState(false)
+  const [bvnLoading, setBvnLoading]   = useState(false)
+  const [bvnError, setBvnError]       = useState<string | null>(null)
+  const [bvnReference, setBvnReference] = useState<string | null>(null)
+  const [otp, setOtp]                 = useState('')
+  const [otpLoading, setOtpLoading]   = useState(false)
 
   const [showSkipModal, setShowSkipModal] = useState(false)
 
@@ -304,18 +307,11 @@ export default function KYC() {
                           body: JSON.stringify({ bvn }),
                         })
                         const json = await res.json() as Record<string, unknown>
-                        // Extract data from various response shapes
-                        const d = (json.data ?? json) as Record<string, unknown>
-                        const name = String(d.full_name ?? d.fullName ?? d.name ?? d.firstName ?? '')
-                        const dob2 = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
-                        const ph   = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
-                        if (name) setFullName(name)
-                        if (dob2) setDob(dob2)
-                        if (ph)   setPhone(ph)
-                        setBvnDone(true)
+                        const ref = String(json.customer_reference ?? '')
+                        if (ref) setBvnReference(ref)
+                        else setBvnError('Could not send OTP. Enter details manually.')
                       } catch {
-                        // BVN lookup failed — still allow manual entry
-                        setBvnDone(true)
+                        setBvnError('BVN check failed. Enter details manually.')
                       } finally {
                         setBvnLoading(false)
                       }
@@ -329,12 +325,58 @@ export default function KYC() {
                       fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80,
                     }}
                   >
-                    {bvnLoading ? '…' : 'Confirm'}
+                    {bvnLoading ? '…' : 'Send OTP'}
                   </button>
                 )}
               </div>
               <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Dial *565*0# on any Nigerian network to retrieve your BVN</p>
               {bvnError && <p style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>{bvnError}</p>}
+
+              {/* OTP input — shown after OTP is sent */}
+              {bvnReference && !bvnDone && (
+                <div style={{ marginTop: 12, padding: '14px', background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
+                  <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700, marginBottom: 8 }}>OTP sent to your BVN-linked number</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="tel"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="Enter OTP"
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #a7f3d0', fontSize: 16, fontWeight: 700, letterSpacing: 4, color: '#065f46' }}
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!otp || otp.length < 4) return
+                        setOtpLoading(true); setBvnError(null)
+                        try {
+                          const res = await fetch('/api/nibss-bvn', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'verify-otp', reference: bvnReference, otp }),
+                          })
+                          const json = await res.json() as Record<string, unknown>
+                          const d = (json.data ?? json) as Record<string, unknown>
+                          const name = String(d.full_name ?? d.fullName ?? d.firstName ?? '')
+                          const dob2 = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
+                          const ph   = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
+                          if (name) setFullName(name)
+                          if (dob2) setDob(dob2)
+                          if (ph)   setPhone(ph)
+                          setBvnDone(true)
+                        } catch {
+                          setBvnError('Wrong OTP. Try again.')
+                        } finally {
+                          setOtpLoading(false)
+                        }
+                      }}
+                      disabled={otp.length < 4 || otpLoading}
+                      style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: otp.length < 4 || otpLoading ? '#d1fae5' : 'linear-gradient(135deg,#059669,#047857)', color: otp.length < 4 || otpLoading ? '#6ee7b7' : '#fff', fontWeight: 700, fontSize: 13, cursor: otp.length < 4 ? 'not-allowed' : 'pointer' }}
+                    >
+                      {otpLoading ? '…' : 'Verify'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Personal details — shown after BVN confirmed */}

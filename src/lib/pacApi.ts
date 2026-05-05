@@ -1,8 +1,8 @@
-const BROKER_BASE = (import.meta.env.VITE_BROKER_BASE_URL as string | undefined) || 'https://api.dev.mywealthcare.io'
+const BROKER_BASE = (import.meta.env.VITE_BROKER_BASE_URL as string | undefined) || 'https://api.prod.mywealthcare.io'
 export const BROKER_BASE_DISPLAY = BROKER_BASE
-const USERNAME    = (import.meta.env.VITE_PAC_USERNAME    as string | undefined) || 'api.test'
-const PASSWORD    = (import.meta.env.VITE_PAC_PASSWORD    as string | undefined) || '8QUYVaa9J5j#'
-const TENANT_ID   = (import.meta.env.VITE_PAC_TENANT_ID   as string | undefined) || 'pac'
+const USERNAME    = (import.meta.env.VITE_PAC_USERNAME    as string | undefined) || 'moneta-user'
+const PASSWORD    = (import.meta.env.VITE_PAC_PASSWORD    as string | undefined) || 'izV6ZBQkpr$$ZlGe'
+const TENANT_ID   = (import.meta.env.VITE_PAC_TENANT_ID   as string | undefined) || 'pac-sec'
 
 const MARKET_CODE = 'NGX'
 
@@ -266,28 +266,53 @@ export async function getIndexData() {
 }
 
 export async function getAccountById(accountId: string): Promise<PacAccount> {
-  const data = await brokerGet<Record<string, unknown>>(
-    `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${new Date().toISOString().split('T')[0]}`
-  )
-  return {
-    id:            String(data.accountId ?? accountId),
-    accountNumber: String(data.accountNo ?? ''),
-    accountName:   String(data.accountLabel ?? ''),
-    balance:       Number(data.totalValue ?? 0),
-    currency:      String(data.reportCurrency ?? 'NGN'),
-    status:        'ACTIVE',
+  const valueDate = new Date().toISOString().split('T')[0]
+  try {
+    const data = await brokerGet<Record<string, unknown>>(
+      `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`
+    )
+    console.log('[getAccountById] response', JSON.stringify(data).slice(0, 500))
+    return {
+      id:            String(data.accountId ?? accountId),
+      accountNumber: String(data.accountNo ?? data.accountNumber ?? ''),
+      accountName:   String(data.accountLabel ?? data.accountName ?? ''),
+      balance:       Number(data.totalValue ?? data.balance ?? 0),
+      currency:      String(data.reportCurrency ?? 'NGN'),
+      status:        'ACTIVE',
+    }
+  } catch {
+    // Fallback: try CRM client endpoint for basic account info
+    const crm = await brokerGet<Record<string, unknown>>(`/crm/api/v1/clients/${accountId}`)
+    console.log('[getAccountById] CRM fallback', JSON.stringify(crm).slice(0, 500))
+    return {
+      id:            String(crm.id ?? accountId),
+      accountNumber: String(crm.accountNo ?? crm.label ?? ''),
+      accountName:   String(crm.label ?? crm.fullName ?? ''),
+      balance:       0,
+      currency:      'NGN',
+      status:        'ACTIVE',
+    }
   }
 }
 
 export async function getClientPositions(accountId: string): Promise<PacPosition[]> {
   const valueDate = new Date().toISOString().split('T')[0]
-  const data = await brokerGet<{
-    positionInstruments?: unknown[]
-    positions?: unknown[]
-    data?: unknown[]
-  }>(`/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`)
-  const list = data.positionInstruments ?? data.positions ?? data.data ?? (Array.isArray(data) ? data : [])
-  return (list as unknown[]).map(normalizePosition)
+  try {
+    const data = await brokerGet<Record<string, unknown>>(
+      `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`
+    )
+    console.log('[getClientPositions] response', JSON.stringify(data).slice(0, 800))
+    const list = (data as { positionInstruments?: unknown[]; positions?: unknown[]; data?: unknown[] }).positionInstruments
+      ?? (data as { positions?: unknown[] }).positions
+      ?? (data as { data?: unknown[] }).data
+      ?? (Array.isArray(data) ? data : [])
+    return (list as unknown[]).map(normalizePosition)
+  } catch (e) {
+    const msg = (e as Error).message
+    // 404 = new account with no trading record yet — return empty
+    if (msg.includes('404') || msg.toLowerCase().includes('not found')) return []
+    throw e
+  }
 }
 
 export async function placeOrder(order: PacOrderRequest): Promise<PacOrderResponse> {
@@ -295,6 +320,7 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
     accountId:    order.accountId,
     secId:        order.symbol,
     side:         order.side,
+    orderType:    order.orderType,
     requestedQty: order.quantity,
     tif:          'DAY',
     marketCode:   'NGX',
@@ -303,8 +329,9 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
     assetType:    'EQUITY',
     allOrNone:    false,
     autoApprove:  true,
-    ...(order.limitPrice ? { limitPrice: order.limitPrice } : {}),
+    ...(order.orderType === 'LIMIT' && order.limitPrice ? { limitPrice: order.limitPrice } : {}),
   }
+  console.log('[placeOrder] body', JSON.stringify(body))
   return brokerPost('/investing/api/v1/orders', body)
 }
 
@@ -383,21 +410,17 @@ let _cachedGroupId: string | null = null
 
 async function getDefaultGroupId(): Promise<string> {
   if (_cachedGroupId) return _cachedGroupId
-  try {
-    await getBearerToken()
-    const data = await pacProxy<{ data?: { id: string }[]; content?: { id: string }[] } | { id: string }[]>(
-      '/crm/api/v1/client_groups?page=0&size=1', 'GET'
-    )
-    const list = Array.isArray(data) ? data
-      : (data as { data?: { id: string }[]; content?: { id: string }[] }).data
-      ?? (data as { content?: { id: string }[] }).content
-      ?? []
-    const id = list[0]?.id ?? ''
-    if (id) _cachedGroupId = id
-    return id
-  } catch {
-    return ''
-  }
+  await getBearerToken()
+  // GET is not allowed on client_groups — create one instead
+  const data = await pacProxy<Record<string, unknown>>('/crm/api/v1/client_groups', 'POST', {
+    name:        'Moneta Retail',
+    description: 'Default client group for Moneta app users',
+  })
+  console.log('[getDefaultGroupId] create group response', JSON.stringify(data))
+  const id = String(data.id ?? data.groupId ?? '')
+  if (!id) throw new Error('PAC did not return a group ID — check browser console')
+  _cachedGroupId = id
+  return id
 }
 
 export async function createBrokerAccount(details: {
@@ -423,7 +446,8 @@ export async function createBrokerAccount(details: {
     country:      'NG',
   }
 
-  const groupId = (import.meta.env.VITE_PAC_GROUP_ID as string | undefined) || await getDefaultGroupId()
+  const envGroupId = import.meta.env.VITE_PAC_GROUP_ID as string | undefined
+  const groupId = envGroupId || await getDefaultGroupId()
 
   const data = await brokerPost<Record<string, unknown>>(
     '/crm/api/v1/clients',
@@ -434,7 +458,7 @@ export async function createBrokerAccount(details: {
       mobileNo,
       valuationCurrency: 'NGN',
       clientType:        'INDIVIDUAL',
-      groupId:           groupId || undefined,
+      groupId,
       address:           [addr],
       contact: [{
         role:             'INDV_OWNER',
@@ -457,7 +481,9 @@ export async function createBrokerAccount(details: {
     }
   )
 
-  const id = String(data.id ?? data.clientId ?? data.accountId ?? '')
+  console.log('[createBrokerAccount] raw response', JSON.stringify(data))
+  // Prefer accountId (trading) over id (CRM) so positions/orders work immediately
+  const id = String(data.accountId ?? data.id ?? data.clientId ?? '')
   if (!id) throw new Error('Broker did not return a client ID')
   return id
 }

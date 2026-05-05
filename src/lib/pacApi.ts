@@ -413,8 +413,12 @@ async function getDefaultGroupId(): Promise<string> {
   await getBearerToken()
   // GET is not allowed on client_groups — create one instead
   const data = await pacProxy<Record<string, unknown>>('/crm/api/v1/client_groups', 'POST', {
-    name:        'Moneta Retail',
-    description: 'Default client group for Moneta app users',
+    label:             'Moneta Retail',
+    code:              'MNT001',
+    type:              'RETAIL',
+    valuationCurrency: 'NGN',
+    active:            true,
+    description:       'Default client group for Moneta app users',
   })
   console.log('[getDefaultGroupId] create group response', JSON.stringify(data))
   const id = String(data.id ?? data.groupId ?? '')

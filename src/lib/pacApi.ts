@@ -372,24 +372,60 @@ function normalizePosition(d: unknown): PacPosition {
 }
 
 
+const ID_TYPE_MAP: Record<string, string> = {
+  'National ID (NIN)':       'NATIONAL_ID',
+  'International Passport':  'PASSPORT',
+  "Driver's Licence":        'DRIVERS_LICENSE',
+  "Voter's Card":            'VOTERS_CARD',
+}
+
 export async function createBrokerAccount(details: {
-  fullName: string
-  email: string
-  phone: string
-  bvn: string
+  fullName:  string
+  email:     string
+  phone:     string
+  bvn:       string
+  dob?:      string
+  address?:  string
+  idType?:   string
+  idNumber?: string
 }): Promise<string> {
+  const [firstName, ...rest] = details.fullName.trim().split(' ')
+  const lastName = rest.join(' ') || firstName
+  const mobileNo = parseInt(details.phone.replace(/\D/g, ''), 10) || 0
+
   const data = await brokerPost<Record<string, unknown>>(
-    '/position/api/v1/accounts',
+    '/crm/api/v1/clients',
     {
-      name:    details.fullName,
-      email:   details.email,
-      phone:   details.phone,
-      bvn:     details.bvn,
-      currency: 'NGN',
+      label:             details.fullName,
+      email:             details.email,
+      notificationEmail: details.email,
+      mobileNo,
+      valuationCurrency: 'NGN',
+      contact: [{
+        role:        'INDV_OWNER',
+        label:       details.fullName,
+        firstName,
+        lastName,
+        email:       details.email,
+        mobileNo,
+        finIdNo:     details.bvn,
+        idType:      ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
+        idNo:        details.idNumber ?? '',
+        birthDate:   details.dob ?? '',
+        nationality: 'NGA',
+      }],
+      ...(details.address ? {
+        address: [{
+          type:         'PRIMARY',
+          addressLine1: details.address,
+          country:      'NG',
+        }],
+      } : {}),
     }
   )
-  const id = data.accountId ?? data.id ?? data.account_id ?? data.accountNumber ?? ''
-  if (!id) throw new Error('Broker did not return an account ID')
-  return String(id)
+
+  const id = String(data.id ?? data.clientId ?? data.accountId ?? '')
+  if (!id) throw new Error('Broker did not return a client ID')
+  return id
 }
 

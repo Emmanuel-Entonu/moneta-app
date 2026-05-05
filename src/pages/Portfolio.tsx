@@ -270,15 +270,19 @@ export default function Portfolio() {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, phone, bvn')
+        .select('full_name, phone, bvn, date_of_birth, address, id_type, id_number')
         .eq('id', userId)
         .single()
       if (!profile?.full_name || !profile?.bvn) throw new Error('KYC data missing — please complete KYC first')
       const pacId = await createBrokerAccount({
-        fullName: profile.full_name,
-        email: userEmail,
-        phone: profile.phone ?? '',
-        bvn: profile.bvn,
+        fullName:  profile.full_name,
+        email:     userEmail,
+        phone:     profile.phone ?? '',
+        bvn:       profile.bvn,
+        dob:       profile.date_of_birth ?? '',
+        address:   profile.address ?? '',
+        idType:    profile.id_type ?? '',
+        idNumber:  profile.id_number ?? '',
       })
       await supabase.from('profiles').update({ pac_account_id: pacId }).eq('id', userId)
       await loadProfile()
@@ -325,7 +329,7 @@ export default function Portfolio() {
         </div>
       )}
 
-      {/* Broker account not linked — retry without re-doing KYC */}
+      {/* Broker account not linked — retry using saved KYC data */}
       {kycStatus === 'verified' && !pacAccountId && (
         <div style={{ margin: '12px 16px 0', background: 'linear-gradient(135deg, #1e3a5f, #1d4ed8)', borderRadius: 16, padding: '14px 16px', boxShadow: '0 4px 16px rgba(29,78,216,0.25)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: brokerLinkError ? 10 : 0 }}>
@@ -336,13 +340,9 @@ export default function Portfolio() {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ color: '#fff', fontWeight: 800, fontSize: 13, margin: 0 }}>Broker Account Not Linked</p>
-              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Your KYC is verified — tap to link your trading account</p>
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Your KYC is verified — tap to activate your trading account</p>
             </div>
-            <button
-              onClick={retryBrokerLink}
-              disabled={brokerLinking}
-              style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#1d4ed8', fontWeight: 800, fontSize: 12, border: 'none', cursor: brokerLinking ? 'wait' : 'pointer', flexShrink: 0, opacity: brokerLinking ? 0.7 : 1 }}
-            >
+            <button onClick={retryBrokerLink} disabled={brokerLinking} style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#1d4ed8', fontWeight: 800, fontSize: 12, border: 'none', cursor: brokerLinking ? 'wait' : 'pointer', flexShrink: 0, opacity: brokerLinking ? 0.7 : 1 }}>
               {brokerLinking ? 'Linking…' : 'Link Now'}
             </button>
           </div>

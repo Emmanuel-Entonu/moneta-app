@@ -72,18 +72,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(status).json(json)
     }
 
-    // ── Step 1: BVN Query (igree) → triggers OTP to user's phone ────────────
+    // ── Step 1: BVN Query (igree) → triggers OTP to user's BVN-linked phone ─
     // Docs: POST /api/bvn/bvn_query
     // Body: { bvn, bvn_query_type, scope, channel_code, customer_reference }
+    // We generate customer_reference so we control the value for Step 2.
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
+    const customerReference = `MON-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+
     const { status, json } = await proxyPost('bvn/query', token, {
       bvn,
-      bvn_query_type: 'igree',
-      scope:          'profile',
-      channel_code:   'mobile_app',
+      bvn_query_type:     'igree',
+      scope:              'profile',
+      channel_code:       'mobile_app',
+      customer_reference: customerReference,
     })
+
+    // Always surface our reference so the client can use it in Step 2
+    if (status >= 200 && status < 300 && json && typeof json === 'object') {
+      json.customer_reference = customerReference
+    }
+
     return res.status(status).json(json)
 
   } catch (e) {

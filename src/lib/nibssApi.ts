@@ -47,49 +47,6 @@ function parseProfile(raw: Record<string, unknown>): BvnProfile {
   }
 }
 
-// Recursively searches any object for the first string/number value whose key
-// looks like a reference/session/tracking identifier.
-const REF_KEY_RE = /ref|reference|session|track|request|token|id|key|correl/i
-function findReference(obj: unknown, depth = 0): string {
-  if (depth > 5 || obj === null || typeof obj !== 'object') return ''
-  const record = obj as Record<string, unknown>
-
-  // Priority 1 — well-known exact key names
-  const priorityKeys = [
-    'customer_reference', 'customerReference',
-    'reference', 'ref', 'requestId', 'request_id', 'trackingId', 'tracking_id',
-    'sessionId', 'session_id', 'verificationRef', 'referenceId', 'reference_id',
-    'transRef', 'transactionRef', 'otpRef', 'bvnRef', 'refCode', 'correlationId',
-    'reqId', 'token', 'id',
-  ]
-  for (const key of priorityKeys) {
-    const val = record[key]
-    if (typeof val === 'string' && val.length >= 4) return val
-    if (typeof val === 'number' && val > 0) return String(val)
-  }
-
-  // Priority 2 — any key that matches the ref-pattern regex
-  for (const [key, val] of Object.entries(record)) {
-    if (REF_KEY_RE.test(key) && typeof val === 'string' && val.length >= 4) return val
-    if (REF_KEY_RE.test(key) && typeof val === 'number' && val > 0) return String(val)
-  }
-
-  // Priority 3 — recurse into nested objects / arrays
-  for (const val of Object.values(record)) {
-    if (Array.isArray(val)) {
-      for (const item of val) {
-        const found = findReference(item, depth + 1)
-        if (found) return found
-      }
-    } else if (val && typeof val === 'object') {
-      const found = findReference(val, depth + 1)
-      if (found) return found
-    }
-  }
-
-  return ''
-}
-
 // Step 1 — sends OTP to the BVN owner's phone, returns a reference for step 2
 export async function initiateBvn(bvn: string): Promise<BvnInitResult> {
   const res = await fetch('/api/nibss-bvn', {
@@ -114,25 +71,20 @@ export async function initiateBvn(bvn: string): Promise<BvnInitResult> {
     throw new Error(String(raw.message ?? raw.error ?? `BVN query failed (${res.status})`))
   }
 
-  const reference = findReference(raw)
-  console.log('[nibss initiate] extracted reference:', reference)
+  // The proxy always injects customer_reference into a successful Step 1 response
+  const reference = String(raw.customer_reference ?? '')
+  console.log('[nibss initiate] customer_reference:', reference)
+
+  if (!reference) {
+    console.error('[nibss initiate] No customer_reference in response. Keys:', Object.keys(raw))
+    throw new Error(`BVN query succeeded but returned no reference. Keys: ${Object.keys(raw).join(', ')}`)
+  }
 
   const d = raw.data as Record<string, unknown> | undefined
   const maskedPhone = String(
     d?.maskedPhone ?? d?.masked_phone ?? d?.phoneNumber ?? d?.phone ??
-    (raw as Record<string, unknown>).maskedPhone ?? ''
+    raw.maskedPhone ?? ''
   )
-
-  if (!reference) {
-    // OTP was sent but the proxy didn't return any recognisable reference field.
-    // Log everything so the actual keys are visible in the browser console.
-    console.error('[nibss initiate] Could not find reference. Full response keys:', Object.keys(raw))
-    if (d) console.error('[nibss initiate] data keys:', Object.keys(d))
-    throw new Error(
-      `OTP sent but no reference returned. Raw keys: ${Object.keys(raw).join(', ')}` +
-      (d ? ` | data keys: ${Object.keys(d).join(', ')}` : '')
-    )
-  }
 
   return { otpRequired: true, reference, maskedPhone }
 }

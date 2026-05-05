@@ -379,7 +379,26 @@ const ID_TYPE_MAP: Record<string, string> = {
   "Voter's Card":            'VOTERS_CARD',
 }
 
-const PAC_GROUP_ID = (import.meta.env.VITE_PAC_GROUP_ID as string | undefined) || ''
+let _cachedGroupId: string | null = null
+
+async function getDefaultGroupId(): Promise<string> {
+  if (_cachedGroupId) return _cachedGroupId
+  try {
+    await getBearerToken()
+    const data = await pacProxy<{ data?: { id: string }[]; content?: { id: string }[] } | { id: string }[]>(
+      '/crm/api/v1/client-groups?page=0&size=1', 'GET'
+    )
+    const list = Array.isArray(data) ? data
+      : (data as { data?: { id: string }[]; content?: { id: string }[] }).data
+      ?? (data as { content?: { id: string }[] }).content
+      ?? []
+    const id = list[0]?.id ?? ''
+    if (id) _cachedGroupId = id
+    return id
+  } catch {
+    return ''
+  }
+}
 
 export async function createBrokerAccount(details: {
   fullName:  string
@@ -404,6 +423,8 @@ export async function createBrokerAccount(details: {
     country:      'NG',
   }
 
+  const groupId = (import.meta.env.VITE_PAC_GROUP_ID as string | undefined) || await getDefaultGroupId()
+
   const data = await brokerPost<Record<string, unknown>>(
     '/crm/api/v1/clients',
     {
@@ -413,7 +434,7 @@ export async function createBrokerAccount(details: {
       mobileNo,
       valuationCurrency: 'NGN',
       clientType:        'INDIVIDUAL',
-      groupId:           PAC_GROUP_ID || undefined,
+      groupId:           groupId || undefined,
       address:           [addr],
       contact: [{
         role:             'INDV_OWNER',

@@ -58,30 +58,6 @@ function StepIndicator({ current }: { current: Step }) {
   )
 }
 
-function ReadonlyField({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{
-        display: 'block', fontSize: 11, fontWeight: 700,
-        color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6,
-      }}>
-        {label}
-      </label>
-      <div style={{
-        padding: '13px 14px', background: '#f0fdf4',
-        border: '1.5px solid #a7f3d0', borderRadius: 12,
-        fontSize: 15, fontWeight: 600, color: '#065f46',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <span>{value || '—'}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-      </div>
-    </div>
-  )
-}
 
 function Field({
   label, value, onChange, placeholder, type = 'text', hint,

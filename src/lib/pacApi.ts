@@ -412,19 +412,6 @@ async function getDefaultGroupId(): Promise<string> {
   if (_cachedGroupId) return _cachedGroupId
   await getBearerToken()
 
-  // Try listing existing groups first
-  try {
-    const list = await pacProxy<{ content?: { id: string }[] }>(
-      '/crm/api/v1/client_groups/list?order=asc&page=0&size=1&sort=code', 'GET'
-    )
-    console.log('[getDefaultGroupId] list response', JSON.stringify(list).slice(0, 500))
-    const id = String(list.content?.[0]?.id ?? '')
-    if (id) { _cachedGroupId = id; return id }
-  } catch (e) {
-    console.log('[getDefaultGroupId] list failed, will create:', (e as Error).message)
-  }
-
-  // No groups exist — create one
   const created = await pacProxy<{ id?: string }>('/crm/api/v1/client_groups', 'POST', {
     type:              'INDIVIDUAL',
     active:            true,
@@ -432,9 +419,9 @@ async function getDefaultGroupId(): Promise<string> {
     label:             'Moneta Retail',
     valuationCurrency: 'NGN',
   })
-  console.log('[getDefaultGroupId] created group', JSON.stringify(created))
+  console.log('[getDefaultGroupId] group response', JSON.stringify(created))
   const id = String(created.id ?? '')
-  if (!id) throw new Error('Could not get or create a client group')
+  if (!id) throw new Error('PAC did not return a group ID — check Vercel logs')
   _cachedGroupId = id
   return id
 }

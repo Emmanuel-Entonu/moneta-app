@@ -15,6 +15,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ...(!isGet ? { 'Content-Type': 'application/json' } : {}),
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
+  const idempotencyId = req.headers['x-idempotency-id'] as string | undefined
+  if (idempotencyId) headers['x-idempotency-id'] = idempotencyId
 
   const body = !isGet ? JSON.stringify(req.body) : undefined
 

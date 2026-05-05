@@ -30,7 +30,7 @@ let _tokenPromise: Promise<string> | null = null
 
 const PROXY_PATH = '/api/pac-proxy'
 
-async function pacProxy<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+async function pacProxy<T>(path: string, method = 'GET', body?: unknown, extraHeaders?: Record<string, string>): Promise<T> {
   const token = _bearerToken ?? ''
   const url = `${PROXY_PATH}?path=${encodeURIComponent(path)}`
   const isGet = method === 'GET' || method === 'HEAD'
@@ -39,6 +39,7 @@ async function pacProxy<T>(path: string, method = 'GET', body?: unknown): Promis
     headers: {
       ...(!isGet ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { 'x-pac-token': token } : {}),
+      ...(extraHeaders ?? {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   })
@@ -79,9 +80,9 @@ async function brokerGet<T>(path: string): Promise<T> {
   return pacProxy<T>(path, 'GET')
 }
 
-async function brokerPost<T>(path: string, body: unknown): Promise<T> {
+async function brokerPost<T>(path: string, body: unknown, extraHeaders?: Record<string, string>): Promise<T> {
   await getBearerToken()
-  return pacProxy<T>(path, 'POST', body)
+  return pacProxy<T>(path, 'POST', body, extraHeaders)
 }
 
 async function brokerPatch<T>(path: string, body?: unknown): Promise<T> {
@@ -341,7 +342,6 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
     accountId:    order.accountId,
     secId:        order.symbol,
     side:         order.side,
-    orderType:    order.orderType,
     requestedQty: order.quantity,
     tif:          'DAY',
     marketCode:   'NGX',
@@ -350,10 +350,12 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
     assetType:    'EQUITY',
     allOrNone:    false,
     autoApprove:  true,
+    channel:      'MOBILE',
     ...(order.orderType === 'LIMIT' && order.limitPrice ? { limitPrice: order.limitPrice } : {}),
   }
-  console.log('[placeOrder] body', JSON.stringify(body))
-  return brokerPost('/investing/api/v1/orders', body)
+  const idempotencyId = crypto.randomUUID()
+  console.log('[placeOrder] body', JSON.stringify(body), 'idempotencyId', idempotencyId)
+  return brokerPost('/investing/api/v1/orders', body, { 'x-idempotency-id': idempotencyId })
 }
 
 export async function cancelOrder(pacOrderId: string): Promise<PacOrderResponse> {

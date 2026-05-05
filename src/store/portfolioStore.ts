@@ -76,7 +76,12 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     } catch (e) {
       const msg = (e as Error).message ?? String(e)
       console.error('loadPositions error:', msg)
-      set({ positions: [], apiStatus: `ERROR: ${msg}` })
+      // 404 means the broker account doesn't exist yet — show empty, no error banner
+      if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
+        set({ positions: [] })
+      } else {
+        set({ positions: [], apiStatus: `ERROR: ${msg}` })
+      }
     } finally {
       set({ loadingPortfolio: false })
     }

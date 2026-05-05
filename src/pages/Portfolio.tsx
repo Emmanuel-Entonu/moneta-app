@@ -241,9 +241,10 @@ export default function Portfolio() {
 
   useEffect(() => {
     loadProfile()
-    const id = pacAccountId ?? 'demo-account'
-    loadAccount(id)
-    loadPositions(id)
+    if (pacAccountId) {
+      loadAccount(pacAccountId)
+      loadPositions(pacAccountId)
+    }
     // Auto-show verify sheet if a payment was pending when app reloads
     if (localStorage.getItem('moneta_pending_ref')) setShowVerify(true)
   }, [pacAccountId])

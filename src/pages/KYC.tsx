@@ -220,7 +220,7 @@ export default function KYC() {
       })
       if (dbError) throw new Error(dbError.message)
 
-      let pacAccountId: string
+      let pacAccountId: string | null = null
       try {
         pacAccountId = await createBrokerAccount({
           fullName,
@@ -228,12 +228,14 @@ export default function KYC() {
           phone,
           bvn,
         })
-      } catch {
-        pacAccountId = '0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e'
+      } catch (e) {
+        console.warn('Broker account creation failed (will retry later):', e)
       }
 
-      const { error: updateErr } = await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
-      if (updateErr) throw new Error(`Failed to save broker account: ${updateErr.message}`)
+      if (pacAccountId) {
+        const { error: updateErr } = await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+        if (updateErr) throw new Error(`Failed to save broker account: ${updateErr.message}`)
+      }
 
       await loadProfile()
       const dest = localStorage.getItem(`moneta_onboarded_${user?.id}`) ? '/market' : '/onboarding'

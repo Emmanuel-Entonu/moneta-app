@@ -281,14 +281,16 @@ export default function Portfolio() {
       loadOrders(pacAccountId)
       if (userId) {
         supabase.from('orders').select('id, pac_order_id').eq('user_id', userId)
-          .then(({ data }) => {
-            const map: Record<string, string> = {}
-            ;(data as { id: string; pac_order_id: string | null }[] ?? []).forEach(r => {
-              if (r.pac_order_id) map[r.pac_order_id] = r.id
-            })
-            setSupabaseIdMap(map)
-          })
-          .catch(() => {})
+          .then(
+            ({ data }) => {
+              const map: Record<string, string> = {}
+              ;(data as { id: string; pac_order_id: string | null }[] ?? []).forEach(r => {
+                if (r.pac_order_id) map[r.pac_order_id] = r.id
+              })
+              setSupabaseIdMap(map)
+            },
+            () => {},
+          )
       }
     } else if (userId) {
       setOrdersLoading(true)

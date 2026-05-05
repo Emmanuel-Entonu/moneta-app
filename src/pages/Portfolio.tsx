@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { initializePayment, verifyPayment, MONETA_CONFIGURED, type PaymentType } from '../lib/monetaApi'
+import { createBrokerAccount } from '../lib/pacApi'
 
 interface OrderRecord {
   id: string
@@ -231,7 +232,10 @@ export default function Portfolio() {
   const [creditBanner, setCreditBanner] = useState<number | null>(null)
   const [orders, setOrders]             = useState<OrderRecord[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
+  const [brokerLinking, setBrokerLinking] = useState(false)
+  const [brokerLinkError, setBrokerLinkError] = useState<string | null>(null)
   const userId = useAuthStore((s) => s.user?.id)
+  const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
   const totalValue = positions.reduce((s, p) => s + p.marketValue, 0)
   const totalPnL = positions.reduce((s, p) => s + p.unrealizedPnL, 0)
@@ -259,6 +263,31 @@ export default function Portfolio() {
         () => setOrdersLoading(false),
       )
   }, [tab, userId])
+
+  async function retryBrokerLink() {
+    if (!userId) return
+    setBrokerLinking(true); setBrokerLinkError(null)
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, phone, bvn')
+        .eq('id', userId)
+        .single()
+      if (!profile?.full_name || !profile?.bvn) throw new Error('KYC data missing — please complete KYC first')
+      const pacId = await createBrokerAccount({
+        fullName: profile.full_name,
+        email: userEmail,
+        phone: profile.phone ?? '',
+        bvn: profile.bvn,
+      })
+      await supabase.from('profiles').update({ pac_account_id: pacId }).eq('id', userId)
+      await loadProfile()
+    } catch (e: unknown) {
+      setBrokerLinkError((e as Error).message)
+    } finally {
+      setBrokerLinking(false)
+    }
+  }
 
   const sorted = [...positions].sort((a, b) => b.marketValue - a.marketValue)
 
@@ -293,6 +322,33 @@ export default function Portfolio() {
             <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Complete your identity check to trade stocks on the NGX</p>
           </div>
           <button onClick={() => navigate('/kyc')} style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#b45309', fontWeight: 800, fontSize: 12, border: 'none', cursor: 'pointer', flexShrink: 0 }}>Verify Now</button>
+        </div>
+      )}
+
+      {/* Broker account not linked — retry without re-doing KYC */}
+      {kycStatus === 'verified' && !pacAccountId && (
+        <div style={{ margin: '12px 16px 0', background: 'linear-gradient(135deg, #1e3a5f, #1d4ed8)', borderRadius: 16, padding: '14px 16px', boxShadow: '0 4px 16px rgba(29,78,216,0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: brokerLinkError ? 10 : 0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ color: '#fff', fontWeight: 800, fontSize: 13, margin: 0 }}>Broker Account Not Linked</p>
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Your KYC is verified — tap to link your trading account</p>
+            </div>
+            <button
+              onClick={retryBrokerLink}
+              disabled={brokerLinking}
+              style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#1d4ed8', fontWeight: 800, fontSize: 12, border: 'none', cursor: brokerLinking ? 'wait' : 'pointer', flexShrink: 0, opacity: brokerLinking ? 0.7 : 1 }}
+            >
+              {brokerLinking ? 'Linking…' : 'Link Now'}
+            </button>
+          </div>
+          {brokerLinkError && (
+            <p style={{ color: '#fca5a5', fontSize: 11, fontWeight: 600, margin: 0, paddingLeft: 52 }}>{brokerLinkError}</p>
+          )}
         </div>
       )}
 

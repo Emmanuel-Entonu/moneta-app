@@ -307,11 +307,12 @@ export default function KYC() {
                           body: JSON.stringify({ bvn }),
                         })
                         const json = await res.json() as Record<string, unknown>
-                        const ref = String(json.customer_reference ?? '')
-                        if (ref) setBvnReference(ref)
-                        else setBvnError('Could not send OTP. Enter details manually.')
+                        // Try multiple locations for the reference
+                        const d = (json.data ?? json) as Record<string, unknown>
+                        const ref = String(json.customer_reference ?? d.customer_reference ?? d.reference ?? '')
+                        setBvnReference(ref || 'pending')  // show OTP input regardless
                       } catch {
-                        setBvnError('BVN check failed. Enter details manually.')
+                        setBvnReference('pending')  // still show OTP input, let user try
                       } finally {
                         setBvnLoading(false)
                       }
@@ -335,7 +336,10 @@ export default function KYC() {
               {/* OTP input — shown after OTP is sent */}
               {bvnReference && !bvnDone && (
                 <div style={{ marginTop: 12, padding: '14px', background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
-                  <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700, marginBottom: 8 }}>OTP sent to your BVN-linked number</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700 }}>OTP sent to your BVN-linked number</p>
+                    <button onClick={() => { setBvnDone(true); setBvnReference(null) }} style={{ fontSize: 11, color: '#059669', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Fill manually</button>
+                  </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       type="tel"

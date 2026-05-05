@@ -147,8 +147,6 @@ export default function KYC() {
         date_of_birth: dob || null,
         address,
         bvn,
-        id_type: idType || null,
-        id_number: idNumber || null,
         kyc_status: 'verified',
         kyc_doc_url: kycDocUrl,
       })

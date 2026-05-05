@@ -270,7 +270,7 @@ export default function Portfolio() {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, phone, bvn, date_of_birth, address, id_type, id_number')
+        .select('full_name, phone, bvn, date_of_birth, address')
         .eq('id', userId)
         .single()
       if (!profile?.full_name || !profile?.bvn) throw new Error('KYC data missing — please complete KYC first')
@@ -281,8 +281,6 @@ export default function Portfolio() {
         bvn:       profile.bvn,
         dob:       profile.date_of_birth ?? '',
         address:   profile.address ?? '',
-        idType:    profile.id_type ?? '',
-        idNumber:  profile.id_number ?? '',
       })
       await supabase.from('profiles').update({ pac_account_id: pacId }).eq('id', userId)
       await loadProfile()

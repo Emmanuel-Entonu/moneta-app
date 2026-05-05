@@ -2,41 +2,50 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
-const NIBSS_SVC  = process.env.VITE_MONETA_NIBSS_TOKEN   ?? ''
+
+const TOKEN_URL = 'https://www.nips.moneta.ng/api/access-token'
+const BVN_BASE  = 'https://staging-nips.moneta.ng'
 
 let _token: string | null = null
 
-async function getServiceToken(): Promise<string> {
+async function getToken(): Promise<string> {
   if (_token) return _token
-  const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
-  const res = await fetch('https://moneta-proxy.fly.dev/api/v2/generate-access-token', {
+  const res = await fetch(TOKEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
+    headers: {
+      'Authorization': `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}`).toString('base64')}`,
+      'Content-Type': 'application/json',
+    },
   })
-  if (!res.ok) throw new Error(`Token failed (${res.status}): ${await res.text()}`)
-  const data = await res.json() as { status: boolean; data?: string; message?: string }
-  if (!data.status || !data.data) throw new Error(data.message ?? 'Token exchange failed')
+  const text = await res.text()
+  console.log('[nibss token]', res.status, text)
+  const data = JSON.parse(text) as { status: boolean; data?: string; message?: string }
+  if (!data.status || !data.data) throw new Error(data.message ?? 'Token failed')
   _token = data.data
   return _token
 }
 
-async function proxyPost(path: string, token: string, payload: object) {
-  const upstream = await fetch(`https://moneta-proxy.fly.dev/api/v2/${path}`, {
+async function bvnPost(path: string, token: string, payload: object) {
+  const res = await fetch(`${BVN_BASE}${path}`, {
     method: 'POST',
     headers: {
-      'Content-Type':    'application/json',
-      'Accept':          'application/json',
-      'X-Service-Token': token,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
   })
-  const text = await upstream.text()
-  console.log(`[nibss-bvn ${path}] ${upstream.status}: ${text}`)
+  const text = await res.text()
+  console.log(`[nibss ${path}] ${res.status}: ${text}`)
   try {
-    return { status: upstream.status, json: JSON.parse(text) }
+    return { status: res.status, json: JSON.parse(text) }
   } catch {
-    return { status: upstream.status, json: { error: text.slice(0, 800) } }
+    return { status: res.status, json: { error: text.slice(0, 800) } }
   }
+}
+
+function makeRef(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -49,22 +58,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = req.body as {
     bvn?: string
     action?: string
-    reference?: string  // customer_reference from step 1
-    otp?: string        // code entered by the user
+    reference?: string
+    otp?: string
   }
 
   try {
-    const token = await getServiceToken()
+    const token = await getToken()
 
-    // ── Step 2: Get BVN Details ──────────────────────────────────────────────
-    // Docs: POST /api/bvn/getBvnDetails
-    // Body: { customer_reference, code (the OTP), scope }
+    // Step 2 — verify OTP, get BVN profile
     if (body.action === 'get-bvn-details') {
       const { reference, otp } = body
-      if (!reference || !otp) {
-        return res.status(400).json({ error: 'customer_reference and code (OTP) are required' })
-      }
-      const { status, json } = await proxyPost('bvn/getBvnDetails', token, {
+      if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
+      const { status, json } = await bvnPost('/api/bvn/getBvnDetails', token, {
         customer_reference: reference,
         code:               otp,
         scope:              'profile',
@@ -72,25 +77,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(status).json(json)
     }
 
-    // ── Step 1: BVN Query (igree) → triggers OTP to user's BVN-linked phone ─
-    // Docs: POST /api/bvn/bvn_query
-    // Body: { bvn, bvn_query_type, scope, channel_code, customer_reference }
-    // We generate customer_reference so we control the value for Step 2.
+    // Step 1 — onboard BVN, triggers OTP to BVN-linked phone
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
-    const { status, json } = await proxyPost('bvn/query', token, {
+    const customerReference = makeRef() // exactly 12 chars as docs require
+
+    const { status, json } = await bvnPost('/api/bvn/bvn_onboard', token, {
       bvn,
-      bvn_query_type: 'igree',
-      scope:          'profile',
-      channel_code:   'mobile_app',
+      scope:              'profile',
+      channel_code:       'mobile_app',
+      customer_reference: customerReference,
     })
 
-    // Moneta auto-generates a customer_reference inside data — bubble it to top level
-    // so the client can pass it directly to Step 2 (getBvnDetails)
+    // Surface our reference at top level so client uses it in Step 2
     if (status >= 200 && status < 300 && json && typeof json === 'object') {
-      const ref = (json.data as Record<string, unknown> | undefined)?.customer_reference
-      if (ref) json.customer_reference = ref
+      json.customer_reference = customerReference
     }
 
     return res.status(status).json(json)

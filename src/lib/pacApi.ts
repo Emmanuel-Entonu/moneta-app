@@ -406,12 +406,6 @@ const ID_TYPE_MAP: Record<string, string> = {
   "Voter's Card":            'VOTERS_CARD',
 }
 
-let _cachedGroupId: string | null = null
-
-async function getDefaultGroupId(): Promise<string> {
-  // moneta-user lacks client_group_create/list roles — set VITE_PAC_GROUP_ID in Vercel env
-  throw new Error('Broker account setup pending — VITE_PAC_GROUP_ID not configured (contact WealthCare admin for the group UUID)')
-}
 
 export async function createBrokerAccount(details: {
   fullName:  string
@@ -436,10 +430,8 @@ export async function createBrokerAccount(details: {
     country:      'NG',
   }
 
-  const envGroupId = import.meta.env.VITE_PAC_GROUP_ID as string | undefined
-  const groupId = envGroupId || await getDefaultGroupId()
-
-  const data = await brokerPost<Record<string, unknown>>(
+  // ── Step 1: Create CRM client ────────────────────────────────────────────────
+  const crmData = await brokerPost<Record<string, unknown>>(
     '/crm/api/v1/clients',
     {
       label:             details.fullName,
@@ -448,7 +440,6 @@ export async function createBrokerAccount(details: {
       mobileNo,
       valuationCurrency: 'NGN',
       clientType:        'INDIVIDUAL',
-      groupId,
       address:           [addr],
       contact: [{
         role:             'INDV_OWNER',
@@ -470,11 +461,33 @@ export async function createBrokerAccount(details: {
       }],
     }
   )
+  console.log('[createBrokerAccount] CRM response', JSON.stringify(crmData))
+  const clientId = String(crmData.id ?? crmData.clientId ?? '')
+  if (!clientId) throw new Error('Broker did not return a CRM client ID')
 
-  console.log('[createBrokerAccount] raw response', JSON.stringify(data))
-  // Prefer accountId (trading) over id (CRM) so positions/orders work immediately
-  const id = String(data.accountId ?? data.id ?? data.clientId ?? '')
-  if (!id) throw new Error('Broker did not return a client ID')
-  return id
+  // ── Step 2: Create investment account ────────────────────────────────────────
+  const productId = import.meta.env.VITE_PAC_PRODUCT_ID as string | undefined
+  const branchId  = import.meta.env.VITE_PAC_BRANCH_ID  as string | undefined
+  if (!productId || !branchId) {
+    throw new Error('Investment account setup pending — VITE_PAC_PRODUCT_ID and VITE_PAC_BRANCH_ID must be set (contact WealthCare admin)')
+  }
+
+  const investData = await brokerPost<Record<string, unknown>>(
+    '/investing/api/v1/investment/accounts',
+    {
+      clientId,
+      productId,
+      branchId,
+      mgmtType:             'SELF',
+      accountUsage:         'LIVE',
+      accountLabel:         details.fullName,
+      directCashSettlement: false,
+      autoApprove:          true,
+    }
+  )
+  console.log('[createBrokerAccount] investment account response', JSON.stringify(investData))
+  const accountId = String(investData.id ?? '')
+  if (!accountId) throw new Error('Broker did not return an investment account ID')
+  return accountId
 }
 

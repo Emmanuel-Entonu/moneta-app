@@ -408,14 +408,15 @@ const ID_TYPE_MAP: Record<string, string> = {
 
 
 export async function createBrokerAccount(details: {
-  fullName:  string
-  email:     string
-  phone:     string
-  bvn:       string
-  dob?:      string
-  address?:  string
-  idType?:   string
-  idNumber?: string
+  fullName:   string
+  email:      string
+  phone:      string
+  bvn:        string
+  dob?:       string
+  address?:   string
+  idType?:    string
+  idNumber?:  string
+  crmClientId?: string  // pass to skip CRM step on retry
 }): Promise<string> {
   const [firstName, ...rest] = details.fullName.trim().split(' ')
   const lastName = rest.join(' ') || firstName
@@ -430,40 +431,43 @@ export async function createBrokerAccount(details: {
     country:      'NG',
   }
 
-  // ── Step 1: Create CRM client ────────────────────────────────────────────────
-  const crmData = await brokerPost<Record<string, unknown>>(
-    '/crm/api/v1/clients',
-    {
-      label:             details.fullName,
-      email:             details.email,
-      notificationEmail: details.email,
-      mobileNo,
-      valuationCurrency: 'NGN',
-      clientType:        'INDIVIDUAL',
-      address:           [addr],
-      contact: [{
-        role:             'INDV_OWNER',
-        label:            details.fullName,
-        firstName,
-        lastName,
-        email:            details.email,
+  // ── Step 1: Create CRM client (skip if already created) ─────────────────────
+  let clientId = details.crmClientId ?? ''
+  if (!clientId) {
+    const crmData = await brokerPost<Record<string, unknown>>(
+      '/crm/api/v1/clients',
+      {
+        label:             details.fullName,
+        email:             details.email,
+        notificationEmail: details.email,
         mobileNo,
-        title:            'MR',
-        gender:           'MALE',
-        maritalStatus:    'SINGLE',
-        grantLoginAccess: false,
-        finIdNo:          details.bvn,
-        idType:           ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
-        idNo:             details.idNumber ?? '',
-        birthDate:        details.dob ?? '',
-        nationality:      'NGA',
-        address:          addr,
-      }],
-    }
-  )
-  console.log('[createBrokerAccount] CRM response', JSON.stringify(crmData))
-  const clientId = String(crmData.id ?? crmData.clientId ?? '')
-  if (!clientId) throw new Error('Broker did not return a CRM client ID')
+        valuationCurrency: 'NGN',
+        clientType:        'INDIVIDUAL',
+        address:           [addr],
+        contact: [{
+          role:             'INDV_OWNER',
+          label:            details.fullName,
+          firstName,
+          lastName,
+          email:            details.email,
+          mobileNo,
+          title:            'MR',
+          gender:           'MALE',
+          maritalStatus:    'SINGLE',
+          grantLoginAccess: false,
+          finIdNo:          details.bvn,
+          idType:           ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
+          idNo:             details.idNumber ?? '',
+          birthDate:        details.dob ?? '',
+          nationality:      'NGA',
+          address:          addr,
+        }],
+      }
+    )
+    console.log('[createBrokerAccount] CRM response', JSON.stringify(crmData))
+    clientId = String(crmData.id ?? crmData.clientId ?? '')
+    if (!clientId) throw new Error('Broker did not return a CRM client ID')
+  }
 
   // ── Step 2: Create investment account ────────────────────────────────────────
   const productId = import.meta.env.VITE_PAC_PRODUCT_ID as string | undefined

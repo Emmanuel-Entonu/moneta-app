@@ -102,7 +102,6 @@ export default function KYC() {
   const [address, setAddress] = useState('')
 
   // Step 2
-  const [nin, setNin] = useState('')
   const [idType, setIdType] = useState('')
   const [idNumber, setIdNumber] = useState('')
 
@@ -122,7 +121,7 @@ export default function KYC() {
   }
 
   function canProceedStep1() {
-    return bvnDone && fullName.trim().length > 1 && address.trim().length > 4
+    return bvnDone && fullName.trim().length > 1 && address.trim().length > 4 && dob.trim().length > 0
   }
 
   function canProceedStep2() {
@@ -359,6 +358,11 @@ export default function KYC() {
                             body: JSON.stringify({ action: 'verify-otp', reference: bvnReference, otp }),
                           })
                           const json = await res.json() as Record<string, unknown>
+                          if (!res.ok) {
+                            const msg = String((json as Record<string, unknown>).message ?? (json as Record<string, unknown>).error ?? 'Wrong OTP. Try again.')
+                            setBvnError(msg)
+                            return
+                          }
                           const d = (json.data ?? json) as Record<string, unknown>
                           const name = String(d.full_name ?? d.fullName ?? d.firstName ?? '')
                           const dob2 = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
@@ -368,7 +372,7 @@ export default function KYC() {
                           if (ph)   setPhone(ph)
                           setBvnDone(true)
                         } catch {
-                          setBvnError('Wrong OTP. Try again.')
+                          setBvnError('OTP verification failed. Check your connection and try again.')
                         } finally {
                           setOtpLoading(false)
                         }
@@ -421,14 +425,6 @@ export default function KYC() {
             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
               Select your ID type and enter the document number.
             </p>
-
-            <Field
-              label="NIN (Optional)"
-              value={nin}
-              onChange={(v) => setNin(v.replace(/\D/g, '').slice(0, 11))}
-              placeholder="11-digit NIN"
-              type="tel"
-            />
 
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>

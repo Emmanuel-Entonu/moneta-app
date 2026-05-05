@@ -120,8 +120,22 @@ export default function KYC() {
     navigate(dest)
   }
 
+  function isValidDob(v: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
+    const d = new Date(v)
+    if (isNaN(d.getTime())) return false
+    const age = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+    return age >= 18 && age <= 100
+  }
+
   function canProceedStep1() {
-    return bvnDone && fullName.trim().length > 1 && address.trim().length > 4 && dob.trim().length > 0
+    return (
+      bvnDone &&
+      fullName.trim().length > 1 &&
+      address.trim().length > 4 &&
+      phone.replace(/\D/g, '').length >= 10 &&
+      isValidDob(dob)
+    )
   }
 
   function canProceedStep2() {
@@ -132,6 +146,16 @@ export default function KYC() {
     if (!user) return
     setSaving(true); setError(null)
     try {
+      // Final sanitization before any network call
+      const cleanName    = fullName.trim().slice(0, 255)
+      const cleanPhone   = phone.replace(/\D/g, '').replace(/^234/, '0').slice(0, 15)
+      const cleanAddress = address.trim().slice(0, 255)
+      const cleanBvn     = bvn.replace(/\D/g, '').slice(0, 11)
+      const cleanIdNum   = idNumber.trim().replace(/[^a-zA-Z0-9\-\/]/g, '').slice(0, 50)
+      if (!cleanName || cleanName.length < 2) throw new Error('Full name is too short')
+      if (cleanPhone.length < 10) throw new Error('Phone number is invalid')
+      if (!isValidDob(dob)) throw new Error('Date of birth must be YYYY-MM-DD and age must be 18–100')
+      if (cleanBvn.length !== 11) throw new Error('BVN must be exactly 11 digits')
       let kycDocUrl: string | null = null
       if (docFile) {
         const ext = docFile.name.split('.').pop()?.toLowerCase() ?? 'jpg'
@@ -146,11 +170,11 @@ export default function KYC() {
 
       const { error: dbError } = await supabase.from('profiles').upsert({
         id: user.id,
-        full_name: fullName,
-        phone,
+        full_name: cleanName,
+        phone: cleanPhone,
         date_of_birth: dob || null,
-        address,
-        bvn,
+        address: cleanAddress,
+        bvn: cleanBvn,
         kyc_status: 'verified',
         kyc_doc_url: kycDocUrl,
       })
@@ -159,14 +183,14 @@ export default function KYC() {
       let pacAccountId: string | null = null
       try {
         pacAccountId = await createBrokerAccount({
-          fullName,
-          email: user.email ?? '',
-          phone,
-          bvn,
+          fullName:  cleanName,
+          email:     user.email ?? '',
+          phone:     cleanPhone,
+          bvn:       cleanBvn,
           dob,
-          address,
+          address:   cleanAddress,
           idType,
-          idNumber,
+          idNumber:  cleanIdNum,
         })
       } catch (e) {
         console.warn('Broker account creation failed (will retry later):', e)
@@ -364,12 +388,17 @@ export default function KYC() {
                             return
                           }
                           const d = (json.data ?? json) as Record<string, unknown>
-                          const name = String(d.full_name ?? d.fullName ?? d.firstName ?? '')
-                          const dob2 = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
-                          const ph   = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
+                          const name = String(d.full_name ?? d.fullName ?? d.firstName ?? '').trim()
+                          const rawDob = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
+                          const rawPh  = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
                           if (name) setFullName(name)
-                          if (dob2) setDob(dob2)
-                          if (ph)   setPhone(ph)
+                          if (rawDob) {
+                            // Normalize to YYYY-MM-DD regardless of what format BVN returns
+                            const parsed = new Date(rawDob)
+                            const iso = isNaN(parsed.getTime()) ? rawDob : parsed.toISOString().split('T')[0]
+                            setDob(iso)
+                          }
+                          if (rawPh) setPhone(rawPh.replace(/\D/g, '').replace(/^234/, '0'))
                           setBvnDone(true)
                         } catch {
                           setBvnError('OTP verification failed. Check your connection and try again.')
@@ -392,7 +421,7 @@ export default function KYC() {
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
                 <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
-                <Field label="Date of Birth" value={dob} onChange={setDob} placeholder="YYYY-MM-DD" />
+                <Field label="Date of Birth" value={dob} onChange={setDob} placeholder="YYYY-MM-DD" hint="Format: 1990-12-31 · Must be 18 or older" />
                 <Field
                   label="Residential Address"
                   value={address}
@@ -489,7 +518,15 @@ export default function KYC() {
                 type="file"
                 accept="image/*,.pdf"
                 style={{ display: 'none' }}
-                onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null
+                  if (!f) return
+                  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+                  if (!allowed.includes(f.type)) { setError('Only JPG, PNG, WEBP or PDF files are accepted.'); return }
+                  if (f.size > 5 * 1024 * 1024) { setError('File must be under 5MB.'); return }
+                  setError(null)
+                  setDocFile(f)
+                }}
               />
               {docFile ? (
                 <>

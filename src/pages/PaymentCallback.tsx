@@ -80,10 +80,11 @@ export default function PaymentCallback() {
 
     verifyWithRetry()
       .then(async (result) => {
-        if (!result.success || result.amountNaira === 0) {
+        const resolvedAmount = savedAmount > 0 ? savedAmount : result.amountNaira
+        if (!result.success || resolvedAmount === 0) {
           setStatus('failed')
           setMessage(
-            result.amountNaira === 0 && result.success
+            result.success
               ? 'Payment was not completed — no funds were collected.'
               : 'Your payment could not be confirmed yet. If money was debited, use "Payment debited but wallet not updated?" on the Portfolio page to recover your funds.',
           )
@@ -98,8 +99,7 @@ export default function PaymentCallback() {
           return
         }
 
-        const amountToCredit = result.amountNaira > 0 ? result.amountNaira : savedAmount
-        await creditWallet(amountToCredit)
+        await creditWallet(resolvedAmount)
 
         if (pendingRaw) {
           try {
@@ -108,7 +108,7 @@ export default function PaymentCallback() {
             await usePortfolioStore.getState().placeOrder(order)
             const orderResult = usePortfolioStore.getState().orderResult
             if (orderResult?.success) {
-              await debitWallet(amountToCredit)
+              await debitWallet(resolvedAmount)
             } else {
               setOrderFailed(true)
             }
@@ -118,7 +118,7 @@ export default function PaymentCallback() {
         }
 
         setStatus('success')
-        setAmount(amountToCredit)
+        setAmount(resolvedAmount)
         setMessage(result.message)
       })
       .catch((e: Error) => {

@@ -4,7 +4,6 @@ import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
 import { createBrokerAccount } from '../lib/pacApi'
 import MonetaLogo from '../components/MonetaLogo'
-import { initiateBvn, confirmBvnOtp, type BvnProfile } from '../lib/nibssApi'
 
 type Step = 1 | 2 | 3
 
@@ -119,9 +118,8 @@ export default function KYC() {
   const [error, setError] = useState<string | null>(null)
   const [docFile, setDocFile] = useState<File | null>(null)
 
-  // BVN & auto-filled data
+  // BVN & personal data
   const [bvn, setBvn] = useState('')
-  const [bvnProfile, setBvnProfile] = useState<BvnProfile | null>(null)
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [dob, setDob] = useState('')
@@ -132,49 +130,7 @@ export default function KYC() {
   const [idType, setIdType] = useState('')
   const [idNumber, setIdNumber] = useState('')
 
-  type BvnState = 'idle' | 'querying' | 'otp_sent' | 'verifying_otp' | 'done' | 'error'
-  const [bvnState, setBvnState] = useState<BvnState>('idle')
-  const [bvnError, setBvnError] = useState<string | null>(null)
-  const [bvnRef, setBvnRef] = useState('')
-  const [maskedPhone, setMaskedPhone] = useState('')
-  const [otp, setOtp] = useState('')
-
-  async function handleBvnQuery() {
-    setBvnState('querying')
-    setBvnError(null)
-    try {
-      const result = await initiateBvn(bvn)
-      setBvnRef(result.reference)
-      setMaskedPhone(result.maskedPhone)
-      setBvnState('otp_sent')
-    } catch (e: unknown) {
-      setBvnError((e as Error).message)
-      setBvnState('error')
-    }
-  }
-
-  async function handleOtpConfirm() {
-    setBvnState('verifying_otp')
-    setBvnError(null)
-    try {
-      const profile = await confirmBvnOtp(bvnRef, otp)
-      setBvnProfile(profile)
-      setFullName(`${profile.firstName} ${profile.surname}`.trim())
-      setPhone(profile.phone)
-      setDob(profile.dob)
-      setBvnState('done')
-    } catch (e: unknown) {
-      const msg = (e as Error).message ?? ''
-      // Only proceed silently on backend/proxy errors (HTML response).
-      // A real wrong-OTP rejection from Moneta returns JSON with a message — show that.
-      if (msg.includes('<!DOCTYPE') || msg.includes('non-JSON') || msg.includes('500')) {
-        setBvnState('done')
-      } else {
-        setBvnError(msg)
-        setBvnState('otp_sent')
-      }
-    }
-  }
+  const [bvnDone, setBvnDone] = useState(false)
 
   const [showSkipModal, setShowSkipModal] = useState(false)
 
@@ -185,7 +141,7 @@ export default function KYC() {
   }
 
   function canProceedStep1() {
-    return bvnState === 'done' && fullName.trim().length > 1 && address.trim().length > 4
+    return bvnDone && fullName.trim().length > 1 && address.trim().length > 4
   }
 
   function canProceedStep2() {
@@ -323,12 +279,12 @@ export default function KYC() {
       <div style={{ flex: 1, padding: '24px 20px 40px', overflowY: 'auto' }}>
         <StepIndicator current={step} />
 
-        {/* Step 1 — BVN Verification + Auto-filled Info */}
+        {/* Step 1 — BVN + Personal Info */}
         {step === 1 && (
           <div className="animate-in">
             <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>BVN Verification</p>
             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
-              Enter your BVN to automatically retrieve your personal information.
+              Enter your BVN and fill in your personal details to continue.
             </p>
 
             {/* BVN Input */}
@@ -342,16 +298,22 @@ export default function KYC() {
                   type="tel"
                   value={bvn}
                   onChange={(e) => {
-                    setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))
-                    if (bvnState !== 'idle') { setBvnState('idle'); setBvnError(null); setBvnProfile(null); setOtp(''); setBvnRef('') }
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 11)
+                    setBvn(v)
+                    if (bvnDone && v.length !== 11) setBvnDone(false)
                   }}
                   placeholder="11-digit BVN"
-                  disabled={bvnState === 'done' || bvnState === 'otp_sent' || bvnState === 'verifying_otp'}
-                  style={{ flex: 1, opacity: (bvnState === 'done' || bvnState === 'otp_sent') ? 0.7 : 1 }}
+                  disabled={bvnDone}
+                  style={{ flex: 1, opacity: bvnDone ? 0.7 : 1 }}
                 />
-                {(bvnState === 'idle' || bvnState === 'error') ? (
+                {bvnDone ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', fontSize: 13, color: '#059669', fontWeight: 700 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Done
+                  </div>
+                ) : (
                   <button
-                    onClick={handleBvnQuery}
+                    onClick={() => setBvnDone(true)}
                     disabled={bvn.length !== 11}
                     style={{
                       padding: '0 18px', borderRadius: 12, border: 'none',
@@ -361,100 +323,19 @@ export default function KYC() {
                       fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
                     }}
                   >
-                    Verify
+                    Confirm
                   </button>
-                ) : bvnState === 'querying' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, color: '#059669', fontWeight: 600 }}>Sending…</div>
-                ) : bvnState === 'verifying_otp' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 13, color: '#059669', fontWeight: 600 }}>Confirming…</div>
-                ) : bvnState === 'done' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', fontSize: 13, color: '#059669', fontWeight: 700 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    Verified
-                  </div>
-                ) : null}
+                )}
               </div>
               <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Dial *565*0# on any Nigerian network to retrieve your BVN</p>
-
-              {bvnError && (
-                <div style={{ marginTop: 8, padding: '8px 12px', background: '#fff5f5', borderRadius: 8, border: '1px solid #fecaca', fontSize: 12, color: '#991b1b', fontWeight: 600 }}>
-                  {bvnError}
-                  <button onClick={() => { setBvnState('idle'); setBvnError(null) }} style={{ marginLeft: 8, textDecoration: 'underline', background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', fontSize: 12 }}>
-                    Try again
-                  </button>
-                </div>
-              )}
             </div>
 
-            {/* OTP input — shown after BVN query triggers NIBSS OTP */}
-            {(bvnState === 'otp_sent' || bvnState === 'verifying_otp') && (
-              <div className="animate-in" style={{ marginTop: 16 }}>
-                <div style={{ padding: '12px 14px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #a7f3d0', marginBottom: 16 }}>
-                  <p style={{ fontSize: 13, color: '#065f46', fontWeight: 700, marginBottom: 2 }}>OTP sent by NIBSS</p>
-                  <p style={{ fontSize: 12, color: '#047857', fontWeight: 500 }}>
-                    Enter the OTP sent to{maskedPhone ? ` ${maskedPhone}` : ' your BVN-linked phone number'}.
-                  </p>
-                </div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
-                  One-Time Password (OTP)
-                </label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    className="input-field"
-                    type="tel"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="6-digit OTP"
-                    maxLength={6}
-                    style={{ flex: 1, letterSpacing: 4, fontSize: 18, fontWeight: 700 }}
-                  />
-                  <button
-                    onClick={handleOtpConfirm}
-                    disabled={otp.length < 4 || bvnState === 'verifying_otp'}
-                    style={{
-                      padding: '0 18px', borderRadius: 12, border: 'none',
-                      cursor: otp.length < 4 ? 'not-allowed' : 'pointer',
-                      background: otp.length < 4 ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
-                      color: otp.length < 4 ? '#94a3b8' : '#fff',
-                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {bvnState === 'verifying_otp' ? 'Confirming…' : 'Confirm'}
-                  </button>
-                </div>
-                <button
-                  onClick={() => { setOtp(''); setBvnState('idle'); setBvnRef('') }}
-                  style={{ marginTop: 8, fontSize: 12, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                  Wrong BVN? Start over
-                </button>
-              </div>
-            )}
-
-            {/* Fields shown after OTP confirmed */}
-            {bvnState === 'done' && (
+            {/* Personal details — shown after BVN confirmed */}
+            {bvnDone && (
               <div className="animate-in">
-                {bvnProfile ? (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '10px 14px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #a7f3d0' }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                      </svg>
-                      <p style={{ fontSize: 12, color: '#065f46', fontWeight: 600 }}>
-                        Details retrieved securely from your BVN. These cannot be edited.
-                      </p>
-                    </div>
-                    <ReadonlyField label="Full Name" value={fullName} />
-                    <ReadonlyField label="Phone Number" value={phone} />
-                    <ReadonlyField label="Date of Birth" value={dob} />
-                  </>
-                ) : (
-                  <>
-                    <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
-                    <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
-                    <Field label="Date of Birth" value={dob} onChange={setDob} placeholder="YYYY-MM-DD" />
-                  </>
-                )}
+                <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
+                <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
+                <Field label="Date of Birth" value={dob} onChange={setDob} placeholder="YYYY-MM-DD" />
                 <Field
                   label="Residential Address"
                   value={address}

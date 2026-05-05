@@ -386,7 +386,7 @@ async function getDefaultGroupId(): Promise<string> {
   try {
     await getBearerToken()
     const data = await pacProxy<{ data?: { id: string }[]; content?: { id: string }[] } | { id: string }[]>(
-      '/crm/api/v1/client-groups?page=0&size=1', 'GET'
+      '/crm/api/v1/client_groups?page=0&size=1', 'GET'
     )
     const list = Array.isArray(data) ? data
       : (data as { data?: { id: string }[]; content?: { id: string }[] }).data

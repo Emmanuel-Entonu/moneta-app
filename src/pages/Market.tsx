@@ -184,7 +184,6 @@ export default function Market() {
   const neutral = marketData.filter((s) => s.changePercent === 0)
   const marketOpen = isMarketOpen()
   const nseChange = +(marketData.reduce((a, s) => a + s.changePercent, 0) / (marketData.length || 1)).toFixed(2)
-  const nseUp = nseChange >= 0
   const gainerPct = marketData.length ? (gainers.length / marketData.length) * 100 : 50
 
   const filtered = marketData.filter((s) => {

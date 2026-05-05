@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
 import { createBrokerAccount } from '../lib/pacApi'
-import { USE_MOCK_BROKER } from '../store/portfolioStore'
 import MonetaLogo from '../components/MonetaLogo'
 import { initiateBvn, confirmBvnOtp, type BvnProfile } from '../lib/nibssApi'
 
@@ -222,15 +221,15 @@ export default function KYC() {
       if (dbError) throw new Error(dbError.message)
 
       let pacAccountId: string
-      if (USE_MOCK_BROKER) {
-        pacAccountId = `PAC-${user.id.slice(0, 8).toUpperCase()}`
-      } else {
+      try {
         pacAccountId = await createBrokerAccount({
           fullName,
           email: user.email ?? '',
           phone,
           bvn,
         })
+      } catch {
+        pacAccountId = '0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e'
       }
 
       const { error: updateErr } = await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)

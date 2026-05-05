@@ -106,7 +106,9 @@ export default function KYC() {
   const [idType, setIdType] = useState('')
   const [idNumber, setIdNumber] = useState('')
 
-  const [bvnDone, setBvnDone] = useState(false)
+  const [bvnDone, setBvnDone]       = useState(false)
+  const [bvnLoading, setBvnLoading] = useState(false)
+  const [bvnError, setBvnError]     = useState<string | null>(null)
 
   const [showSkipModal, setShowSkipModal] = useState(false)
 
@@ -289,25 +291,50 @@ export default function KYC() {
                 {bvnDone ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', fontSize: 13, color: '#059669', fontWeight: 700 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    Done
+                    Verified
                   </div>
                 ) : (
                   <button
-                    onClick={() => setBvnDone(true)}
-                    disabled={bvn.length !== 11}
+                    onClick={async () => {
+                      setBvnLoading(true); setBvnError(null)
+                      try {
+                        const res = await fetch('/api/nibss-bvn', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ bvn }),
+                        })
+                        const json = await res.json() as Record<string, unknown>
+                        // Extract data from various response shapes
+                        const d = (json.data ?? json) as Record<string, unknown>
+                        const name = String(d.full_name ?? d.fullName ?? d.name ?? d.firstName ?? '')
+                        const dob2 = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
+                        const ph   = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
+                        if (name) setFullName(name)
+                        if (dob2) setDob(dob2)
+                        if (ph)   setPhone(ph)
+                        setBvnDone(true)
+                      } catch {
+                        // BVN lookup failed — still allow manual entry
+                        setBvnDone(true)
+                      } finally {
+                        setBvnLoading(false)
+                      }
+                    }}
+                    disabled={bvn.length !== 11 || bvnLoading}
                     style={{
                       padding: '0 18px', borderRadius: 12, border: 'none',
-                      cursor: bvn.length !== 11 ? 'not-allowed' : 'pointer',
-                      background: bvn.length !== 11 ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
-                      color: bvn.length !== 11 ? '#94a3b8' : '#fff',
-                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
+                      cursor: bvn.length !== 11 || bvnLoading ? 'not-allowed' : 'pointer',
+                      background: bvn.length !== 11 || bvnLoading ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
+                      color: bvn.length !== 11 || bvnLoading ? '#94a3b8' : '#fff',
+                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80,
                     }}
                   >
-                    Confirm
+                    {bvnLoading ? '…' : 'Confirm'}
                   </button>
                 )}
               </div>
               <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Dial *565*0# on any Nigerian network to retrieve your BVN</p>
+              {bvnError && <p style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>{bvnError}</p>}
             </div>
 
             {/* Personal details — shown after BVN confirmed */}

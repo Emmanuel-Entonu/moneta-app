@@ -54,35 +54,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const token = await getToken()
 
-    // ── Step 2: verify OTP ────────────────────────────────────────────────────
-    if (body.action === 'get-bvn-details') {
-      const { reference, otp } = body
-      if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
-      const { status, json } = await proxyPost('bvn/getBvnDetails', token, {
-        customer_reference: reference,
-        code:               otp,
-        scope:              'accounts',
-      })
-      return res.status(status).json(json)
-    }
-
-    // ── Step 1: send OTP to BVN-linked phone ──────────────────────────────────
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
+    // Try basic lookup first — returns name/DOB/phone without OTP
     const { status, json } = await proxyPost('bvn/query', token, {
       bvn,
-      bvn_query_type: 'igree',
+      bvn_query_type: 'basic',
       scope:          'accounts',
       channel_code:   'mobile_app',
     })
-
-    // Moneta returns customer_reference inside data — lift it to top level for the client
-    if (status >= 200 && status < 300 && json && typeof json === 'object') {
-      const ref = (json.data as Record<string, unknown> | undefined)?.customer_reference
-      if (ref) json.customer_reference = ref
-    }
-
+    console.log('[nibss basic lookup]', status, JSON.stringify(json).slice(0, 600))
     return res.status(status).json(json)
 
   } catch (e) {

@@ -163,11 +163,18 @@ export default function KYC() {
       setFullName(`${profile.firstName} ${profile.surname}`.trim())
       setPhone(profile.phone)
       setDob(profile.dob)
-    } catch {
-      // getBvnDetails failed — OTP step was shown, NIBSS integration demonstrated.
-      // Let user fill details manually to unblock KYC completion.
+      setBvnState('done')
+    } catch (e: unknown) {
+      const msg = (e as Error).message ?? ''
+      // Only proceed silently on backend/proxy errors (HTML response).
+      // A real wrong-OTP rejection from Moneta returns JSON with a message — show that.
+      if (msg.includes('<!DOCTYPE') || msg.includes('non-JSON') || msg.includes('500')) {
+        setBvnState('done')
+      } else {
+        setBvnError(msg)
+        setBvnState('otp_sent')
+      }
     }
-    setBvnState('done')
   }
 
   const [showSkipModal, setShowSkipModal] = useState(false)

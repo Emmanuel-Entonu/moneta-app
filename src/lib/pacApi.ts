@@ -84,6 +84,11 @@ async function brokerPost<T>(path: string, body: unknown): Promise<T> {
   return pacProxy<T>(path, 'POST', body)
 }
 
+async function brokerPatch<T>(path: string, body?: unknown): Promise<T> {
+  await getBearerToken()
+  return pacProxy<T>(path, 'PATCH', body)
+}
+
 export interface PacMarketData {
   symbol: string
   name: string
@@ -129,11 +134,20 @@ export interface PacOrderRequest {
 export interface PacOrderResponse {
   id?: string
   orderId?: string
+  orderNo?: string
   orderStatus?: string
   routingStatus?: string
-  status?: string
   routingMessage?: string
+  executionMessage?: string
+  status?: string
   message?: string
+  filledQty?: number
+  requestedQty?: number
+  openQuantity?: number
+  consideration?: number
+  commission?: number
+  fees?: number
+  totalValue?: number
 }
 
 interface MdsPriceQuote {
@@ -340,6 +354,11 @@ export async function placeOrder(order: PacOrderRequest): Promise<PacOrderRespon
   }
   console.log('[placeOrder] body', JSON.stringify(body))
   return brokerPost('/investing/api/v1/orders', body)
+}
+
+export async function cancelOrder(pacOrderId: string): Promise<PacOrderResponse> {
+  console.log('[cancelOrder] orderId', pacOrderId)
+  return brokerPatch(`/investing/api/v1/orders/cancel/${pacOrderId}`)
 }
 
 function normalizePriceQuote(d: MdsPriceQuote): PacMarketData {

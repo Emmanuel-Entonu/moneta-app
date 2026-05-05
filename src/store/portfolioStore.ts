@@ -4,6 +4,7 @@ import {
   getMarketData,
   getAccountById,
   placeOrder,
+  cancelOrder,
   type PacPosition,
   type PacMarketData,
   type PacAccount,
@@ -25,6 +26,7 @@ interface PortfolioState {
   loadPositions: (accountId: string) => Promise<void>
   loadMarketData: () => Promise<void>
   placeOrder: (order: PacOrderRequest) => Promise<void>
+  cancelOrder: (pacOrderId: string, supabaseOrderId: string) => Promise<void>
   clearOrderResult: () => void
   fundWallet: (amountNaira: number) => Promise<void>
   deductBalance: (amountNaira: number) => Promise<void>
@@ -136,6 +138,21 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       set({ orderResult: { success: false, message: (e as Error).message } })
     } finally {
       set({ orderLoading: false })
+    }
+  },
+
+  cancelOrder: async (pacOrderId: string, supabaseOrderId: string) => {
+    try {
+      await cancelOrder(pacOrderId)
+      // Update local Supabase record to cancelled
+      try {
+        const { supabase } = await import('../lib/supabase')
+        await supabase.from('orders').update({ status: 'cancelled' }).eq('id', supabaseOrderId)
+      } catch (logErr) {
+        console.error('[cancelOrder] Supabase update failed:', logErr)
+      }
+    } catch (e: unknown) {
+      throw new Error((e as Error).message)
     }
   },
 

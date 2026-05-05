@@ -223,7 +223,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 }
 
 export default function Portfolio() {
-  const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus } = usePortfolioStore()
+  const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus, cancelOrder } = usePortfolioStore()
   const { pacAccountId, walletBalance, loadProfile, kycStatus } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
@@ -234,6 +234,8 @@ export default function Portfolio() {
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [brokerLinking, setBrokerLinking] = useState(false)
   const [brokerLinkError, setBrokerLinkError] = useState<string | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [cancelError, setCancelError] = useState<string | null>(null)
   const userId = useAuthStore((s) => s.user?.id)
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
@@ -676,6 +678,29 @@ export default function Portfolio() {
                     </div>
                   </div>
                   <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 500, marginTop: 10 }}>{dateStr} · {timeStr}{o.pac_order_id ? ` · ID: ${o.pac_order_id}` : ''}</p>
+                  {o.status === 'placed' && o.pac_order_id && (
+                    <div style={{ marginTop: 10 }}>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          setCancellingId(o.id); setCancelError(null)
+                          try {
+                            await cancelOrder(o.pac_order_id!, o.id)
+                            setOrders(prev => prev.map(x => x.id === o.id ? { ...x, status: 'cancelled' } : x))
+                          } catch (err: unknown) {
+                            setCancelError((err as Error).message)
+                          } finally {
+                            setCancellingId(null)
+                          }
+                        }}
+                        disabled={cancellingId === o.id}
+                        style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 11, fontWeight: 700, cursor: cancellingId === o.id ? 'wait' : 'pointer' }}
+                      >
+                        {cancellingId === o.id ? 'Cancelling…' : 'Cancel Order'}
+                      </button>
+                      {cancelError && cancellingId === null && <p style={{ fontSize: 10, color: '#f87171', marginTop: 4, fontWeight: 600 }}>{cancelError}</p>}
+                    </div>
+                  )}
                 </button>
               )
             })}

@@ -409,21 +409,8 @@ const ID_TYPE_MAP: Record<string, string> = {
 let _cachedGroupId: string | null = null
 
 async function getDefaultGroupId(): Promise<string> {
-  if (_cachedGroupId) return _cachedGroupId
-  await getBearerToken()
-
-  const created = await pacProxy<{ id?: string }>('/crm/api/v1/client_groups', 'POST', {
-    type:              'INDIVIDUAL',
-    active:            true,
-    code:              'MNT001',
-    label:             'Moneta Retail',
-    valuationCurrency: 'NGN',
-  })
-  console.log('[getDefaultGroupId] group response', JSON.stringify(created))
-  const id = String(created.id ?? '')
-  if (!id) throw new Error('PAC did not return a group ID — check Vercel logs')
-  _cachedGroupId = id
-  return id
+  // moneta-user lacks client_group_create/list roles — set VITE_PAC_GROUP_ID in Vercel env
+  throw new Error('Broker account setup pending — VITE_PAC_GROUP_ID not configured (contact WealthCare admin for the group UUID)')
 }
 
 export async function createBrokerAccount(details: {
@@ -438,7 +425,7 @@ export async function createBrokerAccount(details: {
 }): Promise<string> {
   const [firstName, ...rest] = details.fullName.trim().split(' ')
   const lastName = rest.join(' ') || firstName
-  const mobileNo = parseInt(details.phone.replace(/\D/g, ''), 10) || 0
+  const mobileNo = details.phone.replace(/\D/g, '')
 
   const addr = {
     type:         'PRIMARY',

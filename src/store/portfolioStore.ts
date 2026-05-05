@@ -115,17 +115,22 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
           message: result.routingMessage ?? result.message ?? (success ? 'Order placed' : 'Order failed'),
         },
       })
-      const { supabase } = await import('../lib/supabase')
-      const userId = useAuthStore.getState().user?.id
-      if (userId) {
-        await supabase.from('orders').insert({
-          user_id: userId, symbol: order.symbol, side: order.side,
-          order_type: order.orderType, quantity: order.quantity,
-          limit_price: order.limitPrice ?? null,
-          estimated_total: order.estimatedTotal ?? null,
-          pac_order_id: result.id ?? result.orderId ?? null,
-          status: success ? 'placed' : 'failed',
-        })
+      // Log to Supabase — wrapped separately so a logging failure never overwrites the order result
+      try {
+        const { supabase } = await import('../lib/supabase')
+        const userId = useAuthStore.getState().user?.id
+        if (userId) {
+          await supabase.from('orders').insert({
+            user_id: userId, symbol: order.symbol, side: order.side,
+            order_type: order.orderType, quantity: order.quantity,
+            limit_price: order.limitPrice ?? null,
+            estimated_total: order.estimatedTotal ?? null,
+            pac_order_id: result.id ?? result.orderId ?? null,
+            status: success ? 'placed' : 'failed',
+          })
+        }
+      } catch (logErr) {
+        console.error('[placeOrder] Supabase logging failed:', logErr)
       }
     } catch (e: unknown) {
       set({ orderResult: { success: false, message: (e as Error).message } })

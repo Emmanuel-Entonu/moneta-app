@@ -305,14 +305,14 @@ export async function getMostActive(): Promise<PacMarketData[]> {
   return unwrapList(raw).map(normalizeMover)
 }
 
-export async function getHistoricalPrices(symbol: string, from: string, to: string) {
+export async function getHistoricalPrices(symbol: string, startDate: string, endDate: string) {
   return mdsGet(
-    `/api/v1/price/history?marketCode=${MARKET_CODE}&secId=${symbol}&from=${from}&to=${to}`
+    `/api/v1/price/history?marketCode=${MARKET_CODE}&secId=${symbol}&startDate=${startDate}&endDate=${endDate}`
   )
 }
 
 export async function getIndexData() {
-  return mdsGet(`/api/v1/index?marketCode=${MARKET_CODE}`)
+  return mdsGet(`/api/v1/price/index/all/summary`)
 }
 
 export async function getAccountById(accountId: string): Promise<PacAccount> {
@@ -549,7 +549,7 @@ const ID_TYPE_MAP: Record<string, string> = {
   'National ID (NIN)':       'NATIONAL_ID',
   'International Passport':  'PASSPORT',
   "Driver's Licence":        'DRIVERS_LICENSE',
-  "Voter's Card":            'VOTERS_CARD',
+  "Voter's Card":            'VOTER_ID',
 }
 
 
@@ -589,6 +589,7 @@ export async function createBrokerAccount(details: {
         mobileNo,
         valuationCurrency: 'NGN',
         clientType:        'INDIVIDUAL',
+        groupId:           import.meta.env.VITE_PAC_GROUP_ID,
         address:           [addr],
         contact: [{
           role:             'INDV_OWNER',

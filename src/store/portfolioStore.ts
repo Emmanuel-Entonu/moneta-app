@@ -31,6 +31,8 @@ interface PortfolioState {
   orderFills: Record<string, PacOrderFill[]>
   loadingFillsId: string | null
 
+  wsConnected: boolean
+
   loadAccount: (accountId: string) => Promise<void>
   loadPositions: (accountId: string) => Promise<void>
   loadMarketData: () => Promise<void>
@@ -39,11 +41,17 @@ interface PortfolioState {
   placeOrder: (order: PacOrderRequest) => Promise<void>
   cancelOrder: (pacOrderId: string, supabaseOrderId: string | null) => Promise<void>
   clearOrderResult: () => void
+  startLivePrices: () => void
+  stopLivePrices: () => void
 
   get totalValue(): number
   get totalPnL(): number
   get totalPnLPercent(): number
 }
+
+// Module-level WebSocket state — lives outside Zustand so it survives re-renders
+let _ws: WebSocket | null = null
+let _wsReconnect: ReturnType<typeof setTimeout> | null = null
 
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   account: null,
@@ -58,6 +66,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   orderLoading: false,
   orderResult: null,
   apiStatus: null,
+  wsConnected: false,
 
   get totalValue() {
     return get().positions.reduce((sum, p) => sum + p.marketValue, 0)
@@ -204,4 +213,57 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   clearOrderResult: () => set({ orderResult: null }),
+
+  startLivePrices: () => {
+    if (_ws && _ws.readyState < 2) return
+    const key    = import.meta.env.VITE_MDS_API_KEY ?? 'deAaDavXQDFQNV7oUVZa'
+    const tenant = import.meta.env.VITE_MDS_TENANT_ID ?? 'pac-sec'
+
+    function connect() {
+      _ws = new WebSocket(
+        `wss://mywealth.mds.prod.mywealthcare.io/ws?x-api-key=${key}&x-tenant-id=${tenant}`
+      )
+      _ws.onopen = () => {
+        set({ wsConnected: true })
+        _ws?.send(JSON.stringify({ action: 'subscribe', marketCode: 'NGX' }))
+      }
+      _ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data as string) as Record<string, unknown>
+          const d = (msg.data ?? msg) as Record<string, unknown>
+          const secId = String(d.secId ?? '')
+          if (!secId) return
+          const price = Number(d.lastPx ?? d.close ?? 0)
+          if (!price) return
+          const open = Number(d.open ?? 0)
+          set(state => ({
+            marketData: state.marketData.map(s =>
+              s.symbol === secId ? {
+                ...s,
+                price,
+                changePercent: Number(d.percChange ?? s.changePercent),
+                change: open > 0 ? price - open : s.change,
+                high: Math.max(s.high, price),
+                volume: Number(d.volTraded ?? s.volume),
+              } : s
+            ),
+          }))
+        } catch {}
+      }
+      _ws.onerror = () => _ws?.close()
+      _ws.onclose = () => {
+        set({ wsConnected: false })
+        if (_wsReconnect) clearTimeout(_wsReconnect)
+        _wsReconnect = setTimeout(connect, 5000)
+      }
+    }
+    connect()
+  },
+
+  stopLivePrices: () => {
+    if (_wsReconnect) clearTimeout(_wsReconnect)
+    _ws?.close()
+    _ws = null
+    set({ wsConnected: false })
+  },
 }))

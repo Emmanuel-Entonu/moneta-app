@@ -5,6 +5,7 @@ import Aurora from '../components/Aurora'
 import StockLogo from '../components/StockLogo'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { generateSparklineArea } from '../lib/sparkline'
+import { getIndexData } from '../lib/pacApi'
 import type { PacMarketData } from '../lib/pacApi'
 
 const CATEGORIES = ['All', 'Gainers', 'Losers', 'Banking', 'Cement', 'Telecom', 'Energy', 'Consumer']
@@ -24,7 +25,7 @@ function isMarketOpen() {
   const now = new Date()
   const day = now.getUTCDay()
   const total = now.getUTCHours() * 60 + now.getUTCMinutes()
-  return day >= 1 && day <= 5 && total >= 510 && total < 810
+  return day >= 1 && day <= 5 && total >= 540 && total < 810
 }
 
 function Sparkline({ symbol, isUp, w = 72, h = 32 }: { symbol: string; isUp: boolean; w?: number; h?: number }) {
@@ -157,12 +158,26 @@ function SkeletonRow() {
 }
 
 export default function Market() {
-  const { marketData, loadingMarket, loadMarketData, apiStatus } = usePortfolioStore()
+  const { marketData, loadingMarket, loadMarketData, apiStatus, wsConnected, startLivePrices } = usePortfolioStore()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
+  const [nseIndex, setNseIndex] = useState<number | null>(null)
+  const [nseIndexChange, setNseIndexChange] = useState<number | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => { loadMarketData() }, [])
+  useEffect(() => { startLivePrices() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    getIndexData().then(raw => {
+      const list = (Array.isArray(raw) ? raw : []) as Record<string, unknown>[]
+      const asi = list.find(i => i.symbol === 'ASI') ?? list[0]
+      if (!asi) return
+      const val = Number(asi.value ?? 0)
+      const chg = Number(asi.changePerc ?? 0)
+      if (val > 0) { setNseIndex(val); setNseIndexChange(chg) }
+    }).catch(() => {})
+  }, [])
 
   const gainers = marketData.filter((s) => s.changePercent > 0)
   const losers  = marketData.filter((s) => s.changePercent < 0)
@@ -242,12 +257,26 @@ export default function Market() {
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: marketOpen ? '#34d399' : 'rgba(255,255,255,0.28)', boxShadow: marketOpen ? '0 0 6px #34d399' : 'none', animation: marketOpen ? 'pulse-dot 2.4s ease-in-out infinite' : 'none' }} />
                 {marketOpen ? 'OPEN' : 'CLOSED'}
               </span>
+              {wsConnected && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 9, fontWeight: 800, color: '#34d399', background: 'rgba(5,150,105,0.15)', border: '1px solid rgba(5,150,105,0.3)', padding: '3px 8px', borderRadius: 20 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399', animation: 'pulse-dot 1.5s ease-in-out infinite' }} />
+                  LIVE
+                </span>
+              )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 28, fontWeight: 900, color: '#ffffff', letterSpacing: -1 }}>97,842.14</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 800, color: nseUp ? '#34d399' : '#f87171', background: nseUp ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.15)', padding: '4px 10px', borderRadius: 20 }}>
-                {nseUp ? '▲' : '▼'} {Math.abs(nseChange).toFixed(2)}%
+              <span style={{ fontSize: 28, fontWeight: 900, color: '#ffffff', letterSpacing: -1 }}>
+                {nseIndex != null ? nseIndex.toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '—'}
               </span>
+              {(() => {
+                const chg = nseIndexChange ?? nseChange
+                const up = chg >= 0
+                return (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 800, color: up ? '#34d399' : '#f87171', background: up ? 'rgba(16,185,129,0.18)' : 'rgba(239,68,68,0.15)', padding: '4px 10px', borderRadius: 20 }}>
+                    {up ? '▲' : '▼'} {Math.abs(chg).toFixed(2)}%
+                  </span>
+                )
+              })()}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 16 }}>

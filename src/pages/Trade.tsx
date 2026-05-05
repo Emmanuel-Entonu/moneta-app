@@ -6,7 +6,7 @@ import { generateIntradayChart } from '../lib/sparkline'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { initializePayment } from '../lib/monetaApi'
-import { validateOrder, type PacValidationResult } from '../lib/pacApi'
+import { validateOrder, getHistoricalPrices, type PacValidationResult } from '../lib/pacApi'
 
 type Side = 'BUY' | 'SELL'
 type OrderType = 'MARKET' | 'LIMIT'
@@ -16,11 +16,50 @@ function fmt(n: number) {
   return '₦' + n.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function parseHistoricalPrices(raw: unknown, currentPrice: number): number[] {
+  try {
+    const r = raw as Record<string, unknown>
+    const list = Array.isArray(r?.priceHistory) ? r.priceHistory as Record<string, unknown>[]
+      : Array.isArray(r?.data) ? r.data as Record<string, unknown>[]
+      : Array.isArray(raw) ? raw as Record<string, unknown>[] : []
+    const prices = list.map(it => Number(it?.close ?? it?.closingPrice ?? it?.closePrice ?? it?.price ?? 0)).filter(p => p > 0)
+    if (prices.length > 0) prices[prices.length - 1] = currentPrice
+    return prices
+  } catch { return [] }
+}
+
+function buildChartPaths(prices: number[], w: number, h: number): { line: string; area: string } | null {
+  const n = prices.length
+  if (n < 2) return null
+  const minP = Math.min(...prices), maxP = Math.max(...prices)
+  const range = maxP - minP || 1
+  const pad = h * 0.12
+  const pts = prices.map((p, i) => [
+    (i / (n - 1)) * w,
+    pad + ((maxP - p) / range) * (h - pad * 2),
+  ] as [number, number])
+  let line = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`
+  for (let i = 1; i < n; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]
+    line += ` Q ${((x0 + x1) / 2).toFixed(1)} ${y0.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`
+  }
+  return { line, area: line + ` L ${w} ${h} L 0 ${h} Z` }
+}
+
+const PERIOD_LABELS: Record<Period, string[]> = {
+  '1D': ['9:30', '11:30', '13:30', '15:30'],
+  '1W': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+  '1M': ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+  '3M': ['Mo 1', 'Mo 2', 'Mo 3'],
+}
+
 function PriceChart({ symbol, price, isUp }: { symbol: string; price: number; isUp: boolean }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [dims, setDims] = useState({ w: 340, h: 150 })
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
   const [period, setPeriod] = useState<Period>('1D')
+  const [realPoints, setRealPoints] = useState<number[] | null>(null)
+  const [histLoading, setHistLoading] = useState(false)
 
   useEffect(() => {
     const el = svgRef.current?.parentElement
@@ -30,7 +69,31 @@ function PriceChart({ symbol, price, isUp }: { symbol: string; price: number; is
     return () => ro.disconnect()
   }, [])
 
-  const { line, area, points } = generateIntradayChart(symbol + period, price, isUp, dims.w, dims.h)
+  useEffect(() => {
+    let cancelled = false
+    setRealPoints(null)
+    setHistLoading(true)
+    const today = new Date()
+    const from = new Date(today)
+    from.setDate(today.getDate() - (period === '1W' ? 7 : period === '1M' ? 30 : period === '3M' ? 90 : 1))
+    const fmtDate = (d: Date) => d.toISOString().split('T')[0]
+    getHistoricalPrices(symbol, fmtDate(from), fmtDate(today))
+      .then(raw => {
+        if (cancelled) return
+        const pts = parseHistoricalPrices(raw, price)
+        if (pts.length > 1) setRealPoints(pts)
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setHistLoading(false) })
+    return () => { cancelled = true }
+  }, [symbol, period]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fallback = generateIntradayChart(symbol + period, price, isUp, dims.w, dims.h)
+  const realPaths = realPoints ? buildChartPaths(realPoints, dims.w, dims.h) : null
+  const line = realPaths?.line ?? fallback.line
+  const area = realPaths?.area ?? fallback.area
+  const points = realPoints ?? fallback.points
+
   const color = isUp ? '#10b981' : '#ef4444'
   const chartId = `chart-${symbol}`
   const n = points.length
@@ -51,6 +114,12 @@ function PriceChart({ symbol, price, isUp }: { symbol: string; price: number; is
         {hoverPrice !== null && (
           <div style={{ position: 'absolute', top: 10, left: 16, zIndex: 10, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', borderRadius: 10, padding: '6px 12px', color: '#fff', fontSize: 14, fontWeight: 800, letterSpacing: -0.3 }}>
             {fmt(hoverPrice)}
+          </div>
+        )}
+        {histLoading && (
+          <div style={{ position: 'absolute', top: 10, right: 16, zIndex: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 10, height: 10, border: `2px solid ${color}40`, borderTopColor: color, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Loading…</span>
           </div>
         )}
         <svg ref={svgRef} width="100%" height={dims.h} style={{ display: 'block', cursor: 'crosshair', userSelect: 'none' }} onMouseMove={handleMouseMove} onMouseLeave={() => setHoverIdx(null)}>
@@ -79,7 +148,7 @@ function PriceChart({ symbol, price, isUp }: { symbol: string; price: number; is
           })()}
         </svg>
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 16px 8px', pointerEvents: 'none' }}>
-          {['9:30', '11:30', '13:30', '15:30'].map((t) => (
+          {PERIOD_LABELS[period].map((t) => (
             <span key={t} style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{t}</span>
           ))}
         </div>
@@ -345,7 +414,7 @@ export default function Trade() {
               </span>
             </div>
             <div style={{ borderRadius: 16, overflow: 'hidden', border: '1.5px solid var(--border)', marginBottom: 18 }}>
-              {[['Security', stock.name], ['Order Type', orderType], ['Quantity', `${qty.toLocaleString()} units`], ['Price', `₦${effectivePrice.toFixed(2)}`], ['Total', fmt(estimatedTotal)]].map(([label, value], i) => (
+              {[['Security', stock.name], ['Order Type', orderType], ['Quantity', `${qty.toLocaleString()} units`], ['Price', `₦${effectivePrice.toFixed(2)}`], ['Total', fmt(orderTotal)]].map(([label, value], i) => (
                 <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 16px', background: i % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: i < 4 ? '1px solid var(--border)' : 'none' }}>
                   <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: label === 'Total' ? (side === 'BUY' ? '#059669' : '#dc2626') : 'var(--text)' }}>{value}</span>

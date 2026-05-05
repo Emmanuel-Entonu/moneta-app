@@ -411,18 +411,30 @@ let _cachedGroupId: string | null = null
 async function getDefaultGroupId(): Promise<string> {
   if (_cachedGroupId) return _cachedGroupId
   await getBearerToken()
-  // GET is not allowed on client_groups — create one instead
-  const data = await pacProxy<Record<string, unknown>>('/crm/api/v1/client_groups', 'POST', {
-    label:             'Moneta Retail',
-    code:              'MNT001',
-    type:              'RETAIL',
-    valuationCurrency: 'NGN',
+
+  // Try listing existing groups first
+  try {
+    const list = await pacProxy<{ content?: { id: string }[] }>(
+      '/crm/api/v1/client_groups/list?order=asc&page=0&size=1&sort=code', 'GET'
+    )
+    console.log('[getDefaultGroupId] list response', JSON.stringify(list).slice(0, 500))
+    const id = String(list.content?.[0]?.id ?? '')
+    if (id) { _cachedGroupId = id; return id }
+  } catch (e) {
+    console.log('[getDefaultGroupId] list failed, will create:', (e as Error).message)
+  }
+
+  // No groups exist — create one
+  const created = await pacProxy<{ id?: string }>('/crm/api/v1/client_groups', 'POST', {
+    type:              'INDIVIDUAL',
     active:            true,
-    description:       'Default client group for Moneta app users',
+    code:              'MNT001',
+    label:             'Moneta Retail',
+    valuationCurrency: 'NGN',
   })
-  console.log('[getDefaultGroupId] create group response', JSON.stringify(data))
-  const id = String(data.id ?? data.groupId ?? '')
-  if (!id) throw new Error('PAC did not return a group ID — check browser console')
+  console.log('[getDefaultGroupId] created group', JSON.stringify(created))
+  const id = String(created.id ?? '')
+  if (!id) throw new Error('Could not get or create a client group')
   _cachedGroupId = id
   return id
 }

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
-import { MOCK_MARKET_DATA } from '../lib/pacApi'
 import { generateIntradayChart } from '../lib/sparkline'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
@@ -125,7 +124,7 @@ export default function Trade() {
     }
   }, [orderResult])
 
-  const stock = marketData.find((s) => s.symbol === symbol) ?? MOCK_MARKET_DATA.find((s) => s.symbol === symbol)
+  const stock = marketData.find((s) => s.symbol === symbol)
   const holding = positions.find((p) => p.symbol === symbol)
 
   if (!stock) {

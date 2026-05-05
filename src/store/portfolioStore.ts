@@ -4,17 +4,12 @@ import {
   getMarketData,
   getAccountById,
   placeOrder,
-  MOCK_POSITIONS,
   type PacPosition,
   type PacMarketData,
   type PacAccount,
   type PacOrderRequest,
 } from '../lib/pacApi'
 import { useAuthStore } from './authStore'
-
-export const USE_MOCK_BROKER = false
-const USE_MOCK_ORDERS = false
-const PAC_TEST_ACCOUNT_ID = '0f4ce611-3a2c-4ba0-8c7d-2e2f0587741e'
 
 interface PortfolioState {
   apiStatus: string | null
@@ -66,24 +61,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
   loadAccount: async (accountId) => {
     try {
-      if (USE_MOCK_BROKER) {
-        const balance = useAuthStore.getState().walletBalance
-        set({
-          account: {
-            id: accountId,
-            accountNumber: 'PAC-001234',
-            accountName: 'Test Account',
-            balance,
-            currency: 'NGN',
-            status: 'ACTIVE',
-          },
-        })
-      } else {
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(accountId ?? '')
-        const realId = isUUID ? accountId : PAC_TEST_ACCOUNT_ID
-        const account = await getAccountById(realId)
-        set({ account })
-      }
+      const account = await getAccountById(accountId)
+      set({ account })
     } catch (e) {
       console.error('loadAccount error:', e)
     }
@@ -92,14 +71,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   loadPositions: async (accountId) => {
     set({ loadingPortfolio: true, apiStatus: null })
     try {
-      if (USE_MOCK_BROKER) {
-        set({ positions: MOCK_POSITIONS })
-      } else {
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(accountId ?? '')
-        const realId = isUUID ? accountId : PAC_TEST_ACCOUNT_ID
-        const positions = await getClientPositions(realId)
-        set({ positions })
-      }
+      const positions = await getClientPositions(accountId)
+      set({ positions })
     } catch (e) {
       const msg = (e as Error).message ?? String(e)
       console.error('loadPositions error:', msg)
@@ -125,48 +98,29 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   placeOrder: async (order) => {
     set({ orderLoading: true, orderResult: null })
     try {
-      if (USE_MOCK_ORDERS) {
-        await new Promise((r) => setTimeout(r, 1200))
-        const msg = `${order.side} order for ${order.quantity} units of ${order.symbol} placed successfully.`
-        set({ orderResult: { success: true, message: msg } })
-        const { supabase } = await import('../lib/supabase')
-        const userId = useAuthStore.getState().user?.id
-        if (userId) {
-          await supabase.from('orders').insert({
-            user_id: userId, symbol: order.symbol, side: order.side,
-            order_type: order.orderType, quantity: order.quantity,
-            limit_price: order.limitPrice ?? null,
-            estimated_total: order.estimatedTotal ?? null,
-            pac_order_id: null, status: 'placed',
-          })
-        }
-      } else {
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.accountId ?? '')
-        const realOrder = { ...order, accountId: isUUID ? order.accountId : PAC_TEST_ACCOUNT_ID }
-        const result = await placeOrder(realOrder)
-        const routingOk = result.routingStatus === 'ACCEPTED' || result.routingStatus === 'DELIVERED'
-        const statusOk = result.orderStatus === 'PENDING' || result.orderStatus === 'NEW' ||
-          result.orderStatus === 'FILLED' || result.orderStatus === 'PARTIALLY_FILLED' ||
-          result.status === 'SUCCESS' || result.status === 'PENDING'
-        const success = routingOk || statusOk || !!(result.id ?? result.orderId)
-        set({
-          orderResult: {
-            success,
-            message: result.routingMessage ?? result.message ?? (success ? 'Order placed' : 'Order failed'),
-          },
+      const result = await placeOrder(order)
+      const routingOk = result.routingStatus === 'ACCEPTED' || result.routingStatus === 'DELIVERED'
+      const statusOk = result.orderStatus === 'PENDING' || result.orderStatus === 'NEW' ||
+        result.orderStatus === 'FILLED' || result.orderStatus === 'PARTIALLY_FILLED' ||
+        result.status === 'SUCCESS' || result.status === 'PENDING'
+      const success = routingOk || statusOk || !!(result.id ?? result.orderId)
+      set({
+        orderResult: {
+          success,
+          message: result.routingMessage ?? result.message ?? (success ? 'Order placed' : 'Order failed'),
+        },
+      })
+      const { supabase } = await import('../lib/supabase')
+      const userId = useAuthStore.getState().user?.id
+      if (userId) {
+        await supabase.from('orders').insert({
+          user_id: userId, symbol: order.symbol, side: order.side,
+          order_type: order.orderType, quantity: order.quantity,
+          limit_price: order.limitPrice ?? null,
+          estimated_total: order.estimatedTotal ?? null,
+          pac_order_id: result.id ?? result.orderId ?? null,
+          status: success ? 'placed' : 'failed',
         })
-        const { supabase } = await import('../lib/supabase')
-        const userId = useAuthStore.getState().user?.id
-        if (userId) {
-          await supabase.from('orders').insert({
-            user_id: userId, symbol: realOrder.symbol, side: realOrder.side,
-            order_type: realOrder.orderType, quantity: realOrder.quantity,
-            limit_price: realOrder.limitPrice ?? null,
-            estimated_total: realOrder.estimatedTotal ?? null,
-            pac_order_id: result.id ?? result.orderId ?? null,
-            status: success ? 'placed' : 'failed',
-          })
-        }
       }
     } catch (e: unknown) {
       set({ orderResult: { success: false, message: (e as Error).message } })

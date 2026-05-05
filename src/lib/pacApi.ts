@@ -393,22 +393,3 @@ export async function createBrokerAccount(details: {
   return String(id)
 }
 
-export const MOCK_MARKET_DATA: PacMarketData[] = [
-  { symbol: 'DANGCEM',    name: 'Dangote Cement Plc',      price: 582.00, change: 12.50,  changePercent: 2.19,  volume: 1243000, high: 590.00, low: 568.00, open: 570.00 },
-  { symbol: 'GTCO',       name: 'GT Holding Company Plc',  price: 51.85,  change: -0.65,  changePercent: -1.24, volume: 5670000, high: 53.00,  low: 51.50,  open: 52.50  },
-  { symbol: 'ZENITHBANK', name: 'Zenith Bank Plc',         price: 37.50,  change: 0.90,   changePercent: 2.46,  volume: 8920000, high: 38.00,  low: 36.50,  open: 36.80  },
-  { symbol: 'MTNN',       name: 'MTN Nigeria Comm. Plc',   price: 220.10, change: -3.40,  changePercent: -1.52, volume: 2100000, high: 225.00, low: 219.00, open: 224.00 },
-  { symbol: 'AIRTELAFRI', name: 'Airtel Africa Plc',       price: 1850.00,change: 45.00,  changePercent: 2.49,  volume: 430000,  high: 1870.00,low: 1800.00,open: 1810.00 },
-  { symbol: 'FBNH',       name: 'FBN Holdings Plc',        price: 22.30,  change: 0.30,   changePercent: 1.36,  volume: 6100000, high: 22.80,  low: 21.90,  open: 22.00  },
-  { symbol: 'BUACEMENT',  name: 'BUA Cement Plc',          price: 119.90, change: -1.10,  changePercent: -0.91, volume: 880000,  high: 122.00, low: 119.00, open: 121.00 },
-  { symbol: 'ACCESS',     name: 'Access Holdings Plc',     price: 19.75,  change: 0.25,   changePercent: 1.28,  volume: 9450000, high: 20.00,  low: 19.40,  open: 19.50  },
-  { symbol: 'NESTLE',     name: 'Nestle Nigeria Plc',      price: 1050.00,change: -20.00, changePercent: -1.87, volume: 95000,   high: 1080.00,low: 1045.00,open: 1070.00 },
-  { symbol: 'SEPLAT',     name: 'Seplat Energy Plc',       price: 4500.00,change: 120.00, changePercent: 2.74,  volume: 210000,  high: 4550.00,low: 4380.00,open: 4400.00 },
-]
-
-export const MOCK_POSITIONS: PacPosition[] = [
-  { symbol: 'DANGCEM',    securityName: 'Dangote Cement Plc',     quantity: 50,   averageCost: 560.00, currentPrice: 582.00, marketValue: 29100, unrealizedPnL: 1100,  unrealizedPnLPercent: 3.93  },
-  { symbol: 'GTCO',       securityName: 'GT Holding Company Plc', quantity: 500,  averageCost: 49.00,  currentPrice: 51.85,  marketValue: 25925, unrealizedPnL: 1425,  unrealizedPnLPercent: 5.82  },
-  { symbol: 'ZENITHBANK', securityName: 'Zenith Bank Plc',        quantity: 800,  averageCost: 38.50,  currentPrice: 37.50,  marketValue: 30000, unrealizedPnL: -800,  unrealizedPnLPercent: -2.60 },
-  { symbol: 'ACCESS',     securityName: 'Access Holdings Plc',    quantity: 1000, averageCost: 18.00,  currentPrice: 19.75,  marketValue: 19750, unrealizedPnL: 1750,  unrealizedPnLPercent: 9.72  },
-]

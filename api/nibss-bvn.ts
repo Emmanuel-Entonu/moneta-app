@@ -16,9 +16,14 @@ async function getToken(): Promise<string> {
     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
   })
   const text = await res.text()
-  console.log('[nibss token]', res.status, text)
-  const data = JSON.parse(text) as { status: boolean; data?: string; message?: string }
-  if (!data.status || !data.data) throw new Error(data.message ?? 'Token failed')
+  console.log('[nibss token]', res.status, text.slice(0, 400))
+  let data: { status: boolean; data?: string; message?: string }
+  try {
+    data = JSON.parse(text) as typeof data
+  } catch {
+    throw new Error(`BVN service unavailable (status ${res.status}). Please try again shortly.`)
+  }
+  if (!data.status || !data.data) throw new Error(data.message ?? 'BVN token request failed')
   _token = data.data
   return data.data
 }

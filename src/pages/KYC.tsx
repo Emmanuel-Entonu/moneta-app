@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
@@ -111,6 +111,7 @@ export default function KYC() {
   const [bvnReference, setBvnReference] = useState<string | null>(null)
   const [otp, setOtp]                 = useState('')
   const [otpLoading, setOtpLoading]   = useState(false)
+  const sendingOtp = useRef(false)
 
   function isValidDob(v: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
@@ -261,6 +262,8 @@ export default function KYC() {
                 ) : (
                   <button
                     onClick={async () => {
+                      if (sendingOtp.current) return
+                      sendingOtp.current = true
                       setBvnLoading(true); setBvnError(null)
                       try {
                         const res = await fetch('/api/nibss-bvn', {
@@ -269,17 +272,17 @@ export default function KYC() {
                           body: JSON.stringify({ bvn }),
                         })
                         const json = await res.json() as Record<string, unknown>
-                        // Try multiple locations for the reference
                         const d = (json.data ?? json) as Record<string, unknown>
                         const ref = String(json.customer_reference ?? d.customer_reference ?? d.reference ?? '')
-                        setBvnReference(ref || 'pending')  // show OTP input regardless
+                        setBvnReference(ref || 'pending')
                       } catch {
-                        setBvnReference('pending')  // still show OTP input, let user try
+                        setBvnReference('pending')
                       } finally {
                         setBvnLoading(false)
+                        sendingOtp.current = false
                       }
                     }}
-                    disabled={bvn.length !== 11 || bvnLoading}
+                    disabled={bvn.length !== 11 || bvnLoading || !!bvnReference}
                     style={{
                       padding: '0 18px', borderRadius: 12, border: 'none',
                       cursor: bvn.length !== 11 || bvnLoading ? 'not-allowed' : 'pointer',

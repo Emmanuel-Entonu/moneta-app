@@ -379,6 +379,8 @@ const ID_TYPE_MAP: Record<string, string> = {
   "Voter's Card":            'VOTERS_CARD',
 }
 
+const PAC_GROUP_ID = (import.meta.env.VITE_PAC_GROUP_ID as string | undefined) || ''
+
 export async function createBrokerAccount(details: {
   fullName:  string
   email:     string
@@ -393,6 +395,15 @@ export async function createBrokerAccount(details: {
   const lastName = rest.join(' ') || firstName
   const mobileNo = parseInt(details.phone.replace(/\D/g, ''), 10) || 0
 
+  const addr = {
+    type:         'PRIMARY',
+    addressLine1: details.address ?? '',
+    city:         'Lagos',
+    state:        'LA',
+    postCode:     '100001',
+    country:      'NG',
+  }
+
   const data = await brokerPost<Record<string, unknown>>(
     '/crm/api/v1/clients',
     {
@@ -401,26 +412,27 @@ export async function createBrokerAccount(details: {
       notificationEmail: details.email,
       mobileNo,
       valuationCurrency: 'NGN',
+      clientType:        'INDIVIDUAL',
+      groupId:           PAC_GROUP_ID || undefined,
+      address:           [addr],
       contact: [{
-        role:        'INDV_OWNER',
-        label:       details.fullName,
+        role:             'INDV_OWNER',
+        label:            details.fullName,
         firstName,
         lastName,
-        email:       details.email,
+        email:            details.email,
         mobileNo,
-        finIdNo:     details.bvn,
-        idType:      ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
-        idNo:        details.idNumber ?? '',
-        birthDate:   details.dob ?? '',
-        nationality: 'NGA',
+        title:            'MR',
+        gender:           'MALE',
+        maritalStatus:    'SINGLE',
+        grantLoginAccess: false,
+        finIdNo:          details.bvn,
+        idType:           ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
+        idNo:             details.idNumber ?? '',
+        birthDate:        details.dob ?? '',
+        nationality:      'NGA',
+        address:          addr,
       }],
-      ...(details.address ? {
-        address: [{
-          type:         'PRIMARY',
-          addressLine1: details.address,
-          country:      'NG',
-        }],
-      } : {}),
     }
   )
 

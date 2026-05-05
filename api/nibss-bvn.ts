@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { status, json } = await proxyPost('bvn/query', token, {
       bvn,
-      bvn_query_type: 'otp',
+      bvn_query_type: 'igree',
       scope:          'profile',
       channel_code:   'mobile_app',
     })

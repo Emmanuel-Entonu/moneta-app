@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const PAC_BASE  = 'https://api.prod.mywealthcare.io'
-const TENANT_ID = (process.env.VITE_PAC_TENANT_ID as string | undefined) || 'pac'
+const TENANT_ID = process.env.VITE_PAC_TENANT_ID || 'pac-sec'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path   = (req.query.path as string) ?? ''

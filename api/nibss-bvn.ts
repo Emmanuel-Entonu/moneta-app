@@ -17,11 +17,10 @@ async function getToken(): Promise<string> {
   })
   const text = await res.text()
   console.log('[nibss token]', res.status, text)
-  let data: { status: boolean; data?: string; message?: string }
-  try { data = JSON.parse(text) } catch { throw new Error(`Token returned non-JSON: ${text.slice(0, 200)}`) }
+  const data = JSON.parse(text) as { status: boolean; data?: string; message?: string }
   if (!data.status || !data.data) throw new Error(data.message ?? 'Token failed')
   _token = data.data
-  return _token
+  return data.data
 }
 
 async function proxyPost(path: string, token: string, payload: object) {

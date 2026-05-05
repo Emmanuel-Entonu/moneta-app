@@ -66,8 +66,7 @@ export async function initiateBvn(bvn: string): Promise<BvnInitResult> {
   }
 
   const ok = raw.status === true || raw.status === 'success' || raw.status === 'SUCCESSFUL'
-    || (res.ok && raw.message !== undefined)
-  if (!res.ok || !ok) {
+  if (!ok) {
     throw new Error(String(raw.message ?? raw.error ?? `BVN query failed (${res.status})`))
   }
 

@@ -271,7 +271,7 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
     const data = await brokerGet<Record<string, unknown>>(
       `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`
     )
-    console.log('[getAccountById] response', JSON.stringify(data).slice(0, 500))
+    console.log('[getAccountById] position response', JSON.stringify(data).slice(0, 500))
     return {
       id:            String(data.accountId ?? accountId),
       accountNumber: String(data.accountNo ?? data.accountNumber ?? ''),
@@ -281,16 +281,18 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
       status:        'ACTIVE',
     }
   } catch {
-    // Fallback: try CRM client endpoint for basic account info
-    const crm = await brokerGet<Record<string, unknown>>(`/crm/api/v1/clients/${accountId}`)
-    console.log('[getAccountById] CRM fallback', JSON.stringify(crm).slice(0, 500))
+    // Fallback: fetch investment account directly (correct for new accounts with no trading history)
+    const inv = await brokerGet<Record<string, unknown>>(
+      `/investing/api/v1/investment/accounts/${accountId}`
+    )
+    console.log('[getAccountById] investment account fallback', JSON.stringify(inv).slice(0, 500))
     return {
-      id:            String(crm.id ?? accountId),
-      accountNumber: String(crm.accountNo ?? crm.label ?? ''),
-      accountName:   String(crm.label ?? crm.fullName ?? ''),
-      balance:       0,
-      currency:      'NGN',
-      status:        'ACTIVE',
+      id:            String(inv.id ?? accountId),
+      accountNumber: String(inv.accountNo ?? inv.refCode ?? ''),
+      accountName:   String(inv.accountLabel ?? inv.clientLabel ?? ''),
+      balance:       Number(inv.cashBalance ?? 0),
+      currency:      String(inv.currency ?? 'NGN'),
+      status:        String(inv.status ?? 'ACTIVE'),
     }
   }
 }

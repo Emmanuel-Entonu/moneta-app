@@ -436,10 +436,17 @@ export default function Trade() {
                   if (side === 'BUY' && paySource === 'wallet') {
                     await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
                     const result = usePortfolioStore.getState().orderResult
-                    if (result?.success) { try { await debitWallet(orderTotal) } catch (e: unknown) { setMonetaError((e as Error).message) } }
+                    if (result?.success) {
+                      try {
+                        await debitWallet(orderTotal)
+                      } catch (e: unknown) {
+                        setMonetaError(`Order placed but wallet debit failed: ${(e as Error).message}`)
+                        return  // keep sheet open so error is visible
+                      }
+                    }
                     setShowConfirm(false); return
                   }
-                  await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
+                  await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal: orderTotal })
                   setShowConfirm(false)
                 }}
                 style={{ flex: 2, padding: '14px', background: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: (!pacAccountId || validating) ? 'not-allowed' : 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}

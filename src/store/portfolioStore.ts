@@ -39,8 +39,6 @@ interface PortfolioState {
   placeOrder: (order: PacOrderRequest) => Promise<void>
   cancelOrder: (pacOrderId: string, supabaseOrderId: string | null) => Promise<void>
   clearOrderResult: () => void
-  fundWallet: (amountNaira: number) => Promise<void>
-  deductBalance: (amountNaira: number) => Promise<void>
 
   get totalValue(): number
   get totalPnL(): number
@@ -206,18 +204,4 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   clearOrderResult: () => set({ orderResult: null }),
-
-  fundWallet: async (amountNaira) => {
-    await useAuthStore.getState().creditWallet(amountNaira)
-    const newBalance = useAuthStore.getState().walletBalance
-    const current = get().account
-    if (current) set({ account: { ...current, balance: newBalance } })
-  },
-
-  deductBalance: async (amountNaira) => {
-    await useAuthStore.getState().debitWallet(amountNaira)
-    const newBalance = useAuthStore.getState().walletBalance
-    const current = get().account
-    if (current) set({ account: { ...current, balance: newBalance } })
-  },
 }))

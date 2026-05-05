@@ -112,14 +112,6 @@ export default function KYC() {
   const [otp, setOtp]                 = useState('')
   const [otpLoading, setOtpLoading]   = useState(false)
 
-  const [showSkipModal, setShowSkipModal] = useState(false)
-
-  function confirmSkip() {
-    localStorage.setItem(`moneta_kyc_skipped_${user?.id}`, '1')
-    const dest = localStorage.getItem(`moneta_onboarded_${user?.id}`) ? '/market' : '/onboarding'
-    navigate(dest)
-  }
-
   function isValidDob(v: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
     const d = new Date(v)
@@ -219,18 +211,8 @@ export default function KYC() {
         background: 'linear-gradient(160deg, #064e3b 0%, #059669 100%)',
         padding: 'calc(env(safe-area-inset-top,0px) + 20px) 20px 24px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ marginBottom: 20 }}>
           <MonetaLogo size="sm" inverted />
-          <button
-            onClick={() => setShowSkipModal(true)}
-            style={{
-              fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.8)',
-              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-              padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
-            }}
-          >
-            Skip for now
-          </button>
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 4, letterSpacing: -0.5 }}>
           Verify your identity
@@ -239,49 +221,6 @@ export default function KYC() {
           Required by the SEC and CBN to enable trading on the NGX
         </p>
       </div>
-
-      {/* Skip Warning Modal */}
-      {showSkipModal && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '0 20px',
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: 24, padding: '28px 24px 24px',
-            width: '100%', maxWidth: 420, margin: '0 16px',
-            boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: '50%',
-                background: '#fff7ed', border: '2px solid #fed7aa',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-              </div>
-            </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', textAlign: 'center', marginBottom: 10 }}>
-              Skip Identity Verification?
-            </h3>
-            <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: 24, fontWeight: 500 }}>
-              You <strong style={{ color: '#0f172a' }}>cannot trade stocks</strong> until your KYC is completed. This is required by SEC Nigeria and the CBN.
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowSkipModal(false)} style={secondaryBtn}>Cancel</button>
-              <button onClick={confirmSkip} style={{
-                flex: 1, padding: '14px', borderRadius: 'var(--radius)',
-                background: '#fff7ed', border: '1.5px solid #fed7aa',
-                color: '#c2410c', fontWeight: 700, fontSize: 15, cursor: 'pointer',
-              }}>Skip anyway</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Body */}
       <div style={{ flex: 1, padding: '24px 20px 40px', overflowY: 'auto' }}>

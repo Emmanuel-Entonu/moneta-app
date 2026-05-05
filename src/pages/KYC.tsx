@@ -133,7 +133,7 @@ export default function KYC() {
   const [idType, setIdType] = useState('')
   const [idNumber, setIdNumber] = useState('')
 
-  type BvnState = 'idle' | 'querying' | 'otp_sent' | 'verifying_otp' | 'done' | 'manual' | 'error'
+  type BvnState = 'idle' | 'querying' | 'otp_sent' | 'verifying_otp' | 'done' | 'error'
   const [bvnState, setBvnState] = useState<BvnState>('idle')
   const [bvnError, setBvnError] = useState<string | null>(null)
   const [bvnRef, setBvnRef] = useState('')
@@ -179,7 +179,7 @@ export default function KYC() {
   }
 
   function canProceedStep1() {
-    return (bvnState === 'done' || bvnState === 'manual') && fullName.trim().length > 1 && address.trim().length > 4
+    return bvnState === 'done' && address.trim().length > 4
   }
 
   function canProceedStep2() {
@@ -414,41 +414,16 @@ export default function KYC() {
                     {bvnState === 'verifying_otp' ? 'Confirming…' : 'Confirm'}
                   </button>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                  <button
-                    onClick={() => { setOtp(''); setBvnState('idle'); setBvnRef('') }}
-                    style={{ fontSize: 12, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                  >
-                    Wrong BVN? Start over
-                  </button>
-                  <button
-                    onClick={() => setBvnState('manual')}
-                    style={{ fontSize: 12, color: '#059669', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 700 }}
-                  >
-                    Didn't receive OTP? Enter manually
-                  </button>
-                </div>
+                <button
+                  onClick={() => { setOtp(''); setBvnState('idle'); setBvnRef('') }}
+                  style={{ marginTop: 8, fontSize: 12, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Wrong BVN? Start over
+                </button>
               </div>
             )}
 
-            {/* Manual entry fallback — shown when OTP not received */}
-            {bvnState === 'manual' && (
-              <div className="animate-in">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '10px 14px', background: '#fffbeb', borderRadius: 10, border: '1px solid #fde68a' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  <p style={{ fontSize: 12, color: '#92400e', fontWeight: 600 }}>
-                    BVN registered — please fill in your details as they appear on your bank records.
-                  </p>
-                </div>
-                <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As on your bank account" />
-                <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
-                <Field label="Date of Birth" value={dob} onChange={setDob} placeholder="YYYY-MM-DD" />
-              </div>
-            )}
-
-            {/* Auto-filled fields — shown after BVN verified via OTP */}
+            {/* Auto-filled fields — shown after BVN verified */}
             {bvnState === 'done' && bvnProfile && (
               <div className="animate-in">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '10px 14px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #a7f3d0' }}>
@@ -464,19 +439,6 @@ export default function KYC() {
                 <ReadonlyField label="Phone Number" value={phone} />
                 <ReadonlyField label="Date of Birth" value={dob} />
 
-                <Field
-                  label="Residential Address"
-                  value={address}
-                  onChange={setAddress}
-                  placeholder="No. 12, Broad Street, Lagos Island"
-                  hint="Must be a verifiable Nigerian address"
-                />
-              </div>
-            )}
-
-            {/* Address for manual entry state */}
-            {bvnState === 'manual' && (
-              <div className="animate-in">
                 <Field
                   label="Residential Address"
                   value={address}

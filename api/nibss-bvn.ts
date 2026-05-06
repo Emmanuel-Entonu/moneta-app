@@ -9,8 +9,9 @@ async function monetaPost(url: string, payload: object) {
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`,
+      'Content-Type':    'application/json',
+      'Authorization':   `Bearer ${API_KEY}`,
+      'X-Service-Token': API_KEY,
     },
     body: JSON.stringify(payload),
   })

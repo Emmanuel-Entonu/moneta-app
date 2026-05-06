@@ -77,8 +77,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
-    const customerRef = Math.random().toString(36).slice(2, 8).toUpperCase() +
-                        Math.random().toString(36).slice(2, 8).toUpperCase()
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    const customerRef = Array.from({ length: 12 }, () =>
+      chars[Math.floor(Math.random() * chars.length)]
+    ).join('')
 
     const { status, json } = await monetaPost(ONBOARD_URL, token, {
       bvn,

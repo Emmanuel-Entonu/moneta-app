@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 const API_KEY = process.env.VITE_MONETA_SERVICE_KEY ?? ''
 
 // Proxy forwards /nibss-app/* → https://app.moneta.ng/*
-const QUERY_URL = 'https://moneta-proxy.fly.dev/nibss-app/api/bvn/bvn_query'
+const QUERY_URL = 'https://moneta-proxy.fly.dev/nibss-app/api/v2/bvn/bvn_query'
 
 async function monetaPost(url: string, payload: object) {
   const res = await fetch(url, {

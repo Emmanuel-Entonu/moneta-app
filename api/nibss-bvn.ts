@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
-const NIBSS_SVC  = process.env.VITE_MONETA_NIBSS_TOKEN   ?? ''
+const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
 const PROXY = 'https://moneta-proxy.fly.dev/api/v2'
 

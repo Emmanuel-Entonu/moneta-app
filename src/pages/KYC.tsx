@@ -271,12 +271,22 @@ export default function KYC() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ bvn }),
                         })
-                        const json = await res.json() as Record<string, unknown>
+                        let json: Record<string, unknown>
+                        try {
+                          json = await res.json() as Record<string, unknown>
+                        } catch {
+                          setBvnError(`Server error (${res.status}). Please try again.`)
+                          return
+                        }
+                        if (!res.ok) {
+                          setBvnError(String(json.error ?? json.message ?? `Request failed (${res.status})`))
+                          return
+                        }
                         const d = (json.data ?? json) as Record<string, unknown>
                         const ref = String(json.customer_reference ?? d.customer_reference ?? d.reference ?? '')
                         setBvnReference(ref || 'pending')
-                      } catch {
-                        setBvnReference('pending')
+                      } catch (e: unknown) {
+                        setBvnError((e as Error).message ?? 'Network error. Please try again.')
                       } finally {
                         setBvnLoading(false)
                         sendingOtp.current = false

@@ -174,7 +174,6 @@ export default function KYC() {
       if (!cleanName || cleanName.length < 2) throw new Error('Full name is too short')
       if (cleanPhone.length < 10) throw new Error('Phone number is invalid')
       if (!isValidDob(dob)) throw new Error('Date of birth must be YYYY-MM-DD and age must be 18–100')
-      if (cleanBvn.length !== 11) throw new Error('BVN must be exactly 11 digits')
       let kycDocUrl: string | null = null
       if (docFile) {
         const ext = docFile.name.split('.').pop()?.toLowerCase() ?? 'jpg'
@@ -256,7 +255,15 @@ export default function KYC() {
         {/* Step 1 — BVN + Personal Info */}
         {step === 1 && (
           <div className="animate-in">
-            <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>BVN Verification</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>BVN Verification</p>
+              <button
+                onClick={() => { setBvnDone(true) }}
+                style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}
+              >
+                Skip for now
+              </button>
+            </div>
             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
               Enter your BVN and fill in your personal details to continue.
             </p>

@@ -134,8 +134,6 @@ export default function KYC() {
   const [idNumber, setIdNumber] = useState('')
 
   const [bvnDone, setBvnDone]       = useState(false)
-  const [bankCode, setBankCode]     = useState('')
-  const [accountNo, setAccountNo]   = useState('')
   const [bvnLoading, setBvnLoading] = useState(false)
   const [bvnError, setBvnError]     = useState<string | null>(null)
 
@@ -265,7 +263,7 @@ export default function KYC() {
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
                 Bank Verification Number (BVN)
               </label>
-              <div style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   className="input-field"
                   type="tel"
@@ -277,55 +275,14 @@ export default function KYC() {
                   }}
                   placeholder="11-digit BVN"
                   disabled={bvnDone}
-                  style={{ paddingRight: bvnDone ? 40 : undefined, opacity: bvnDone ? 0.7 : 1 }}
+                  style={{ flex: 1, opacity: bvnDone ? 0.7 : 1 }}
                 />
-                {bvnDone && (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-              </div>
-              <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Dial *565*0# on any Nigerian network to retrieve your BVN</p>
-
-              {/* Bank + account fields — shown when BVN is 11 digits and not yet verified */}
-              {bvn.length === 11 && !bvnDone && (
-                <div className="animate-in" style={{ marginTop: 16 }}>
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
-                      Your Bank
-                    </label>
-                    <select
-                      className="input-field"
-                      value={bankCode}
-                      onChange={(e) => setBankCode(e.target.value)}
-                      style={{ color: bankCode ? '#0f172a' : '#94a3b8' }}
-                    >
-                      <option value="" disabled>Select your bank</option>
-                      {BANKS.map((b) => (
-                        <option key={b.code} value={b.code}>{b.name}</option>
-                      ))}
-                    </select>
+                {bvnDone ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', color: '#059669', fontWeight: 700, fontSize: 13 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Verified
                   </div>
-
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
-                      Account Number
-                    </label>
-                    <input
-                      className="input-field"
-                      type="tel"
-                      value={accountNo}
-                      onChange={(e) => setAccountNo(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      placeholder="10-digit account number"
-                    />
-                  </div>
-
-                  {bvnError && (
-                    <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginBottom: 10 }}>{bvnError}</p>
-                  )}
-
+                ) : (
                   <button
                     onClick={async () => {
                       setBvnLoading(true); setBvnError(null)
@@ -333,7 +290,7 @@ export default function KYC() {
                         const res = await fetch('/api/nibss-bvn', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ bvn, account_number: accountNo, bank_code: bankCode }),
+                          body: JSON.stringify({ bvn }),
                         })
                         let json: Record<string, unknown>
                         try { json = await res.json() as Record<string, unknown> }
@@ -342,7 +299,7 @@ export default function KYC() {
                           setBvnError(String(json.error ?? json.message ?? `Verification failed (${res.status})`))
                           return
                         }
-                        const d = ((json.data ?? json) as Record<string, unknown>)
+                        const d = (json.data ?? json) as Record<string, unknown>
                         const name   = String(d.full_name ?? d.fullName ?? d.firstName ?? '').trim()
                         const rawDob = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
                         const rawPh  = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
@@ -359,19 +316,20 @@ export default function KYC() {
                         setBvnLoading(false)
                       }
                     }}
-                    disabled={!bankCode || accountNo.length !== 10 || bvnLoading}
+                    disabled={bvn.length !== 11 || bvnLoading}
                     style={{
-                      width: '100%', padding: '13px', borderRadius: 12, border: 'none',
-                      background: !bankCode || accountNo.length !== 10 || bvnLoading
-                        ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
-                      color: !bankCode || accountNo.length !== 10 || bvnLoading ? '#94a3b8' : '#fff',
-                      fontSize: 14, fontWeight: 700, cursor: !bankCode || accountNo.length !== 10 ? 'not-allowed' : 'pointer',
+                      padding: '0 18px', borderRadius: 12, border: 'none',
+                      background: bvn.length !== 11 || bvnLoading ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
+                      color: bvn.length !== 11 || bvnLoading ? '#94a3b8' : '#fff',
+                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: bvn.length !== 11 ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    {bvnLoading ? 'Verifying…' : 'Verify BVN'}
+                    {bvnLoading ? '…' : 'Verify'}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
+
+              {bvnError && <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 8 }}>{bvnError}</p>}
             </div>
 
             {/* Personal details — shown after BVN confirmed */}

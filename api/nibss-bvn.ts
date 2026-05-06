@@ -60,22 +60,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(204).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const body = req.body as { bvn?: string; account_number?: string; bank_code?: string }
-  const { bvn, account_number, bank_code } = body
+  const { bvn } = req.body as { bvn?: string }
 
-  if (!bvn || bvn.length !== 11)          return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
-  if (!account_number || !bank_code)       return res.status(400).json({ error: 'account_number and bank_code are required' })
+  if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
   try {
     const token = await getToken()
     const { status, json } = await monetaPost(QUERY_URL, token, {
       bvn,
-      bvn_query_type:     'casual',
-      customer_reference: makeRef(),
-      account_number,
-      bank_code,
-      scope:              'accounts',
-      channel_code:       'mobile_app',
+      scope:        'profile',
+      channel_code: 'mobile_app',
     })
     return res.status(status).json(json)
   } catch (e) {

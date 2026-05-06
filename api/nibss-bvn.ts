@@ -5,8 +5,8 @@ const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
 const PROXY       = 'https://moneta-proxy.fly.dev/api/v2'
-const ONBOARD_URL = `${PROXY}/bvn/query`
-const DETAIL_URL  = `${PROXY}/bvn/getBvnDetails`
+const ONBOARD_URL = 'https://staging-nips.moneta.ng/api/bvn/bvn_onboard'
+const DETAIL_URL  = 'https://staging-nips.moneta.ng/api/bvn/getBvnDetails'
 
 let _token: string | null = null
 
@@ -84,7 +84,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { status, json } = await monetaPost(ONBOARD_URL, token, {
       bvn,
-      bvn_query_type:     'igree',
       customer_reference: customerRef,
       scope:              'accounts',
       channel_code:       'mobile_app',

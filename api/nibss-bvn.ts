@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const API_KEY = process.env.VITE_MONETA_SERVICE_KEY ?? ''
 
-const BVN_QUERY_URL  = 'https://app.moneta.ng/api/bvn/bvn_query'
-const BVN_DETAIL_URL = 'https://staging-nips.moneta.ng/api/bvn/getBvnDetails'
+const BVN_ONBOARD_URL = 'https://staging-nips.moneta.ng/api/bvn/bvn_onboard'
+const BVN_DETAIL_URL  = 'https://staging-nips.moneta.ng/api/bvn/getBvnDetails'
 
 async function monetaPost(url: string, payload: object) {
   const res = await fetch(url, {
@@ -52,9 +52,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const customerRef = Math.random().toString(36).slice(2, 8).toUpperCase() +
                         Math.random().toString(36).slice(2, 8).toUpperCase()
 
-    const { status, json } = await monetaPost(BVN_QUERY_URL, {
+    const { status, json } = await monetaPost(BVN_ONBOARD_URL, {
       bvn,
-      bvn_query_type:     'igree',
       customer_reference: customerRef,
       scope:              'accounts',
       channel_code:       'mobile_app',

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
@@ -60,10 +60,10 @@ function StepIndicator({ current }: { current: Step }) {
 
 
 function Field({
-  label, value, onChange, placeholder, type = 'text', hint,
+  label, value, onChange, placeholder, type = 'text', hint, min, max,
 }: {
   label: string; value: string; onChange: (v: string) => void
-  placeholder?: string; type?: string; hint?: string
+  placeholder?: string; type?: string; hint?: string; min?: string; max?: string
 }) {
   return (
     <div style={{ marginBottom: 16 }}>
@@ -79,6 +79,8 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        min={min}
+        max={max}
       />
       {hint && <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>{hint}</p>}
     </div>
@@ -105,13 +107,7 @@ export default function KYC() {
   const [idType, setIdType] = useState('')
   const [idNumber, setIdNumber] = useState('')
 
-  const [bvnDone, setBvnDone]         = useState(false)
-  const [bvnLoading, setBvnLoading]   = useState(false)
-  const [bvnError, setBvnError]       = useState<string | null>(null)
-  const [bvnReference, setBvnReference] = useState<string | null>(null)
-  const [otp, setOtp]                 = useState('')
-  const [otpLoading, setOtpLoading]   = useState(false)
-  const sendingOtp = useRef(false)
+  const [bvnDone, setBvnDone] = useState(false)
 
   function isValidDob(v: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
@@ -240,7 +236,7 @@ export default function KYC() {
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
                 Bank Verification Number (BVN)
               </label>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ position: 'relative' }}>
                 <input
                   className="input-field"
                   type="tel"
@@ -248,123 +244,22 @@ export default function KYC() {
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, '').slice(0, 11)
                     setBvn(v)
-                    if (bvnDone && v.length !== 11) setBvnDone(false)
+                    setBvnDone(v.length === 11)
                   }}
                   placeholder="11-digit BVN"
-                  disabled={bvnDone}
-                  style={{ flex: 1, opacity: bvnDone ? 0.7 : 1 }}
+                  style={{ paddingRight: bvnDone ? 40 : undefined }}
                 />
-                {bvnDone ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', fontSize: 13, color: '#059669', fontWeight: 700 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    Verified
-                  </div>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      if (sendingOtp.current) return
-                      sendingOtp.current = true
-                      setBvnLoading(true); setBvnError(null)
-                      try {
-                        const res = await fetch('/api/nibss-bvn', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ bvn }),
-                        })
-                        let json: Record<string, unknown>
-                        try {
-                          json = await res.json() as Record<string, unknown>
-                        } catch {
-                          setBvnError(`Server error (${res.status}). Please try again.`)
-                          return
-                        }
-                        if (!res.ok) {
-                          setBvnError(String(json.error ?? json.message ?? `Request failed (${res.status})`))
-                          return
-                        }
-                        const d = (json.data ?? json) as Record<string, unknown>
-                        const ref = String(json.customer_reference ?? d.customer_reference ?? d.reference ?? '')
-                        setBvnReference(ref || 'pending')
-                      } catch (e: unknown) {
-                        setBvnError((e as Error).message ?? 'Network error. Please try again.')
-                      } finally {
-                        setBvnLoading(false)
-                        sendingOtp.current = false
-                      }
-                    }}
-                    disabled={bvn.length !== 11 || bvnLoading || !!bvnReference}
-                    style={{
-                      padding: '0 18px', borderRadius: 12, border: 'none',
-                      cursor: bvn.length !== 11 || bvnLoading ? 'not-allowed' : 'pointer',
-                      background: bvn.length !== 11 || bvnLoading ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
-                      color: bvn.length !== 11 || bvnLoading ? '#94a3b8' : '#fff',
-                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80,
-                    }}
+                {bvnDone && (
+                  <svg
+                    width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
                   >
-                    {bvnLoading ? '…' : 'Send OTP'}
-                  </button>
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                 )}
               </div>
               <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Dial *565*0# on any Nigerian network to retrieve your BVN</p>
-              {bvnError && <p style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>{bvnError}</p>}
-
-              {/* OTP input — shown after OTP is sent */}
-              {bvnReference && !bvnDone && (
-                <div style={{ marginTop: 12, padding: '14px', background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
-                  <div style={{ marginBottom: 8 }}>
-                    <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700 }}>OTP sent to your BVN-linked number</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      type="tel"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="Enter OTP"
-                      style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #a7f3d0', fontSize: 16, fontWeight: 700, letterSpacing: 4, color: '#065f46' }}
-                    />
-                    <button
-                      onClick={async () => {
-                        if (!otp || otp.length < 4) return
-                        setOtpLoading(true); setBvnError(null)
-                        try {
-                          const res = await fetch('/api/nibss-bvn', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'verify-otp', reference: bvnReference, otp }),
-                          })
-                          const json = await res.json() as Record<string, unknown>
-                          if (!res.ok) {
-                            const msg = String((json as Record<string, unknown>).message ?? (json as Record<string, unknown>).error ?? 'Wrong OTP. Try again.')
-                            setBvnError(msg)
-                            return
-                          }
-                          const d = (json.data ?? json) as Record<string, unknown>
-                          const name = String(d.full_name ?? d.fullName ?? d.firstName ?? '').trim()
-                          const rawDob = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
-                          const rawPh  = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
-                          if (name) setFullName(name)
-                          if (rawDob) {
-                            // Normalize to YYYY-MM-DD regardless of what format BVN returns
-                            const parsed = new Date(rawDob)
-                            const iso = isNaN(parsed.getTime()) ? rawDob : parsed.toISOString().split('T')[0]
-                            setDob(iso)
-                          }
-                          if (rawPh) setPhone(rawPh.replace(/\D/g, '').replace(/^234/, '0'))
-                          setBvnDone(true)
-                        } catch {
-                          setBvnError('OTP verification failed. Check your connection and try again.')
-                        } finally {
-                          setOtpLoading(false)
-                        }
-                      }}
-                      disabled={otp.length < 4 || otpLoading}
-                      style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: otp.length < 4 || otpLoading ? '#d1fae5' : 'linear-gradient(135deg,#059669,#047857)', color: otp.length < 4 || otpLoading ? '#6ee7b7' : '#fff', fontWeight: 700, fontSize: 13, cursor: otp.length < 4 ? 'not-allowed' : 'pointer' }}
-                    >
-                      {otpLoading ? '…' : 'Verify'}
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Personal details — shown after BVN confirmed */}
@@ -372,7 +267,14 @@ export default function KYC() {
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
                 <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
-                <Field label="Date of Birth" value={dob} onChange={setDob} placeholder="YYYY-MM-DD" hint="Format: 1990-12-31 · Must be 18 or older" />
+                <Field
+                  label="Date of Birth"
+                  value={dob}
+                  onChange={setDob}
+                  type="date"
+                  min={`${new Date().getFullYear() - 100}-01-01`}
+                  max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                />
                 <Field
                   label="Residential Address"
                   value={address}

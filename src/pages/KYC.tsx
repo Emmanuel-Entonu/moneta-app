@@ -108,9 +108,12 @@ export default function KYC() {
   const [idType, setIdType] = useState('')
   const [idNumber, setIdNumber] = useState('')
 
-  const [bvnDone, setBvnDone]       = useState(false)
-  const [bvnLoading, setBvnLoading] = useState(false)
-  const [bvnError, setBvnError]     = useState<string | null>(null)
+  const [bvnDone, setBvnDone]           = useState(false)
+  const [bvnLoading, setBvnLoading]     = useState(false)
+  const [bvnError, setBvnError]         = useState<string | null>(null)
+  const [bvnReference, setBvnReference] = useState<string | null>(null)
+  const [otp, setOtp]                   = useState('')
+  const [otpLoading, setOtpLoading]     = useState(false)
 
   function isValidDob(v: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
@@ -246,7 +249,7 @@ export default function KYC() {
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, '').slice(0, 11)
                     setBvn(v)
-                    if (bvnDone) { setBvnDone(false); setBvnError(null) }
+                    if (bvnDone || bvnReference) { setBvnDone(false); setBvnReference(null); setBvnError(null); setOtp('') }
                   }}
                   placeholder="11-digit BVN"
                   disabled={bvnDone}
@@ -270,38 +273,76 @@ export default function KYC() {
                         let json: Record<string, unknown>
                         try { json = await res.json() as Record<string, unknown> }
                         catch { setBvnError(`Server error (${res.status}). Please try again.`); return }
-                        if (!res.ok) {
-                          setBvnError(String(json.error ?? json.message ?? `Failed (${res.status})`))
-                          return
-                        }
+                        if (!res.ok) { setBvnError(String(json.error ?? json.message ?? `Failed (${res.status})`)); return }
                         const d = (json.data ?? json) as Record<string, unknown>
-                        const name   = String(d.full_name ?? d.fullName ?? d.firstName ?? '').trim()
-                        const rawDob = String(d.date_of_birth ?? d.dob ?? d.dateOfBirth ?? '')
-                        const rawPh  = String(d.phone_number ?? d.phone ?? d.phoneNumber ?? d.mobile ?? '')
-                        if (name)   setFullName(name)
-                        if (rawDob) { const p = new Date(rawDob); setDob(isNaN(p.getTime()) ? rawDob : p.toISOString().split('T')[0]) }
-                        if (rawPh)  setPhone(rawPh.replace(/\D/g, '').replace(/^234/, '0'))
-                        setBvnDone(true)
+                        const ref = String(d.customer_reference ?? '')
+                        setBvnReference(ref || 'pending')
                       } catch (e: unknown) {
                         setBvnError((e as Error).message ?? 'Network error. Please try again.')
                       } finally {
                         setBvnLoading(false)
                       }
                     }}
-                    disabled={bvn.length !== 11 || bvnLoading}
+                    disabled={bvn.length !== 11 || bvnLoading || !!bvnReference}
                     style={{
                       padding: '0 18px', borderRadius: 12, border: 'none',
-                      background: bvn.length !== 11 || bvnLoading ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
-                      color: bvn.length !== 11 || bvnLoading ? '#94a3b8' : '#fff',
-                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: bvn.length !== 11 ? 'not-allowed' : 'pointer',
+                      background: bvn.length !== 11 || bvnLoading || !!bvnReference ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
+                      color: bvn.length !== 11 || bvnLoading || !!bvnReference ? '#94a3b8' : '#fff',
+                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: bvn.length !== 11 || !!bvnReference ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    {bvnLoading ? '…' : 'Verify'}
+                    {bvnLoading ? '…' : 'Send OTP'}
                   </button>
                 )}
               </div>
 
               {bvnError && <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 8 }}>{bvnError}</p>}
+
+              {bvnReference && !bvnDone && (
+                <div style={{ marginTop: 12, padding: 14, background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
+                  <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700, marginBottom: 10 }}>OTP sent to your BVN-linked number</p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="tel"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="Enter OTP"
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1.5px solid #a7f3d0', fontSize: 16, fontWeight: 700, letterSpacing: 4, color: '#065f46' }}
+                    />
+                    <button
+                      onClick={async () => {
+                        setOtpLoading(true); setBvnError(null)
+                        try {
+                          const res = await fetch('/api/nibss-bvn', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'verify-otp', reference: bvnReference, otp }),
+                          })
+                          let json: Record<string, unknown>
+                          try { json = await res.json() as Record<string, unknown> }
+                          catch { setBvnError('Verification failed. Try again.'); return }
+                          if (!res.ok) { setBvnError(String(json.message ?? json.error ?? 'Wrong OTP.')); return }
+                          const d = (json.data ?? json) as Record<string, unknown>
+                          const name   = String(d.first_name ?? d.full_name ?? d.fullName ?? '').trim()
+                          const surname = String(d.surname ?? d.last_name ?? '').trim()
+                          const rawDob = String(d.DateOfBirth ?? d.date_of_birth ?? d.dob ?? '')
+                          if (name)   setFullName(surname ? `${name} ${surname}` : name)
+                          if (rawDob) { const p = new Date(rawDob); setDob(isNaN(p.getTime()) ? rawDob : p.toISOString().split('T')[0]) }
+                          setBvnDone(true)
+                        } catch (e: unknown) {
+                          setBvnError((e as Error).message ?? 'Network error.')
+                        } finally {
+                          setOtpLoading(false)
+                        }
+                      }}
+                      disabled={otp.length < 4 || otpLoading}
+                      style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: otp.length < 4 || otpLoading ? '#d1fae5' : 'linear-gradient(135deg,#059669,#047857)', color: otp.length < 4 || otpLoading ? '#6ee7b7' : '#fff', fontWeight: 700, fontSize: 13, cursor: otp.length < 4 ? 'not-allowed' : 'pointer' }}
+                    >
+                      {otpLoading ? 'Verifying…' : 'Verify'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Personal details — shown after BVN confirmed */}

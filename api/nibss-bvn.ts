@@ -34,6 +34,7 @@ async function proxyPost(path: string, token: string, payload: object) {
     headers: {
       'Content-Type':    'application/json',
       'Accept':          'application/json',
+      'Authorization':   `Bearer ${token}`,
       'X-Service-Token': token,
     },
     body: JSON.stringify(payload),

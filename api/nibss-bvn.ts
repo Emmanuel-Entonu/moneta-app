@@ -5,8 +5,8 @@ const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
 const PROXY       = 'https://moneta-proxy.fly.dev/api/v2'
-const ONBOARD_URL = 'https://staging-nips.moneta.ng/api/bvn/bvn_onboard'
-const DETAIL_URL  = 'https://staging-nips.moneta.ng/api/bvn/getBvnDetails'
+const ONBOARD_URL = 'https://www.nips.moneta.ng/api/bvn/bvn_onboard'
+const DETAIL_URL  = 'https://www.nips.moneta.ng/api/bvn/getBvnDetails'
 
 let _token: string | null = null
 

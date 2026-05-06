@@ -5,7 +5,7 @@ const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
 const PROXY      = 'https://moneta-proxy.fly.dev/api/v2'
-const QUERY_URL  = 'https://api.moneta.ng/api/v2/bvn/query'
+const QUERY_URL  = `${PROXY}/bvn/query`
 
 let _token: string | null = null
 

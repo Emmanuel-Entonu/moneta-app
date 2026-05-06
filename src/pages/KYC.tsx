@@ -7,31 +7,6 @@ import MonetaLogo from '../components/MonetaLogo'
 
 type Step = 1 | 2 | 3
 
-const BANKS = [
-  { name: 'Access Bank',      code: '044' },
-  { name: 'Citibank',         code: '023' },
-  { name: 'Ecobank',          code: '050' },
-  { name: 'Fidelity Bank',    code: '070' },
-  { name: 'First Bank',       code: '011' },
-  { name: 'FCMB',             code: '214' },
-  { name: 'GTBank',           code: '058' },
-  { name: 'Heritage Bank',    code: '030' },
-  { name: 'Keystone Bank',    code: '082' },
-  { name: 'Kuda Bank',        code: '090267' },
-  { name: 'OPay',             code: '100004' },
-  { name: 'PalmPay',          code: '100033' },
-  { name: 'Polaris Bank',     code: '076' },
-  { name: 'Providus Bank',    code: '101' },
-  { name: 'Stanbic IBTC',     code: '221' },
-  { name: 'Sterling Bank',    code: '232' },
-  { name: 'Taj Bank',         code: '302' },
-  { name: 'UBA',              code: '033' },
-  { name: 'Union Bank',       code: '032' },
-  { name: 'Unity Bank',       code: '215' },
-  { name: 'VFD Microfinance', code: '566' },
-  { name: 'Wema Bank',        code: '035' },
-  { name: 'Zenith Bank',      code: '057' },
-]
 
 const ID_TYPES = [
   'National ID (NIN)',

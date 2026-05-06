@@ -48,6 +48,7 @@ app.all('/api/v2/*', async (req, res) => {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        ...(req.headers['authorization']   && { 'Authorization':   req.headers['authorization'] }),
         ...(req.headers['x-auth-token']    && { 'X-Auth-Token':    req.headers['x-auth-token'] }),
         ...(req.headers['x-service-token'] && { 'X-Service-Token': req.headers['x-service-token'] }),
       },

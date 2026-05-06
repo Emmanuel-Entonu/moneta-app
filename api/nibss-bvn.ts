@@ -10,13 +10,10 @@ let _token: string | null = null
 
 async function getToken(): Promise<string> {
   if (_token) return _token
+  const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
   const res = await fetch(`${PROXY}/generate-access-token`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Auth-Token': Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}`).toString('base64'),
-      'X-Service-Key': NIBSS_SVC,
-    },
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
   })
   const text = await res.text()
   console.log('[nibss token]', res.status, text.slice(0, 400))

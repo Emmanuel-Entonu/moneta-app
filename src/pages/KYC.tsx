@@ -255,15 +255,7 @@ export default function KYC() {
         {/* Step 1 — BVN + Personal Info */}
         {step === 1 && (
           <div className="animate-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>BVN Verification</p>
-              <button
-                onClick={() => { setBvnDone(true) }}
-                style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}
-              >
-                Skip for now
-              </button>
-            </div>
+            <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>BVN Verification</p>
             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
               Enter your BVN and fill in your personal details to continue.
             </p>
@@ -417,6 +409,18 @@ export default function KYC() {
                 </svg>
               </button>
             </div>
+
+            <button
+              onClick={() => setStep(2)}
+              style={{
+                width: '100%', marginTop: 12, padding: '13px',
+                borderRadius: 'var(--radius)', border: '1.5px solid #e2e8f0',
+                background: '#f8fafc', color: '#64748b',
+                fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              Skip BVN for now
+            </button>
           </div>
         )}
 

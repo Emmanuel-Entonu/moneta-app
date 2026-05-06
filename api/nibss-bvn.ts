@@ -4,9 +4,8 @@ const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
-const PROXY       = 'https://moneta-proxy.fly.dev/api/v2'
-const ONBOARD_URL = `${PROXY}/bvn/query`
-const DETAIL_URL  = `${PROXY}/bvn/getBvnDetails`
+const PROXY      = 'https://moneta-proxy.fly.dev/api/v2'
+const QUERY_URL  = `${PROXY}/bvn/query`
 
 let _token: string | null = null
 
@@ -49,6 +48,11 @@ async function monetaPost(url: string, token: string, payload: object) {
   }
 }
 
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+function makeRef() {
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -56,49 +60,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(204).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const body = req.body as { bvn?: string; action?: string; reference?: string; otp?: string }
+  const body = req.body as { bvn?: string; account_number?: string; bank_code?: string }
+  const { bvn, account_number, bank_code } = body
+
+  if (!bvn || bvn.length !== 11)          return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
+  if (!account_number || !bank_code)       return res.status(400).json({ error: 'account_number and bank_code are required' })
 
   try {
     const token = await getToken()
-
-    // ── Step 2: verify OTP → returns real BVN data ───────────────────────────
-    if (body.action === 'verify-otp') {
-      const { reference, otp } = body
-      if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
-      const { status, json } = await monetaPost(DETAIL_URL, token, {
-        customer_reference: reference,
-        code:               otp,
-        scope:              'accounts',
-      })
-      return res.status(status).json(json)
-    }
-
-    // ── Step 1: send OTP to BVN-linked phone ─────────────────────────────────
-    const { bvn } = body
-    if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
-
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    const customerRef = Array.from({ length: 12 }, () =>
-      chars[Math.floor(Math.random() * chars.length)]
-    ).join('')
-
-    const { status, json } = await monetaPost(ONBOARD_URL, token, {
+    const { status, json } = await monetaPost(QUERY_URL, token, {
       bvn,
-      bvn_query_type:     'igree',
-      customer_reference: customerRef,
+      bvn_query_type:     'casual',
+      customer_reference: makeRef(),
+      account_number,
+      bank_code,
       scope:              'accounts',
       channel_code:       'mobile_app',
     })
-
-    // Lift customer_reference to top level so client can use it for OTP verification
-    if (status >= 200 && status < 300 && json && typeof json === 'object') {
-      const d = (json as Record<string, unknown>).data as Record<string, unknown> | undefined
-      const ref = d?.customer_reference ?? customerRef
-      ;(json as Record<string, unknown>).customer_reference = ref
-    }
-
     return res.status(status).json(json)
-
   } catch (e) {
     _token = null
     return res.status(500).json({ error: String(e) })

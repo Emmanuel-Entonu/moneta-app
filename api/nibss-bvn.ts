@@ -80,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       bvn,
       bvn_query_type: 'basic',
       scope:          'accounts',
-      channel_code:   'mobile_app',
+      channel_code:   '1',
     })
 
     // Lift customer_reference to top level for the client

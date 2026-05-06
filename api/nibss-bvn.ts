@@ -2,8 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
+const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
-const TOKEN_URL   = 'https://www.nips.moneta.ng/api/access-token'
+const PROXY       = 'https://moneta-proxy.fly.dev/api/v2'
 const ONBOARD_URL = 'https://staging-nips.moneta.ng/api/bvn/bvn_onboard'
 const DETAIL_URL  = 'https://staging-nips.moneta.ng/api/bvn/getBvnDetails'
 
@@ -11,12 +12,10 @@ let _token: string | null = null
 
 async function getToken(): Promise<string> {
   if (_token) return _token
-  const res = await fetch(TOKEN_URL, {
+  const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
+  const res = await fetch(`${PROXY}/generate-access-token`, {
     method: 'POST',
-    headers: {
-      'Content-Type':  'application/json',
-      'Authorization': `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}`).toString('base64')}`,
-    },
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
   })
   const text = await res.text()
   console.log('[nibss token]', res.status, text.slice(0, 400))

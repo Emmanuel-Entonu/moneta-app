@@ -109,11 +109,14 @@ export default function KYC() {
   const [idNumber, setIdNumber] = useState('')
 
   const [bvnDone, setBvnDone]           = useState(false)
+  const [bvnSkipped, setBvnSkipped]     = useState(false)
   const [bvnLoading, setBvnLoading]     = useState(false)
   const [bvnError, setBvnError]         = useState<string | null>(null)
   const [bvnReference, setBvnReference] = useState<string | null>(null)
   const [otp, setOtp]                   = useState('')
   const [otpLoading, setOtpLoading]     = useState(false)
+
+  const showPersonalDetails = bvnDone || bvnSkipped
 
   function isValidDob(v: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
@@ -125,7 +128,7 @@ export default function KYC() {
 
   function canProceedStep1() {
     return (
-      bvnDone &&
+      (bvnDone || bvnSkipped) &&
       fullName.trim().length > 1 &&
       address.trim().length > 4 &&
       phone.replace(/\D/g, '').length >= 10 &&
@@ -345,8 +348,8 @@ export default function KYC() {
               )}
             </div>
 
-            {/* Personal details — shown after BVN confirmed */}
-            {bvnDone && (
+            {/* Personal details — shown after BVN confirmed or skipped */}
+            {showPersonalDetails && (
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
                 <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
@@ -381,17 +384,19 @@ export default function KYC() {
               </button>
             </div>
 
-            <button
-              onClick={() => setStep(2)}
-              style={{
-                width: '100%', marginTop: 12, padding: '13px',
-                borderRadius: 'var(--radius)', border: '1.5px solid #e2e8f0',
-                background: '#f8fafc', color: '#64748b',
-                fontSize: 14, fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              Skip BVN for now
-            </button>
+            {!bvnSkipped && !bvnDone && (
+              <button
+                onClick={() => setBvnSkipped(true)}
+                style={{
+                  width: '100%', marginTop: 12, padding: '13px',
+                  borderRadius: 'var(--radius)', border: '1.5px solid #e2e8f0',
+                  background: '#f8fafc', color: '#64748b',
+                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Skip BVN for now
+              </button>
+            )}
           </div>
         )}
 

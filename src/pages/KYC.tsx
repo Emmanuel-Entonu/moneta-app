@@ -307,14 +307,6 @@ export default function KYC() {
               </div>
               <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 500 }}>Dial *565*0# on any Nigerian network to retrieve your BVN</p>
               {bvnError && <p style={{ fontSize: 11, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>{bvnError}</p>}
-              {bvn.length === 11 && !bvnDone && (
-                <button
-                  onClick={() => { setBvnDone(true); setBvnError(null) }}
-                  style={{ marginTop: 8, background: 'none', border: 'none', color: '#94a3b8', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
-                >
-                  Skip verification
-                </button>
-              )}
 
               {/* OTP input — shown after OTP is sent */}
               {bvnReference && !bvnDone && (

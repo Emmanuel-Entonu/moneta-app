@@ -1,41 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
-const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
-const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
+const API_KEY = process.env.VITE_MONETA_SERVICE_KEY ?? ''
 
-const PROXY      = 'https://moneta-proxy.fly.dev/api/v2'
-const QUERY_URL  = `${PROXY}/bvn/query`
+// Proxy forwards /nibss-app/* → https://app.moneta.ng/*
+const QUERY_URL  = 'https://moneta-proxy.fly.dev/nibss-app/api/bvn/bvn_query'
+const DETAIL_URL = 'https://moneta-proxy.fly.dev/nibss-app/api/bvn/getBvnDetails'
 
-let _token: string | null = null
-
-async function getToken(): Promise<string> {
-  if (_token) return _token
-  const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
-  const res = await fetch(`${PROXY}/generate-access-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
-  })
-  const text = await res.text()
-  console.log('[nibss token]', res.status, text.slice(0, 400))
-  let data: { status: boolean; data?: string; message?: string }
-  try {
-    data = JSON.parse(text) as typeof data
-  } catch {
-    throw new Error(`BVN service unavailable (status ${res.status}). Please try again shortly.`)
-  }
-  if (!data.status || !data.data) throw new Error(data.message ?? 'BVN token request failed')
-  _token = data.data
-  return data.data
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+function makeRef() {
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
-async function monetaPost(url: string, token: string, payload: object) {
+async function monetaPost(url: string, payload: object) {
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type':    'application/json',
-      'Authorization':   token,
-      'X-Service-Token': token,
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`,
     },
     body: JSON.stringify(payload),
   })
@@ -48,11 +29,6 @@ async function monetaPost(url: string, token: string, payload: object) {
   }
 }
 
-const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-function makeRef() {
-  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -60,20 +36,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(204).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { bvn } = req.body as { bvn?: string }
-
-  if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
+  const body = req.body as { bvn?: string; action?: string; reference?: string; otp?: string }
 
   try {
-    const token = await getToken()
-    const { status, json } = await monetaPost(QUERY_URL, token, {
+    // Step 2 — verify OTP
+    if (body.action === 'verify-otp') {
+      const { reference, otp } = body
+      if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
+      const { status, json } = await monetaPost(DETAIL_URL, {
+        customer_reference: reference,
+        otp,
+        scope: 'profile',
+      })
+      return res.status(status).json(json)
+    }
+
+    // Step 1 — initiate igree BVN query
+    const { bvn } = body
+    if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
+
+    const customerRef = makeRef()
+    const { status, json } = await monetaPost(QUERY_URL, {
       bvn,
-      scope:        'profile',
-      channel_code: 'mobile_app',
+      bvn_query_type:     'igree',
+      customer_reference: customerRef,
+      scope:              'profile',
+      channel_code:       'mobile_app',
     })
+
+    // Lift customer_reference to top level for client
+    if (status >= 200 && status < 300 && json && typeof json === 'object') {
+      const d = (json as Record<string, unknown>).data as Record<string, unknown> | undefined
+      const ref = d?.customer_reference ?? customerRef
+      ;(json as Record<string, unknown>).customer_reference = ref
+    }
+
     return res.status(status).json(json)
   } catch (e) {
-    _token = null
     return res.status(500).json({ error: String(e) })
   }
 }

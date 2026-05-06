@@ -10,6 +10,7 @@ let _token: string | null = null
 
 async function getToken(): Promise<string> {
   if (_token) return _token
+  console.log('[nibss env]', `CLIENT_ID.len=${CLIENT_ID.length} CLIENT_SEC.len=${CLIENT_SEC.length} NIBSS_SVC.len=${NIBSS_SVC.length}`)
   const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
   const res = await fetch(`${PROXY}/generate-access-token`, {
     method: 'POST',

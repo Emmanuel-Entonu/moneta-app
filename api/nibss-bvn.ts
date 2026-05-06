@@ -76,18 +76,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN' })
 
-    const { status, json } = await proxyPost('bvn/query', token, {
+    // igree type requires a 12-char customer_reference we generate
+    const customerRef = Math.random().toString(36).slice(2, 8).toUpperCase() +
+                        Math.random().toString(36).slice(2, 8).toUpperCase()
+
+    const { status, json } = await proxyPost('bvn/bvn_query', token, {
       bvn,
-      bvn_query_type: 'basic',
-      scope:          'accounts',
-      channel_code:   '1',
+      bvn_query_type:     'igree',
+      customer_reference: customerRef,
+      scope:              'accounts',
+      channel_code:       'mobile_app',
     })
 
-    // Lift customer_reference to top level for the client
+    // Lift customer_reference to top level so the client can use it for OTP verification
     if (status >= 200 && status < 300 && json && typeof json === 'object') {
       const d = (json as Record<string, unknown>).data as Record<string, unknown> | undefined
-      const ref = d?.customer_reference
-      if (ref) (json as Record<string, unknown>).customer_reference = ref
+      const ref = d?.customer_reference ?? customerRef
+      ;(json as Record<string, unknown>).customer_reference = ref
     }
 
     return res.status(status).json(json)

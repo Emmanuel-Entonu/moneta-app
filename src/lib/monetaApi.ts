@@ -78,7 +78,6 @@ export async function initializePayment(
       payment_type: paymentType,
       hash,
       callback_url: CALLBACK_URL,
-      json: true,
     }),
   })
 

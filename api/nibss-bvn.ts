@@ -1,28 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { ProxyAgent, fetch as proxiedFetch } from 'undici'
+import nodeFetch from 'node-fetch'
+import { HttpsProxyAgent } from 'https-proxy-agent'
 
 const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 const FIXIE_URL  = process.env.FIXIE_URL                 ?? ''
 
+const PROXY      = 'https://moneta-proxy.fly.dev'
 const MONETA_API = 'https://api.moneta.ng'
-const PROXY      = 'https://moneta-proxy.fly.dev'        // fallback if no Fixie
+
+const proxyAgent = FIXIE_URL ? new HttpsProxyAgent(FIXIE_URL) : undefined
 
 let _token: string | null = null
-
-function makeDispatcher(): ProxyAgent | undefined {
-  return FIXIE_URL ? new ProxyAgent(FIXIE_URL) : undefined
-}
-
-async function monetaFetch(url: string, init: RequestInit): Promise<{ status: number; text: string }> {
-  const dispatcher = makeDispatcher()
-  const res = dispatcher
-    ? await proxiedFetch(url, { ...init, dispatcher } as Parameters<typeof proxiedFetch>[1])
-    : await fetch(url, init)
-  const text = await res.text()
-  return { status: res.status, text }
-}
 
 function svcHeaders(token: string): Record<string, string> {
   return {
@@ -35,8 +25,7 @@ function svcHeaders(token: string): Record<string, string> {
 async function getToken(): Promise<string> {
   if (_token) return _token
   const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
-  // Token generation still goes through fly.io proxy (wallet path — already working)
-  const res = await fetch(`${PROXY}/api/v2/generate-access-token`, {
+  const res = await nodeFetch(`${PROXY}/api/v2/generate-access-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
   })
@@ -50,14 +39,16 @@ async function getToken(): Promise<string> {
 
 async function apiPost(path: string, token: string, body: object) {
   const url = `${MONETA_API}${path}`
-  const { status, text } = await monetaFetch(url, {
+  const res = await nodeFetch(url, {
     method: 'POST',
     headers: svcHeaders(token),
     body: JSON.stringify(body),
+    agent: proxyAgent,
   })
-  console.log(`[nibss] POST ${path} status=${status}: ${text.slice(0, 600)}`)
-  try { return { status, json: JSON.parse(text) } }
-  catch { return { status, json: { error: `non-JSON (${status}): ${text.slice(0, 400)}` } } }
+  const text = await res.text()
+  console.log(`[nibss] POST ${path} status=${res.status}: ${text.slice(0, 600)}`)
+  try { return { status: res.status, json: JSON.parse(text) } }
+  catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))

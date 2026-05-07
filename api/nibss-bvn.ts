@@ -74,6 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) as {
     action?: string
     bvn?: string
+    otpMethod?: string
     reference?: string
     otp?: string
   }
@@ -122,12 +123,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action !== 'query') return res.status(400).json({ error: `Unknown BVN action: ${action}` })
 
     const { bvn } = body
+    const otpMethod = String(body.otpMethod ?? '').replace(/\D/g, '')
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
+    if (otpMethod && otpMethod.length < 10) return res.status(400).json({ error: 'OTP phone number is invalid' })
 
     const { status, json } = await apiPost('/api/v2/bvn/query', token, {
       bvn,
       scope:        'profile',
       channel_code: 'mobile_app',
+      ...(otpMethod ? { otp_method: otpMethod.replace(/^234/, '0') } : {}),
     })
     const data = (json as { data?: unknown }).data
     const d = (Array.isArray(data) ? data[0] : data ?? json) as Record<string, unknown>

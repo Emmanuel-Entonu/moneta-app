@@ -4,7 +4,6 @@ const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
-const BASE  = 'https://api.moneta.ng'
 const PROXY = 'https://moneta-proxy.fly.dev'
 
 let _token: string | null = null
@@ -33,7 +32,7 @@ function svcHeaders(token: string) {
 }
 
 async function directPost(path: string, token: string, body: object) {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${PROXY}${path}`, {
     method: 'POST',
     headers: svcHeaders(token),
     body: JSON.stringify(body),

@@ -25,9 +25,11 @@ function svcHeaders(token: string): Record<string, string> {
 async function getToken(): Promise<string> {
   if (_token) return _token
   const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
+  console.log('[nibss] fetching token via', PROXY, 'fixie=', !!FIXIE_URL)
   const res = await nodeFetch(`${PROXY}/api/v2/generate-access-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
+    agent: proxyAgent,
   })
   const text = await res.text()
   console.log('[nibss token]', res.status, text.slice(0, 200))
@@ -39,6 +41,7 @@ async function getToken(): Promise<string> {
 
 async function apiPost(path: string, token: string, body: object) {
   const url = `${MONETA_API}${path}`
+  console.log(`[nibss] POST ${url} proxy=${!!proxyAgent} body=${JSON.stringify(body).slice(0, 200)}`)
   const res = await nodeFetch(url, {
     method: 'POST',
     headers: svcHeaders(token),
@@ -46,9 +49,10 @@ async function apiPost(path: string, token: string, body: object) {
     agent: proxyAgent,
   })
   const text = await res.text()
-  console.log(`[nibss] POST ${path} status=${res.status}: ${text.slice(0, 600)}`)
+  const ct = res.headers.get('content-type') ?? 'unknown'
+  console.log(`[nibss] POST ${path} status=${res.status} ct=${ct}: ${text.slice(0, 600)}`)
   try { return { status: res.status, json: JSON.parse(text) } }
-  catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
+  catch { return { status: res.status, json: { error: `non-JSON (${res.status}) ct=${ct}: ${text.slice(0, 300)}` } } }
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -61,6 +65,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const body = req.body as { action?: string; bvn?: string; reference?: string; otp?: string }
+
+  console.log('[nibss] handler bvn action=', body.action ?? 'query', 'fixie_set=', !!FIXIE_URL)
 
   try {
     const token = await getToken()
@@ -89,6 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { status, json } = await apiPost('/api/v2/bvn/query', token, {
       bvn,
+      type:         'casual',
       scope:        'profile',
       channel_code: 'mobile_app',
     })

@@ -57,6 +57,13 @@ async function apiPost(path: string, token: string, body: object) {
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
+function hasBvnDetails(json: unknown): boolean {
+  const data = (json as { data?: unknown })?.data
+  if (!data) return false
+  if (Array.isArray(data)) return data.length > 0
+  return typeof data === 'object' && Object.keys(data as Record<string, unknown>).length > 0
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -87,13 +94,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
       if (!otpResult.json?.status) return res.status(otpResult.status).json(otpResult.json)
 
-      await sleep(7000)
+      let lastDetails: Awaited<ReturnType<typeof apiPost>> | null = null
+      const delays = [7000, 5000, 5000, 5000, 5000, 5000]
+      for (let attempt = 0; attempt < delays.length; attempt++) {
+        await sleep(delays[attempt])
+        const details = await apiPost('/api/v2/bvn/details', token, {
+          scope:              'profile',
+          customer_reference: reference,
+        })
+        lastDetails = details
+        if (details.status >= 200 && details.status < 300 && details.json?.status && hasBvnDetails(details.json)) {
+          return res.status(details.status).json(details.json)
+        }
+        console.warn(
+          '[nibss] details not ready',
+          `attempt=${attempt + 1}/${delays.length}`,
+          `status=${details.status}`,
+          JSON.stringify(details.json).slice(0, 300),
+        )
+      }
 
-      const details = await apiPost('/api/v2/bvn/details', token, {
-        scope:              'profile',
-        customer_reference: reference,
-      })
-      return res.status(details.status).json(details.json)
+      return res.status(lastDetails?.status ?? 504).json(
+        lastDetails?.json ?? { status: false, message: 'BVN details not ready', data: [], statusCode: 504 },
+      )
     }
 
     if (action !== 'query') return res.status(400).json({ error: `Unknown BVN action: ${action}` })

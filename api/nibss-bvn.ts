@@ -26,8 +26,8 @@ async function getToken(): Promise<string> {
 }
 
 async function apiPost(path: string, token: string, body: object) {
-  // BVN calls go directly to api.moneta.ng as the docs specify
-  const res = await fetch(`${BASE}${path}`, {
+  // BVN calls go through proxy (static IP for whitelisting)
+  const res = await fetch(`${PROXY}${path}`, {
     method: 'POST',
     headers: {
       'Content-Type':    'application/json',

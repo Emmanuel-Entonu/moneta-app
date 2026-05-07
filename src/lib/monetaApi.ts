@@ -131,16 +131,18 @@ export async function verifyPayment(reference: string): Promise<{
   }
 
   const data = await res.json() as {
-    status: string | boolean
-    data?: { amount?: number; reference?: string }
+    status: string | boolean          // top-level = API call status, not payment status
+    data?: { amount?: number; reference?: string; status?: string }
     message?: string
   }
 
-  const success = data.status === 'success' || data.status === true
+  // data.status is always true/200 if the HTTP call worked — check the inner payment status
+  const paymentStatus = String(data.data?.status ?? '').toLowerCase()
+  const success = paymentStatus === 'success'
   return {
     success,
     amountNaira: data.data?.amount ?? 0,
-    message: data.message ?? (success ? 'Payment successful' : 'Payment failed'),
+    message: data.message ?? (success ? 'Payment successful' : 'Payment not completed'),
   }
 }
 

@@ -1,17 +1,41 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { ProxyAgent, fetch as proxiedFetch } from 'undici'
 
 const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
+const FIXIE_URL  = process.env.FIXIE_URL                 ?? ''
 
-const PROXY      = 'https://moneta-proxy.fly.dev'
 const MONETA_API = 'https://api.moneta.ng'
+const PROXY      = 'https://moneta-proxy.fly.dev'        // fallback if no Fixie
 
 let _token: string | null = null
+
+function makeDispatcher(): ProxyAgent | undefined {
+  return FIXIE_URL ? new ProxyAgent(FIXIE_URL) : undefined
+}
+
+async function monetaFetch(url: string, init: RequestInit): Promise<{ status: number; text: string }> {
+  const dispatcher = makeDispatcher()
+  const res = dispatcher
+    ? await proxiedFetch(url, { ...init, dispatcher } as Parameters<typeof proxiedFetch>[1])
+    : await fetch(url, init)
+  const text = await res.text()
+  return { status: res.status, text }
+}
+
+function svcHeaders(token: string): Record<string, string> {
+  return {
+    'Content-Type':    'application/json',
+    'Accept':          'application/json',
+    'X-Service-Token': token,
+  }
+}
 
 async function getToken(): Promise<string> {
   if (_token) return _token
   const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
+  // Token generation still goes through fly.io proxy (wallet path — already working)
   const res = await fetch(`${PROXY}/api/v2/generate-access-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
@@ -24,24 +48,16 @@ async function getToken(): Promise<string> {
   return data.data
 }
 
-function svcHeaders(token: string) {
-  return {
-    'Content-Type':    'application/json',
-    'Accept':          'application/json',
-    'X-Service-Token': token,
-  }
-}
-
-async function post(base: string, path: string, token: string, body: object) {
-  const res = await fetch(`${base}${path}`, {
+async function apiPost(path: string, token: string, body: object) {
+  const url = `${MONETA_API}${path}`
+  const { status, text } = await monetaFetch(url, {
     method: 'POST',
     headers: svcHeaders(token),
     body: JSON.stringify(body),
   })
-  const text = await res.text()
-  console.log(`[nibss] POST ${base}${path} status=${res.status}: ${text.slice(0, 600)}`)
-  try { return { status: res.status, json: JSON.parse(text) } }
-  catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
+  console.log(`[nibss] POST ${path} status=${status}: ${text.slice(0, 600)}`)
+  try { return { status, json: JSON.parse(text) } }
+  catch { return { status, json: { error: `non-JSON (${status}): ${text.slice(0, 400)}` } } }
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -62,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { reference, otp } = body
       if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
 
-      const step2 = await post(MONETA_API, '/api/v2/bvn/verify/otp', token, {
+      const step2 = await apiPost('/api/v2/bvn/verify/otp', token, {
         customer_reference: reference,
         otp,
       })
@@ -70,27 +86,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       await sleep(6000)
 
-      const step3 = await post(MONETA_API, '/api/v2/bvn/details', token, {
+      const step3 = await apiPost('/api/v2/bvn/details', token, {
         scope:              'profile',
         customer_reference: reference,
       })
       return res.status(step3.status).json(step3.json)
     }
 
-    // STEP 1: try direct first, fall back to proxy if 403 (IP restriction)
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
-    const bvnBody = { bvn, scope: 'profile', channel_code: 'mobile_app' }
-
-    let result = await post(MONETA_API, '/api/v2/bvn/query', token, bvnBody)
-    if (result.status === 403) {
-      // Direct call blocked by IP — try through static-IP proxy
-      console.log('[nibss] direct call blocked (403), retrying via proxy')
-      result = await post(PROXY, '/api/v2/bvn/query', token, bvnBody)
-    }
-
-    return res.status(result.status).json(result.json)
+    const { status, json } = await apiPost('/api/v2/bvn/query', token, {
+      bvn,
+      scope:        'profile',
+      channel_code: 'mobile_app',
+    })
+    return res.status(status).json(json)
 
   } catch (e) {
     _token = null

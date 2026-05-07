@@ -78,11 +78,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(step3.status).json(step3.json)
     }
 
-    // STEP 1: initiate — Blessing confirmed this is the working path (no v2)
+    // STEP 1: initiate BVN OTP
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
-    const { status, json } = await directPost('/api/bvn/bvn_query', token, {
+    const { status, json } = await directPost('/api/v2/bvn/bvn_query', token, {
       bvn,
       scope:        'profile',
       channel_code: 'mobile_app',

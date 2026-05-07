@@ -38,9 +38,10 @@ async function proxyPost(path: string, token: string, body: object) {
     body: JSON.stringify(body),
   })
   const text = await res.text()
-  console.log(`[nibss] ${path} ${res.status}: ${text.slice(0, 400)}`)
+  const ct = res.headers.get('content-type') ?? ''
+  console.log(`[nibss] ${path} status=${res.status} ct=${ct}: ${text.slice(0, 600)}`)
   try { return { status: res.status, json: JSON.parse(text) } }
-  catch { return { status: res.status, json: { error: text.slice(0, 800) } } }
+  catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
 }
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))

@@ -48,14 +48,22 @@ app.all('/api/v2/*', async (req, res) => {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'User-Agent': 'MonetaApp/1.0',
         ...(req.headers['authorization']   && { 'Authorization':   req.headers['authorization'] }),
         ...(req.headers['x-auth-token']    && { 'X-Auth-Token':    req.headers['x-auth-token'] }),
         ...(req.headers['x-service-token'] && { 'X-Service-Token': req.headers['x-service-token'] }),
       },
       body: req.method !== 'GET' && req.body ? JSON.stringify(req.body) : undefined,
     })
-    const data = await upstream.json()
-    res.status(upstream.status).json(data)
+    const text = await upstream.text()
+    console.log(`[proxy] ${req.method} ${req.path} → ${upstream.status}: ${text.slice(0, 600)}`)
+    try {
+      const json = JSON.parse(text)
+      res.status(upstream.status).json(json)
+    } catch {
+      // Not JSON — pass text through with real status so caller can diagnose
+      res.status(upstream.status).type('text').send(text)
+    }
   } catch (e) {
     res.status(500).json({ error: e.message })
   }

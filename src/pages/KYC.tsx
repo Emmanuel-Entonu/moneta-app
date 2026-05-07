@@ -289,7 +289,7 @@ export default function KYC() {
                         const res = await fetch('/api/nibss-bvn', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ bvn }),
+                          body: JSON.stringify({ action: 'query', bvn }),
                         })
                         let json: Record<string, unknown>
                         try { json = await res.json() as Record<string, unknown> }
@@ -297,7 +297,16 @@ export default function KYC() {
                         if (!res.ok) { setBvnError(String(json.error ?? json.message ?? `Failed (${res.status})`)); return }
                         const raw = json.data
                         const d = (Array.isArray(raw) ? raw[0] : raw ?? json) as Record<string, unknown>
-                        const ref = String(d?.customer_reference ?? '')
+                        const nested = d?.customer as Record<string, unknown> | undefined
+                        const ref = String(
+                          d?.customer_reference ??
+                          d?.customerReference ??
+                          d?.reference ??
+                          d?.ref ??
+                          nested?.customer_reference ??
+                          nested?.customerReference ??
+                          '',
+                        )
                         if (ref) setBvnReference(ref)
                         else setBvnError('BVN lookup failed — no reference returned. Please try again.')
                       } catch (e: unknown) {

@@ -577,8 +577,21 @@ export async function createBrokerAccount(details: {
     country:      'NG',
   }
 
-  // ── Step 1: Create CRM client (skip if already created) ─────────────────────
-  let clientId = details.crmClientId ?? ''
+  // ── Step 1: Resolve CRM client ID ────────────────────────────────────────────
+  // Moneta operates as a single sub-broker entity: one CRM client with one
+  // investment account per end-user under it (per Melvin's architecture).
+  // VITE_PAC_CLIENT_ID holds the company-level CRM client ID set up by Melvin/Kajode.
+  // If not set, fall back to creating a per-user CRM client.
+  const sharedClientId = import.meta.env.VITE_PAC_CLIENT_ID as string | undefined
+  const productId      = import.meta.env.VITE_PAC_PRODUCT_ID as string | undefined
+  const branchId       = import.meta.env.VITE_PAC_BRANCH_ID  as string | undefined
+
+  if (!productId || !branchId) {
+    throw new Error('Investment account setup pending — VITE_PAC_PRODUCT_ID and VITE_PAC_BRANCH_ID must be set (contact WealthCare admin)')
+  }
+
+  let clientId = sharedClientId || details.crmClientId || ''
+
   if (!clientId) {
     const crmData = await brokerPost<Record<string, unknown>>(
       '/crm/api/v1/clients',
@@ -590,6 +603,8 @@ export async function createBrokerAccount(details: {
         valuationCurrency: 'NGN',
         clientType:        'INDIVIDUAL',
         groupId:           import.meta.env.VITE_PAC_GROUP_ID,
+        autoApprove:       true,
+        kycStatus:         'APPROVED_DOCUMENTS',
         address:           [addr],
         contact: [{
           role:             'INDV_OWNER',
@@ -614,15 +629,24 @@ export async function createBrokerAccount(details: {
     console.log('[createBrokerAccount] CRM response', JSON.stringify(crmData))
     clientId = String(crmData.id ?? crmData.clientId ?? '')
     if (!clientId) throw new Error('Broker did not return a CRM client ID')
+
+    // Submit KYC identity document (non-fatal)
+    try {
+      const kycDocResp = await brokerPost<Record<string, unknown>>('/crm/api/v1/kyc_documents', {
+        clientId,
+        recordType: 'IDENTITY',
+        idType:     ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
+        idNo:       details.idNumber ?? '',
+      })
+      console.log('[createBrokerAccount] KYC doc', JSON.stringify(kycDocResp).slice(0, 200))
+    } catch (e) {
+      console.warn('[createBrokerAccount] KYC document submission failed (non-fatal):', e)
+    }
   }
 
-  // ── Step 2: Create investment account ────────────────────────────────────────
-  const productId = import.meta.env.VITE_PAC_PRODUCT_ID as string | undefined
-  const branchId  = import.meta.env.VITE_PAC_BRANCH_ID  as string | undefined
-  if (!productId || !branchId) {
-    throw new Error('Investment account setup pending — VITE_PAC_PRODUCT_ID and VITE_PAC_BRANCH_ID must be set (contact WealthCare admin)')
-  }
+  console.log('[createBrokerAccount] clientId', clientId, sharedClientId ? '(shared)' : '(per-user)')
 
+  // ── Step 2: Create investment account — always explicit, ID returned directly ──
   const investData = await brokerPost<Record<string, unknown>>(
     '/investing/api/v1/investment/accounts',
     {
@@ -636,7 +660,7 @@ export async function createBrokerAccount(details: {
       autoApprove:          true,
     }
   )
-  console.log('[createBrokerAccount] investment account response', JSON.stringify(investData))
+  console.log('[createBrokerAccount] investment account', JSON.stringify(investData).slice(0, 300))
   const accountId = String(investData.id ?? '')
   if (!accountId) throw new Error('Broker did not return an investment account ID')
   return accountId

@@ -4,16 +4,14 @@ const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
-const BASE = 'https://api.moneta.ng/api/v2'
-const PROXY = 'https://moneta-proxy.fly.dev/api/v2'
+const PROXY = 'https://moneta-proxy.fly.dev'
 
 let _token: string | null = null
 
 async function getToken(): Promise<string> {
   if (_token) return _token
   const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
-  // Token generation goes through proxy (whitelisted)
-  const res = await fetch(`${PROXY}/generate-access-token`, {
+  const res = await fetch(`${PROXY}/api/v2/generate-access-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
   })
@@ -26,8 +24,8 @@ async function getToken(): Promise<string> {
 }
 
 async function apiPost(path: string, token: string, body: object) {
-  // BVN calls go through proxy (static IP for whitelisting)
-  const res = await fetch(`${PROXY}${path}`, {
+  const url = `${PROXY}${path}`
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type':    'application/json',
@@ -38,7 +36,7 @@ async function apiPost(path: string, token: string, body: object) {
   })
   const text = await res.text()
   const ct = res.headers.get('content-type') ?? ''
-  console.log(`[nibss] ${path} status=${res.status} ct=${ct}: ${text.slice(0, 600)}`)
+  console.log(`[nibss] POST ${path} status=${res.status} ct=${ct}: ${text.slice(0, 600)}`)
   try { return { status: res.status, json: JSON.parse(text) } }
   catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
 }
@@ -57,34 +55,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const token = await getToken()
 
-    // STEP 2+3: receive OTP → submit it → wait → get details
+    // STEP 2+3: OTP submitted → wait → fetch details
     if (body.action === 'verify-otp') {
       const { reference, otp } = body
       if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
 
-      // Submit OTP (collects it, doesn't verify)
-      const step2 = await apiPost('/bvn/verify/otp', token, {
+      const step2 = await apiPost('/api/bvn/verify_otp', token, {
         customer_reference: reference,
         otp,
       })
       if (!step2.json?.status) return res.status(step2.status).json(step2.json)
 
-      // Wait 6 seconds as docs require before fetching details
       await sleep(6000)
 
-      // Get BVN details
-      const step3 = await apiPost('/bvn/details', token, {
+      const step3 = await apiPost('/api/bvn/bvn_details', token, {
         scope:              'profile',
         customer_reference: reference,
       })
       return res.status(step3.status).json(step3.json)
     }
 
-    // STEP 1: initiate BVN query — sends OTP to user's phone
+    // STEP 1: initiate BVN query
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
-    const { status, json } = await apiPost('/bvn/query', token, {
+    const { status, json } = await apiPost('/api/bvn/bvn_query', token, {
       bvn,
       scope:        'profile',
       channel_code: 'mobile_app',

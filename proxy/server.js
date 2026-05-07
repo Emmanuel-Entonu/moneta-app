@@ -40,7 +40,7 @@ app.all('/nibss-app/*', async (req, res) => {
   }
 })
 
-app.all('/api/v2/*', async (req, res) => {
+app.all('/api/*', async (req, res) => {
   const url = `https://api.moneta.ng${req.path}${req.url.includes('?') ? '?' + req.url.split('?')[1] : ''}`
   try {
     const upstream = await fetch(url, {

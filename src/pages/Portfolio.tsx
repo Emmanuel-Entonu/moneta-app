@@ -142,10 +142,7 @@ function VerifyPaymentSheet({ onClose, onCredited }: { onClose: () => void; onCr
     }
   }
 
-  // Auto-verify when sheet opens with a pre-filled ref (browser closed / page reload)
-  useEffect(() => {
-    if (pendingRef) handleVerify()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // No auto-verify on open — user clicks the button to prevent spurious calls
 
   return (
     <>
@@ -270,8 +267,28 @@ export default function Portfolio() {
       loadAccount(pacAccountId)
       loadPositions(pacAccountId)
     }
-    // Auto-show verify sheet if a payment was pending when app reloads
-    if (localStorage.getItem('moneta_pending_ref')) setShowVerify(true)
+    // Silently check any pending payment ref — don't popup unless we're sure it succeeded
+    const pendingRef = localStorage.getItem('moneta_pending_ref')
+    if (pendingRef) {
+      const pendingAmount = parseFloat(localStorage.getItem('moneta_pending_amount') ?? '0')
+      verifyPayment(pendingRef)
+        .then(async (result) => {
+          localStorage.removeItem('moneta_pending_ref')
+          localStorage.removeItem('moneta_pending_amount')
+          if (result.success) {
+            const amount = pendingAmount > 0 ? pendingAmount : result.amountNaira
+            if (amount > 0) {
+              await useAuthStore.getState().creditWallet(amount)
+              setCreditBanner(amount)
+            }
+          }
+          // Payment abandoned or failed — silently discard, no popup
+        })
+        .catch(() => {
+          // Network error — fall back to manual recover sheet
+          setShowVerify(true)
+        })
+    }
   }, [pacAccountId])
 
 

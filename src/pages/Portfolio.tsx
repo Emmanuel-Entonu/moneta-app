@@ -333,8 +333,6 @@ export default function Portfolio() {
 
   return (
     <Layout noBorder>
-      {apiStatus && <div style={{ margin: '8px 16px', background: '#1a0a00', border: '1px solid #f97316', borderRadius: 8, padding: '8px 12px', fontSize: 11, color: '#f97316', wordBreak: 'break-all' }}>{apiStatus}</div>}
-
       {/* Payment credited banner */}
       {creditBanner !== null && (
         <div style={{ margin: '12px 16px 0', background: 'linear-gradient(135deg, #059669, #047857)', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 16px rgba(5,150,105,0.3)' }}>
@@ -368,7 +366,7 @@ export default function Portfolio() {
       {/* Broker account not linked — retry using saved KYC data */}
       {kycStatus === 'verified' && !pacAccountId && (
         <div style={{ margin: '12px 16px 0', background: 'linear-gradient(135deg, #1e3a5f, #1d4ed8)', borderRadius: 16, padding: '14px 16px', boxShadow: '0 4px 16px rgba(29,78,216,0.25)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: brokerLinkError ? 10 : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
@@ -382,9 +380,6 @@ export default function Portfolio() {
               {brokerLinking ? 'Linking…' : 'Link Now'}
             </button>
           </div>
-          {brokerLinkError && (
-            <p style={{ color: '#fca5a5', fontSize: 11, fontWeight: 600, margin: 0, paddingLeft: 52 }}>{brokerLinkError}</p>
-          )}
         </div>
       )}
 

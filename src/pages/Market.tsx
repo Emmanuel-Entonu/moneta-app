@@ -310,13 +310,6 @@ export default function Market() {
       {/* ── DARK BODY ── */}
       <div style={{ background: '#ffffff', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
 
-        {/* API error banner */}
-        {apiStatus && (
-          <div style={{ margin: '16px 12px 0', padding: '12px 14px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 12, fontSize: 12, color: '#991b1b', fontWeight: 600 }}>
-            {apiStatus}
-          </div>
-        )}
-
         {/* Top Movers section */}
         {!loadingMarket && topGainer && topLoser && mostActive && (
           <div style={{ padding: '20px 0 0' }}>

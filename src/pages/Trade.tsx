@@ -22,7 +22,13 @@ function parseHistoricalPrices(raw: unknown, currentPrice: number): number[] {
     const list = Array.isArray(r?.priceHistory) ? r.priceHistory as Record<string, unknown>[]
       : Array.isArray(r?.data) ? r.data as Record<string, unknown>[]
       : Array.isArray(raw) ? raw as Record<string, unknown>[] : []
-    const prices = list.map(it => Number(it?.close ?? it?.closingPrice ?? it?.closePrice ?? it?.price ?? 0)).filter(p => p > 0)
+    // Sort ascending by date — API may return newest-first which would plot the chart backwards
+    const sorted = [...list].sort((a, b) => {
+      const da = String(a?.tradeDate ?? a?.date ?? a?.Date ?? a?.time ?? '')
+      const db = String(b?.tradeDate ?? b?.date ?? b?.Date ?? b?.time ?? '')
+      return da.localeCompare(db)
+    })
+    const prices = sorted.map(it => Number(it?.close ?? it?.closingPrice ?? it?.closePrice ?? it?.price ?? 0)).filter(p => p > 0)
     if (prices.length > 0) prices[prices.length - 1] = currentPrice
     return prices
   } catch { return [] }
@@ -440,11 +446,6 @@ export default function Trade() {
                     <span style={{ fontSize: 12, fontWeight: 800, color: label === 'Total Due' ? '#059669' : 'var(--text)' }}>{value}</span>
                   </div>
                 ))}
-              </div>
-            )}
-            {validationError && !validation && (
-              <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: '#fff5f5', border: '1px solid #fecaca', fontSize: 12, color: '#991b1b', fontWeight: 600 }}>
-                Fee estimate unavailable — proceed to place order
               </div>
             )}
             {side === 'BUY' && (

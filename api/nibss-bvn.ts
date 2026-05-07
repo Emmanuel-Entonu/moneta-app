@@ -55,8 +55,6 @@ async function apiPost(path: string, token: string, body: object) {
   catch { return { status: res.status, json: { error: `non-JSON (${res.status}) ct=${ct}: ${text.slice(0, 300)}` } } }
 }
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -65,30 +63,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const body = req.body as { action?: string; bvn?: string; reference?: string; otp?: string }
+  const action = String(body.action ?? 'query').trim().toLowerCase()
 
-  console.log('[nibss] handler bvn action=', body.action ?? 'query', 'fixie_set=', !!FIXIE_URL)
+  console.log('[nibss] handler bvn action=', action, 'fixie_set=', !!FIXIE_URL)
 
   try {
     const token = await getToken()
 
-    if (body.action === 'verify-otp') {
+    if (action === 'verify-otp' || action === 'get-bvn-details') {
       const { reference, otp } = body
       if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
 
-      const step2 = await apiPost('/api/v2/bvn/verify/otp', token, {
+      const details = await apiPost('/api/v2/bvn/details', token, {
+        scope:              'profile',
         customer_reference: reference,
         otp,
       })
-      if (!step2.json?.status) return res.status(step2.status).json(step2.json)
-
-      await sleep(6000)
-
-      const step3 = await apiPost('/api/v2/bvn/details', token, {
-        scope:              'profile',
-        customer_reference: reference,
-      })
-      return res.status(step3.status).json(step3.json)
+      return res.status(details.status).json(details.json)
     }
+
+    if (action !== 'query') return res.status(400).json({ error: `Unknown BVN action: ${action}` })
 
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })

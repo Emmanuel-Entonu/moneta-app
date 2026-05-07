@@ -24,8 +24,7 @@ async function getToken(): Promise<string> {
 }
 
 async function bvnPost(path: string, token: string, body: object) {
-  // Try nips.moneta.ng (where the docs live) since api.moneta.ng blocks our proxy IP for BVN paths
-  const url = `${PROXY}/nips/api/v2/bvn${path}`
+  const url = `${PROXY}/api/v2/bvn${path}`
   const res = await fetch(url, {
     method: 'POST',
     headers: {

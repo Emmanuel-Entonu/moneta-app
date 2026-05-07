@@ -158,7 +158,7 @@ function SkeletonRow() {
 }
 
 export default function Market() {
-  const { marketData, loadingMarket, loadMarketData, apiStatus, wsConnected, startLivePrices } = usePortfolioStore()
+  const { marketData, loadingMarket, loadMarketData, wsConnected, startLivePrices } = usePortfolioStore()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
   const [nseIndex, setNseIndex] = useState<number | null>(null)

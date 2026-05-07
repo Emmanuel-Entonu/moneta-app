@@ -240,7 +240,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 }
 
 export default function Portfolio() {
-  const { positions, account, loadingPortfolio, loadPositions, loadAccount, apiStatus, cancelOrder, pacOrders, loadingOrders, loadOrders, orderFills, loadingFillsId, loadFills } = usePortfolioStore()
+  const { positions, account, loadingPortfolio, loadPositions, loadAccount, cancelOrder, pacOrders, loadingOrders, loadOrders, orderFills, loadingFillsId, loadFills } = usePortfolioStore()
   const { pacAccountId, walletBalance, loadProfile, kycStatus } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
@@ -250,7 +250,7 @@ export default function Portfolio() {
   const [orders, setOrders]             = useState<OrderRecord[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [brokerLinking, setBrokerLinking] = useState(false)
-  const [brokerLinkError, setBrokerLinkError] = useState<string | null>(null)
+  const [, setBrokerLinkError] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelErrors, setCancelErrors] = useState<Record<string, string>>({})
   const [supabaseIdMap, setSupabaseIdMap] = useState<Record<string, string>>({})

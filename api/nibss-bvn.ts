@@ -82,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
-    const { status, json } = await directPost('/api/v2/bvn/verify', token, {
+    const { status, json } = await directPost('/api/v2/bvn/query', token, {
       bvn,
       scope:        'profile',
       channel_code: 'mobile_app',

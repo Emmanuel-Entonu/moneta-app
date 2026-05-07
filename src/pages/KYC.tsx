@@ -277,9 +277,11 @@ export default function KYC() {
                         try { json = await res.json() as Record<string, unknown> }
                         catch { setBvnError(`Server error (${res.status}). Please try again.`); return }
                         if (!res.ok) { setBvnError(String(json.error ?? json.message ?? `Failed (${res.status})`)); return }
-                        const d = (json.data ?? json) as Record<string, unknown>
-                        const ref = String(d.customer_reference ?? '')
+                        const raw = json.data
+                        const d = (Array.isArray(raw) ? raw[0] : raw ?? json) as Record<string, unknown>
+                        const ref = String(d?.customer_reference ?? '')
                         if (ref) setBvnReference(ref)
+                        else setBvnError('BVN lookup failed — no reference returned. Please try again.')
                       } catch (e: unknown) {
                         setBvnError((e as Error).message ?? 'Network error. Please try again.')
                       } finally {

@@ -4,7 +4,8 @@ const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
-const PROXY = 'https://moneta-proxy.fly.dev'
+const PROXY      = 'https://moneta-proxy.fly.dev'
+const MONETA_API = 'https://api.moneta.ng'
 
 let _token: string | null = null
 
@@ -31,14 +32,14 @@ function svcHeaders(token: string) {
   }
 }
 
-async function directPost(path: string, token: string, body: object) {
-  const res = await fetch(`${PROXY}${path}`, {
+async function post(base: string, path: string, token: string, body: object) {
+  const res = await fetch(`${base}${path}`, {
     method: 'POST',
     headers: svcHeaders(token),
     body: JSON.stringify(body),
   })
   const text = await res.text()
-  console.log(`[nibss] POST ${path} status=${res.status}: ${text.slice(0, 600)}`)
+  console.log(`[nibss] POST ${base}${path} status=${res.status}: ${text.slice(0, 600)}`)
   try { return { status: res.status, json: JSON.parse(text) } }
   catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
 }
@@ -57,13 +58,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const token = await getToken()
 
-    // STEP 2: submit OTP
-    // STEP 3: wait 6s then get details
     if (body.action === 'verify-otp') {
       const { reference, otp } = body
       if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
 
-      const step2 = await directPost('/api/v2/bvn/verify/otp', token, {
+      const step2 = await post(MONETA_API, '/api/v2/bvn/verify/otp', token, {
         customer_reference: reference,
         otp,
       })
@@ -71,23 +70,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       await sleep(6000)
 
-      const step3 = await directPost('/api/v2/bvn/details', token, {
+      const step3 = await post(MONETA_API, '/api/v2/bvn/details', token, {
         scope:              'profile',
         customer_reference: reference,
       })
       return res.status(step3.status).json(step3.json)
     }
 
-    // STEP 1: initiate BVN OTP
+    // STEP 1: try direct first, fall back to proxy if 403 (IP restriction)
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
-    const { status, json } = await directPost('/api/v2/bvn/query', token, {
-      bvn,
-      scope:        'profile',
-      channel_code: 'mobile_app',
-    })
-    return res.status(status).json(json)
+    const bvnBody = { bvn, scope: 'profile', channel_code: 'mobile_app' }
+
+    let result = await post(MONETA_API, '/api/v2/bvn/query', token, bvnBody)
+    if (result.status === 403) {
+      // Direct call blocked by IP — try through static-IP proxy
+      console.log('[nibss] direct call blocked (403), retrying via proxy')
+      result = await post(PROXY, '/api/v2/bvn/query', token, bvnBody)
+    }
+
+    return res.status(result.status).json(result.json)
 
   } catch (e) {
     _token = null

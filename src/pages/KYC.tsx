@@ -119,7 +119,6 @@ export default function KYC() {
   const bvnRequestInFlight = useRef(false)
 
   const showPersonalDetails = bvnDone || bvnSkipped
-  const cleanOtpPhone = phone.replace(/\D/g, '').replace(/^234/, '0').slice(0, 15)
 
   useEffect(() => {
     if (!bvnReference) {
@@ -283,14 +282,14 @@ export default function KYC() {
                 ) : (
                   <button
                     onClick={async () => {
-                      if (bvnRequestInFlight.current || bvn.length !== 11 || cleanOtpPhone.length < 10 || bvnReference) return
+                      if (bvnRequestInFlight.current || bvn.length !== 11 || bvnReference) return
                       bvnRequestInFlight.current = true
                       setBvnLoading(true); setBvnError(null)
                       try {
                         const res = await fetch('/api/nibss-bvn', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ action: 'query', bvn, otpMethod: cleanOtpPhone }),
+                          body: JSON.stringify({ action: 'query', bvn }),
                         })
                         let json: Record<string, unknown>
                         try { json = await res.json() as Record<string, unknown> }
@@ -318,34 +317,18 @@ export default function KYC() {
                       }
                     }}
                     type="button"
-                    disabled={bvn.length !== 11 || cleanOtpPhone.length < 10 || bvnLoading || !!bvnReference}
+                    disabled={bvn.length !== 11 || bvnLoading || !!bvnReference}
                     style={{
                       padding: '0 18px', borderRadius: 12, border: 'none',
-                      background: bvn.length !== 11 || cleanOtpPhone.length < 10 || bvnLoading || !!bvnReference ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
-                      color: bvn.length !== 11 || cleanOtpPhone.length < 10 || bvnLoading || !!bvnReference ? '#94a3b8' : '#fff',
-                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: bvn.length !== 11 || cleanOtpPhone.length < 10 || !!bvnReference ? 'not-allowed' : 'pointer',
+                      background: bvn.length !== 11 || bvnLoading || !!bvnReference ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
+                      color: bvn.length !== 11 || bvnLoading || !!bvnReference ? '#94a3b8' : '#fff',
+                      fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: bvn.length !== 11 || !!bvnReference ? 'not-allowed' : 'pointer',
                     }}
                   >
                     {bvnLoading ? '…' : 'Send OTP'}
                   </button>
                 )}
               </div>
-
-              {!bvnDone && (
-                <div style={{ marginTop: 12 }}>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
-                    BVN-linked phone number
-                  </label>
-                  <input
-                    className="input-field"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, '').slice(0, 15))}
-                    placeholder="08012345678"
-                    disabled={!!bvnReference}
-                  />
-                </div>
-              )}
 
               {bvnError && <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 8 }}>{bvnError}</p>}
 

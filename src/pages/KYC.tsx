@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
@@ -115,8 +115,23 @@ export default function KYC() {
   const [bvnReference, setBvnReference] = useState<string | null>(null)
   const [otp, setOtp]                   = useState('')
   const [otpLoading, setOtpLoading]     = useState(false)
+  const [otpWaitSeconds, setOtpWaitSeconds] = useState(0)
+  const bvnRequestInFlight = useRef(false)
 
   const showPersonalDetails = bvnDone || bvnSkipped
+
+  useEffect(() => {
+    if (!bvnReference) {
+      setOtpWaitSeconds(0)
+      return
+    }
+
+    const readyAt = Date.now() + 30000
+    const tick = () => setOtpWaitSeconds(Math.max(0, Math.ceil((readyAt - Date.now()) / 1000)))
+    tick()
+    const timer = window.setInterval(tick, 1000)
+    return () => window.clearInterval(timer)
+  }, [bvnReference])
 
   function isValidDob(v: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false
@@ -253,7 +268,7 @@ export default function KYC() {
                   onChange={(e) => {
                     const v = e.target.value.replace(/\D/g, '').slice(0, 11)
                     setBvn(v)
-                    if (bvnDone || bvnReference) { setBvnDone(false); setBvnReference(null); setBvnError(null); setOtp('') }
+                    if (bvnDone || bvnReference) { setBvnDone(false); setBvnReference(null); setBvnError(null); setOtp(''); setOtpWaitSeconds(0) }
                   }}
                   placeholder="11-digit BVN"
                   disabled={bvnDone}
@@ -267,6 +282,8 @@ export default function KYC() {
                 ) : (
                   <button
                     onClick={async () => {
+                      if (bvnRequestInFlight.current || bvn.length !== 11 || bvnReference) return
+                      bvnRequestInFlight.current = true
                       setBvnLoading(true); setBvnError(null)
                       try {
                         const res = await fetch('/api/nibss-bvn', {
@@ -286,9 +303,11 @@ export default function KYC() {
                       } catch (e: unknown) {
                         setBvnError((e as Error).message ?? 'Network error. Please try again.')
                       } finally {
+                        bvnRequestInFlight.current = false
                         setBvnLoading(false)
                       }
                     }}
+                    type="button"
                     disabled={bvn.length !== 11 || bvnLoading || !!bvnReference}
                     style={{
                       padding: '0 18px', borderRadius: 12, border: 'none',
@@ -306,7 +325,9 @@ export default function KYC() {
 
               {bvnReference && !bvnDone && (
                 <div style={{ marginTop: 12, padding: 14, background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
-                  <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700, marginBottom: 10 }}>OTP sent to your BVN-linked number</p>
+                  <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700, marginBottom: 10 }}>
+                    {otpWaitSeconds > 0 ? `OTP sent. You can verify in ${otpWaitSeconds}s` : 'OTP sent to your BVN-linked number'}
+                  </p>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input
                       type="tel"
@@ -317,6 +338,7 @@ export default function KYC() {
                     />
                     <button
                       onClick={async () => {
+                        if (otpWaitSeconds > 0 || otpLoading) return
                         setOtpLoading(true); setBvnError(null)
                         try {
                           const res = await fetch('/api/nibss-bvn', {
@@ -341,10 +363,11 @@ export default function KYC() {
                           setOtpLoading(false)
                         }
                       }}
-                      disabled={otp.length < 4 || otpLoading}
-                      style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: otp.length < 4 || otpLoading ? '#d1fae5' : 'linear-gradient(135deg,#059669,#047857)', color: otp.length < 4 || otpLoading ? '#6ee7b7' : '#fff', fontWeight: 700, fontSize: 13, cursor: otp.length < 4 ? 'not-allowed' : 'pointer' }}
+                      type="button"
+                      disabled={otp.length < 4 || otpLoading || otpWaitSeconds > 0}
+                      style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: otp.length < 4 || otpLoading || otpWaitSeconds > 0 ? '#d1fae5' : 'linear-gradient(135deg,#059669,#047857)', color: otp.length < 4 || otpLoading || otpWaitSeconds > 0 ? '#6ee7b7' : '#fff', fontWeight: 700, fontSize: 13, cursor: otp.length < 4 || otpWaitSeconds > 0 ? 'not-allowed' : 'pointer' }}
                     >
-                      {otpLoading ? 'Verifying…' : 'Verify'}
+                      {otpLoading ? 'Verifying…' : otpWaitSeconds > 0 ? `${otpWaitSeconds}s` : 'Verify'}
                     </button>
                   </div>
                 </div>

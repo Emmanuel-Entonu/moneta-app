@@ -562,6 +562,7 @@ export async function createBrokerAccount(details: {
   address?:   string
   idType?:    string
   idNumber?:  string
+  userId?:    string
   crmClientId?: string  // pass to skip CRM step on retry
 }): Promise<string> {
   const [firstName, ...rest] = details.fullName.trim().split(' ')
@@ -581,13 +582,15 @@ export async function createBrokerAccount(details: {
   // Moneta operates as a single sub-broker entity: one CRM client with one
   // investment account per end-user under it (per Melvin's architecture).
   // VITE_PAC_CLIENT_ID holds the company-level CRM client ID set up by Melvin/Kajode.
-  // If not set, fall back to creating a per-user CRM client.
   const sharedClientId = import.meta.env.VITE_PAC_CLIENT_ID as string | undefined
   const productId      = import.meta.env.VITE_PAC_PRODUCT_ID as string | undefined
   const branchId       = import.meta.env.VITE_PAC_BRANCH_ID  as string | undefined
 
+  if (!sharedClientId && !details.crmClientId) {
+    throw new Error('Investment account setup pending — VITE_PAC_CLIENT_ID must be set to the shared Moneta broker client ID')
+  }
   if (!productId || !branchId) {
-    throw new Error('Investment account setup pending — VITE_PAC_PRODUCT_ID and VITE_PAC_BRANCH_ID must be set (contact WealthCare admin)')
+    throw new Error('Investment account setup pending — VITE_PAC_PRODUCT_ID and VITE_PAC_BRANCH_ID must be set')
   }
 
   let clientId = sharedClientId || details.crmClientId || ''
@@ -647,6 +650,12 @@ export async function createBrokerAccount(details: {
   console.log('[createBrokerAccount] clientId', clientId, sharedClientId ? '(shared)' : '(per-user)')
 
   // ── Step 2: Create investment account — always explicit, ID returned directly ──
+  const subBrokerIdentifier = (details.userId || details.email || mobileNo)
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, 64)
+  const refCode = `MONETA-${subBrokerIdentifier || Date.now()}`
+  const accountLabel = `Moneta / pending / ${refCode}`
+
   const investData = await brokerPost<Record<string, unknown>>(
     '/investing/api/v1/investment/accounts',
     {
@@ -655,9 +664,10 @@ export async function createBrokerAccount(details: {
       branchId,
       mgmtType:             'SELF',
       accountUsage:         'LIVE',
-      accountLabel:         details.fullName,
+      accountLabel,
       directCashSettlement: false,
-      autoApprove:          true,
+      autoApprove:          false,
+      refCode,
     }
   )
   console.log('[createBrokerAccount] investment account', JSON.stringify(investData).slice(0, 300))
@@ -665,4 +675,3 @@ export async function createBrokerAccount(details: {
   if (!accountId) throw new Error('Broker did not return an investment account ID')
   return accountId
 }
-

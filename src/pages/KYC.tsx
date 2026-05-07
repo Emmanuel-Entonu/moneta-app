@@ -188,6 +188,7 @@ export default function KYC() {
           address:   cleanAddress,
           idType,
           idNumber:  cleanIdNum,
+          userId:    user.id,
         })
       } catch (e) {
         console.warn('Broker account creation failed (will retry later):', e)

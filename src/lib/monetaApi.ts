@@ -7,7 +7,7 @@ function monetaUrl(endpoint: string) {
 }
 const CLIENT_ID  = import.meta.env.VITE_MONETA_CLIENT_ID     as string
 const CLIENT_SEC = import.meta.env.VITE_MONETA_CLIENT_SECRET as string
-const SVC_KEY    = import.meta.env.VITE_MONETA_SERVICE_KEY   as string
+const SVC_KEY    = import.meta.env.VITE_MONETA_WALLET_SERVICE_KEY as string
 const MAC_KEY    = import.meta.env.VITE_MONETA_MAC_KEY       as string
 
 const CALLBACK_URL = Capacitor.isNativePlatform()

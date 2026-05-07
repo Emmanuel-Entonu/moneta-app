@@ -23,6 +23,26 @@ async function getToken(): Promise<string> {
   return data.data
 }
 
+async function bvnPost(path: string, token: string, body: object) {
+  // Try nips.moneta.ng (where the docs live) since api.moneta.ng blocks our proxy IP for BVN paths
+  const url = `${PROXY}/nips/api/v2/bvn${path}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type':    'application/json',
+      'Accept':          'application/json',
+      'X-Service-Token': token,
+    },
+    body: JSON.stringify(body),
+  })
+  const text = await res.text()
+  console.log(`[nibss] bvn${path} status=${res.status}: ${text.slice(0, 600)}`)
+  try { return { status: res.status, json: JSON.parse(text) } }
+  catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
+}
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -30,30 +50,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(204).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { bvn } = req.body as { bvn?: string }
-  if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
+  const body = req.body as { action?: string; bvn?: string; reference?: string; otp?: string }
 
   try {
     const token = await getToken()
 
-    const upstream = await fetch(`${PROXY}/api/bvn/bvn_query`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'Accept':          'application/json',
-        'X-Service-Token': token,
-      },
-      body: JSON.stringify({ bvn, scope: 'profile', channel_code: 'mobile_app' }),
-    })
+    // STEP 2+3: submit OTP → wait → get details
+    if (body.action === 'verify-otp') {
+      const { reference, otp } = body
+      if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
 
-    const text = await upstream.text()
-    console.log(`[nibss] bvn_query status=${upstream.status}: ${text.slice(0, 600)}`)
+      const step2 = await bvnPost('/verify/otp', token, { customer_reference: reference, otp })
+      if (!step2.json?.status) return res.status(step2.status).json(step2.json)
 
-    try {
-      return res.status(upstream.status).json(JSON.parse(text))
-    } catch {
-      return res.status(upstream.status).json({ error: `non-JSON (${upstream.status}): ${text.slice(0, 400)}` })
+      await sleep(6000)
+
+      const step3 = await bvnPost('/details', token, { scope: 'profile', customer_reference: reference })
+      return res.status(step3.status).json(step3.json)
     }
+
+    // STEP 1: initiate BVN query
+    const { bvn } = body
+    if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
+
+    const { status, json } = await bvnPost('/query', token, {
+      bvn,
+      scope:        'profile',
+      channel_code: 'mobile_app',
+    })
+    return res.status(status).json(json)
 
   } catch (e) {
     _token = null

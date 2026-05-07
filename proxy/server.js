@@ -40,6 +40,30 @@ app.all('/nibss-app/*', async (req, res) => {
   }
 })
 
+app.all('/nips/*', async (req, res) => {
+  const path = req.path.replace('/nips', '')
+  const url = `https://nips.moneta.ng${path}`
+  try {
+    const upstream = await fetch(url, {
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'MonetaApp/1.0',
+        ...(req.headers['x-auth-token']    && { 'X-Auth-Token':    req.headers['x-auth-token'] }),
+        ...(req.headers['x-service-token'] && { 'X-Service-Token': req.headers['x-service-token'] }),
+      },
+      body: req.method !== 'GET' && req.body ? JSON.stringify(req.body) : undefined,
+    })
+    const text = await upstream.text()
+    console.log(`[proxy/nips] ${req.method} ${path} → ${upstream.status}: ${text.slice(0, 600)}`)
+    try { res.status(upstream.status).json(JSON.parse(text)) }
+    catch { res.status(upstream.status).type('text').send(text) }
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 app.all('/api/*', async (req, res) => {
   const url = `https://api.moneta.ng${req.path}${req.url.includes('?') ? '?' + req.url.split('?')[1] : ''}`
   try {

@@ -267,14 +267,16 @@ export default function Portfolio() {
       loadAccount(pacAccountId)
       loadPositions(pacAccountId)
     }
-    // Silently check any pending payment ref — don't popup unless we're sure it succeeded
+    // Silently verify any pending payment ref.
+    // Claim synchronously first — effect runs twice (pacAccountId goes null→value),
+    // removing upfront ensures only one of the two calls ever processes the ref.
     const pendingRef = localStorage.getItem('moneta_pending_ref')
     if (pendingRef) {
       const pendingAmount = parseFloat(localStorage.getItem('moneta_pending_amount') ?? '0')
+      localStorage.removeItem('moneta_pending_ref')
+      localStorage.removeItem('moneta_pending_amount')
       verifyPayment(pendingRef)
         .then(async (result) => {
-          localStorage.removeItem('moneta_pending_ref')
-          localStorage.removeItem('moneta_pending_amount')
           if (result.success) {
             const amount = pendingAmount > 0 ? pendingAmount : result.amountNaira
             if (amount > 0) {
@@ -282,10 +284,12 @@ export default function Portfolio() {
               setCreditBanner(amount)
             }
           }
-          // Payment abandoned or failed — silently discard, no popup
+          // Not success = abandoned payment — already cleared, nothing to show
         })
         .catch(() => {
-          // Network error — fall back to manual recover sheet
+          // Network error — put the ref back so user can manually recover
+          localStorage.setItem('moneta_pending_ref', pendingRef)
+          if (pendingAmount > 0) localStorage.setItem('moneta_pending_amount', String(pendingAmount))
           setShowVerify(true)
         })
     }

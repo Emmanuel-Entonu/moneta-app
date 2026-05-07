@@ -4,6 +4,7 @@ const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
 const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
 const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
 
+const BASE  = 'https://api.moneta.ng'
 const PROXY = 'https://moneta-proxy.fly.dev'
 
 let _token: string | null = null
@@ -23,19 +24,22 @@ async function getToken(): Promise<string> {
   return data.data
 }
 
-async function bvnPost(path: string, token: string, body: object) {
-  const url = `${PROXY}/api/v2/bvn${path}`
-  const res = await fetch(url, {
+function svcHeaders(token: string) {
+  return {
+    'Content-Type':    'application/json',
+    'Accept':          'application/json',
+    'X-Service-Token': token,
+  }
+}
+
+async function directPost(path: string, token: string, body: object) {
+  const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
-    headers: {
-      'Content-Type':    'application/json',
-      'Accept':          'application/json',
-      'X-Service-Token': token,
-    },
+    headers: svcHeaders(token),
     body: JSON.stringify(body),
   })
   const text = await res.text()
-  console.log(`[nibss] bvn${path} status=${res.status}: ${text.slice(0, 600)}`)
+  console.log(`[nibss] POST ${path} status=${res.status}: ${text.slice(0, 600)}`)
   try { return { status: res.status, json: JSON.parse(text) } }
   catch { return { status: res.status, json: { error: `non-JSON (${res.status}): ${text.slice(0, 400)}` } } }
 }
@@ -54,25 +58,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const token = await getToken()
 
-    // STEP 2+3: submit OTP → wait → get details
+    // STEP 2: submit OTP
+    // STEP 3: wait 6s then get details
     if (body.action === 'verify-otp') {
       const { reference, otp } = body
       if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
 
-      const step2 = await bvnPost('/verify/otp', token, { customer_reference: reference, otp })
+      const step2 = await directPost('/api/v2/bvn/verify/otp', token, {
+        customer_reference: reference,
+        otp,
+      })
       if (!step2.json?.status) return res.status(step2.status).json(step2.json)
 
       await sleep(6000)
 
-      const step3 = await bvnPost('/details', token, { scope: 'profile', customer_reference: reference })
+      const step3 = await directPost('/api/v2/bvn/details', token, {
+        scope:              'profile',
+        customer_reference: reference,
+      })
       return res.status(step3.status).json(step3.json)
     }
 
-    // STEP 1: initiate BVN query
+    // STEP 1: initiate — Blessing confirmed this is the working path (no v2)
     const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
-    const { status, json } = await bvnPost('/query', token, {
+    const { status, json } = await directPost('/api/bvn/bvn_query', token, {
       bvn,
       scope:        'profile',
       channel_code: 'mobile_app',

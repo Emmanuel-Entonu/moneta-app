@@ -252,8 +252,11 @@ export default function KYC() {
           <div className="animate-in">
             <p style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>BVN Verification</p>
             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
-              Enter your BVN and fill in your personal details to continue.
+              Enter your phone number and BVN to continue.
             </p>
+
+            {/* Phone Input for OTP */}
+            <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
 
             {/* BVN Input */}
             <div style={{ marginBottom: bvnDone ? 0 : 20 }}>
@@ -289,7 +292,7 @@ export default function KYC() {
                         const res = await fetch('/api/nibss-bvn', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ action: 'query', bvn }),
+                          body: JSON.stringify({ action: 'query', bvn, phone }),
                         })
                         let json: Record<string, unknown>
                         try { json = await res.json() as Record<string, unknown> }
@@ -317,7 +320,7 @@ export default function KYC() {
                       }
                     }}
                     type="button"
-                    disabled={bvn.length !== 11 || bvnLoading || !!bvnReference}
+                    disabled={bvn.length !== 11 || bvnLoading || !!bvnReference || phone.replace(/\D/g, '').length < 10}
                     style={{
                       padding: '0 18px', borderRadius: 12, border: 'none',
                       background: bvn.length !== 11 || bvnLoading || !!bvnReference ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',

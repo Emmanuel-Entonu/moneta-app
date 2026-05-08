@@ -121,15 +121,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (action !== 'query') return res.status(400).json({ error: `Unknown BVN action: ${action}` })
 
-    const { bvn, phone } = body
+    const { bvn } = body
     if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
-    if (!phone || phone.replace(/\D/g, '').length < 10) return res.status(400).json({ error: 'Phone number required for OTP' })
 
     const { status, json } = await apiPost('/api/v2/bvn/query', token, {
       bvn,
       scope:        'profile',
       channel_code: 'mobile_app',
-      otp_method:   phone,
     })
     const data = (json as { data?: unknown }).data
     const d = (Array.isArray(data) ? data[0] : data ?? json) as Record<string, unknown>

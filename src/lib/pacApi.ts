@@ -513,6 +513,13 @@ function normalizePosition(d: unknown): PacPosition {
 }
 
 
+const ID_TYPE_MAP: Record<string, string> = {
+  'National ID (NIN)':       'NATIONAL_ID',
+  'International Passport':  'PASSPORT',
+  "Driver's Licence":        'DRIVERS_LICENSE',
+  "Voter's Card":            'VOTER_ID',
+}
+
 export async function createBrokerAccount(details: {
   fullName:   string
   email:      string
@@ -524,13 +531,58 @@ export async function createBrokerAccount(details: {
   idNumber?:  string
   userId?:    string
 }): Promise<string> {
+  const [firstName, ...rest] = details.fullName.trim().split(' ')
+  const lastName = rest.join(' ') || firstName
   const mobileNo = details.phone.replace(/\D/g, '')
 
-  // ── Step 1: Resolve CRM client ID ────────────────────────────────────────────
-  const clientId = '201e7ef2-159c-4744-8a6b-95656a60fbcc'
   const productId = '019e01ab-0727-74c1-9c60-81830bf546ba'
   const branchId  = 'b94b25a0-6546-49a5-8ee6-87046b9d602f'
 
+  const addr = {
+    type:         'PRIMARY',
+    addressLine1: details.address ?? '',
+    city:         'Lagos',
+    state:        'LA',
+    postCode:     '100001',
+    country:      'NG',
+  }
+
+  // ── Step 1: Create a CRM client for this user ─────────────────────────────
+  const crmData = await brokerPost<Record<string, unknown>>(
+    '/crm/api/v1/clients',
+    {
+      label:             details.fullName,
+      email:             details.email,
+      notificationEmail: details.email,
+      mobileNo,
+      valuationCurrency: 'NGN',
+      clientType:        'INDIVIDUAL',
+      autoApprove:       true,
+      kycStatus:         'APPROVED_DOCUMENTS',
+      address:           [addr],
+      contact: [{
+        role:             'INDV_OWNER',
+        label:            details.fullName,
+        firstName,
+        lastName,
+        email:            details.email,
+        mobileNo,
+        title:            'MR',
+        gender:           'MALE',
+        maritalStatus:    'SINGLE',
+        grantLoginAccess: false,
+        finIdNo:          details.bvn ?? '',
+        idType:           ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
+        idNo:             details.idNumber ?? '',
+        birthDate:        details.dob ?? '',
+        nationality:      'NGA',
+        address:          addr,
+      }],
+    }
+  )
+  console.log('[createBrokerAccount] CRM response', JSON.stringify(crmData).slice(0, 300))
+  const clientId = String(crmData.id ?? crmData.clientId ?? '')
+  if (!clientId) throw new Error('PAC did not return a CRM client ID')
   console.log('[createBrokerAccount] clientId', clientId)
 
   // ── Step 2: Create investment account — always explicit, ID returned directly ──

@@ -1,8 +1,5 @@
 const BROKER_BASE = (import.meta.env.VITE_BROKER_BASE_URL as string | undefined) || 'https://api.prod.mywealthcare.io'
 export const BROKER_BASE_DISPLAY = BROKER_BASE
-const USERNAME    = (import.meta.env.VITE_PAC_USERNAME    as string | undefined) || 'moneta-user'
-const PASSWORD    = (import.meta.env.VITE_PAC_PASSWORD    as string | undefined) || 'izV6ZBQkpr$$ZlGe'
-const TENANT_ID   = (import.meta.env.VITE_PAC_TENANT_ID   as string | undefined) || 'pac-sec'
 
 const MARKET_CODE = 'NGX'
 
@@ -24,47 +21,21 @@ const SECURITY_NAMES: Record<string, string> = {
   SEPLAT:     'Seplat Energy Plc',
 }
 
-let _bearerToken: string | null = null
-let _tokenExpiry = 0
-let _tokenPromise: Promise<string> | null = null
-
 const PROXY_PATH = '/api/pac-proxy'
 
 async function pacProxy<T>(path: string, method = 'GET', body?: unknown, extraHeaders?: Record<string, string>): Promise<T> {
-  const token = _bearerToken ?? ''
   const url = `${PROXY_PATH}?path=${encodeURIComponent(path)}`
   const isGet = method === 'GET' || method === 'HEAD'
   const res = await fetch(url, {
     method,
     headers: {
       ...(!isGet ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { 'x-pac-token': token } : {}),
       ...(extraHeaders ?? {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) throw new Error(`Broker ${res.status}: ${await res.text()}`)
   return res.json()
-}
-
-async function getBearerToken(): Promise<string> {
-  if (_bearerToken && Date.now() < _tokenExpiry) return _bearerToken
-  if (!_tokenPromise) {
-    _tokenPromise = pacProxy<{ token?: string; access_token?: string; expires_in?: number }>(
-      '/administration/api/v1/users/token/daemon',
-      'POST',
-      { username: USERNAME, password: PASSWORD, tenant: TENANT_ID },
-    ).then((data) => {
-      _bearerToken = data.access_token ?? data.token ?? ''
-      _tokenExpiry = Date.now() + ((data.expires_in ?? 1800) * 1000) - 60000
-      _tokenPromise = null
-      return _bearerToken
-    }).catch((e) => {
-      _tokenPromise = null
-      throw e
-    })
-  }
-  return _tokenPromise
 }
 
 async function mdsGet<T>(path: string): Promise<T> {
@@ -76,17 +47,14 @@ async function mdsGet<T>(path: string): Promise<T> {
 }
 
 async function brokerGet<T>(path: string): Promise<T> {
-  await getBearerToken()
   return pacProxy<T>(path, 'GET')
 }
 
 async function brokerPost<T>(path: string, body: unknown, extraHeaders?: Record<string, string>): Promise<T> {
-  await getBearerToken()
   return pacProxy<T>(path, 'POST', body, extraHeaders)
 }
 
 async function brokerPatch<T>(path: string, body?: unknown): Promise<T> {
-  await getBearerToken()
   return pacProxy<T>(path, 'PATCH', body)
 }
 

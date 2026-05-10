@@ -547,75 +547,11 @@ export async function createBrokerAccount(details: {
   }
 
   // ── Step 1: Resolve CRM client ID ────────────────────────────────────────────
-  // Moneta operates as a single sub-broker entity: one CRM client with one
-  // investment account per end-user under it (per Melvin's architecture).
-  // VITE_PAC_CLIENT_ID holds the company-level CRM client ID set up by Melvin/Kajode.
-  const sharedClientId = import.meta.env.VITE_PAC_CLIENT_ID as string | undefined
-  const productId      = import.meta.env.VITE_PAC_PRODUCT_ID as string | undefined
-  const branchId       = import.meta.env.VITE_PAC_BRANCH_ID  as string | undefined
+  const clientId = '201e7ef2-159c-4744-8a6b-95656a60fbcc'
+  const productId = '019e01ab-0727-74c1-9c60-81830bf546ba'
+  const branchId  = 'b94b25a0-6546-49a5-8ee6-87046b9d602f'
 
-  if (!sharedClientId && !details.crmClientId) {
-    throw new Error('Investment account setup pending — VITE_PAC_CLIENT_ID must be set to the shared Moneta broker client ID')
-  }
-  if (!productId || !branchId) {
-    throw new Error('Investment account setup pending — VITE_PAC_PRODUCT_ID and VITE_PAC_BRANCH_ID must be set')
-  }
-
-  let clientId = sharedClientId || details.crmClientId || ''
-
-  if (!clientId) {
-    const crmData = await brokerPost<Record<string, unknown>>(
-      '/crm/api/v1/clients',
-      {
-        label:             details.fullName,
-        email:             details.email,
-        notificationEmail: details.email,
-        mobileNo,
-        valuationCurrency: 'NGN',
-        clientType:        'INDIVIDUAL',
-        groupId:           import.meta.env.VITE_PAC_GROUP_ID,
-        autoApprove:       true,
-        kycStatus:         'APPROVED_DOCUMENTS',
-        address:           [addr],
-        contact: [{
-          role:             'INDV_OWNER',
-          label:            details.fullName,
-          firstName,
-          lastName,
-          email:            details.email,
-          mobileNo,
-          title:            'MR',
-          gender:           'MALE',
-          maritalStatus:    'SINGLE',
-          grantLoginAccess: false,
-          finIdNo:          details.bvn,
-          idType:           ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
-          idNo:             details.idNumber ?? '',
-          birthDate:        details.dob ?? '',
-          nationality:      'NGA',
-          address:          addr,
-        }],
-      }
-    )
-    console.log('[createBrokerAccount] CRM response', JSON.stringify(crmData))
-    clientId = String(crmData.id ?? crmData.clientId ?? '')
-    if (!clientId) throw new Error('Broker did not return a CRM client ID')
-
-    // Submit KYC identity document (non-fatal)
-    try {
-      const kycDocResp = await brokerPost<Record<string, unknown>>('/crm/api/v1/kyc_documents', {
-        clientId,
-        recordType: 'IDENTITY',
-        idType:     ID_TYPE_MAP[details.idType ?? ''] ?? 'NATIONAL_ID',
-        idNo:       details.idNumber ?? '',
-      })
-      console.log('[createBrokerAccount] KYC doc', JSON.stringify(kycDocResp).slice(0, 200))
-    } catch (e) {
-      console.warn('[createBrokerAccount] KYC document submission failed (non-fatal):', e)
-    }
-  }
-
-  console.log('[createBrokerAccount] clientId', clientId, sharedClientId ? '(shared)' : '(per-user)')
+  console.log('[createBrokerAccount] clientId', clientId)
 
   // ── Step 2: Create investment account — always explicit, ID returned directly ──
   const refCode = `MONETA-${Date.now().toString(36).toUpperCase()}`.slice(0, 20)
@@ -632,7 +568,7 @@ export async function createBrokerAccount(details: {
       accountUsage:         'LIVE',
       accountLabel,
       directCashSettlement: false,
-      autoApprove:          true,
+      autoApprove:          false,
       refCode,
     }
   )

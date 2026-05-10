@@ -95,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!otpResult.json?.status) return res.status(otpResult.status).json(otpResult.json)
 
       let lastDetails: Awaited<ReturnType<typeof apiPost>> | null = null
-      const delays = [7000, 5000, 5000, 5000, 5000, 5000]
+      const delays = [20000, 5000, 5000, 5000, 5000, 5000]
       for (let attempt = 0; attempt < delays.length; attempt++) {
         await sleep(delays[attempt])
         const details = await apiPost('/api/v2/bvn/details', token, {

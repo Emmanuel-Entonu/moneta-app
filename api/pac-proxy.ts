@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const PAC_BASE  = process.env.VITE_BROKER_BASE_URL || 'https://api.prod.mywealthcare.io'
 const TENANT_ID = process.env.VITE_PAC_TENANT_ID   || 'pac-sec'
-const USERNAME  = process.env.VITE_PAC_USERNAME     || ''
-const PASSWORD  = process.env.VITE_PAC_PASSWORD     || ''
+const USERNAME  = process.env.VITE_PAC_USERNAME     || 'moneta-user'
+const PASSWORD  = process.env.VITE_PAC_PASSWORD     || 'izV6ZBQkpr$$ZlGe'
 
 let _token: string | null = null
 let _tokenExpiry = 0

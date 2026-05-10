@@ -618,11 +618,9 @@ export async function createBrokerAccount(details: {
   console.log('[createBrokerAccount] clientId', clientId, sharedClientId ? '(shared)' : '(per-user)')
 
   // ── Step 2: Create investment account — always explicit, ID returned directly ──
-  const subBrokerIdentifier = (details.userId || details.email || mobileNo)
-    .replace(/[^a-zA-Z0-9_-]/g, '')
-    .slice(0, 64)
-  const refCode = `MONETA-${subBrokerIdentifier || Date.now()}`
-  const accountLabel = `Moneta / pending / ${refCode}`
+  const refCode = `MONETA-${Date.now().toString(36).toUpperCase()}`
+  const subBrokerIdentifier = (details.email || mobileNo).slice(0, 64)
+  const accountLabel = `Moneta / ${refCode} / ${subBrokerIdentifier}`
 
   const investData = await brokerPost<Record<string, unknown>>(
     '/investing/api/v1/investment/accounts',

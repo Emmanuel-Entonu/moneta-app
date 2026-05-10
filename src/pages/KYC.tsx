@@ -256,7 +256,7 @@ export default function KYC() {
             </p>
 
             {/* BVN Input */}
-            <div style={{ marginBottom: bvnDone ? 0 : 20 }}>
+            <div style={{ marginBottom: (bvnDone || bvnSkipped) ? 0 : 20 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
                 Bank Verification Number (BVN)
               </label>
@@ -269,16 +269,25 @@ export default function KYC() {
                     const v = e.target.value.replace(/\D/g, '').slice(0, 11)
                     setBvn(v)
                     if (bvnDone || bvnReference) { setBvnDone(false); setBvnReference(null); setBvnError(null); setOtp(''); setOtpWaitSeconds(0) }
+                    if (bvnSkipped) setBvnSkipped(false)
                   }}
                   placeholder="11-digit BVN"
-                  disabled={bvnDone}
-                  style={{ flex: 1, opacity: bvnDone ? 0.7 : 1 }}
+                  disabled={bvnDone || bvnSkipped}
+                  style={{ flex: 1, opacity: (bvnDone || bvnSkipped) ? 0.7 : 1 }}
                 />
                 {bvnDone ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 12px', color: '#059669', fontWeight: 700, fontSize: 13 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     Verified
                   </div>
+                ) : bvnSkipped ? (
+                  <button
+                    onClick={() => { setBvnSkipped(false) }}
+                    type="button"
+                    style={{ padding: '0 14px', borderRadius: 12, border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#94a3b8', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Change
+                  </button>
                 ) : (
                   <button
                     onClick={async () => {
@@ -331,6 +340,21 @@ export default function KYC() {
               </div>
 
               {bvnError && <p style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 8 }}>{bvnError}</p>}
+
+              {bvn.length === 11 && !bvnDone && !bvnSkipped && !bvnReference && (
+                <button
+                  type="button"
+                  onClick={() => setBvnSkipped(true)}
+                  style={{
+                    width: '100%', marginTop: 8, padding: '11px',
+                    borderRadius: 10, border: '1.5px dashed #cbd5e1',
+                    background: 'transparent', color: '#64748b',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Continue with BVN without OTP verification
+                </button>
+              )}
 
               {bvnReference && !bvnDone && (
                 <div style={{ marginTop: 12, padding: 14, background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
@@ -419,7 +443,7 @@ export default function KYC() {
               </button>
             </div>
 
-            {!bvnSkipped && !bvnDone && (
+            {!bvnSkipped && !bvnDone && bvn.length < 11 && (
               <button
                 onClick={() => setBvnSkipped(true)}
                 style={{

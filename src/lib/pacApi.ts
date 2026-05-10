@@ -513,38 +513,18 @@ function normalizePosition(d: unknown): PacPosition {
 }
 
 
-const ID_TYPE_MAP: Record<string, string> = {
-  'National ID (NIN)':       'NATIONAL_ID',
-  'International Passport':  'PASSPORT',
-  "Driver's Licence":        'DRIVERS_LICENSE',
-  "Voter's Card":            'VOTER_ID',
-}
-
-
 export async function createBrokerAccount(details: {
   fullName:   string
   email:      string
   phone:      string
-  bvn:        string
+  bvn?:       string
   dob?:       string
   address?:   string
   idType?:    string
   idNumber?:  string
   userId?:    string
-  crmClientId?: string  // pass to skip CRM step on retry
 }): Promise<string> {
-  const [firstName, ...rest] = details.fullName.trim().split(' ')
-  const lastName = rest.join(' ') || firstName
   const mobileNo = details.phone.replace(/\D/g, '')
-
-  const addr = {
-    type:         'PRIMARY',
-    addressLine1: details.address ?? '',
-    city:         'Lagos',
-    state:        'LA',
-    postCode:     '100001',
-    country:      'NG',
-  }
 
   // ── Step 1: Resolve CRM client ID ────────────────────────────────────────────
   const clientId = '201e7ef2-159c-4744-8a6b-95656a60fbcc'

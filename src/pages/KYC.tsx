@@ -180,6 +180,7 @@ export default function KYC() {
         kycDocUrl = publicUrl
       }
 
+      // Save personal data first (status = submitted until broker succeeds)
       const { error: dbError } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: cleanName,
@@ -187,7 +188,7 @@ export default function KYC() {
         date_of_birth: dob || null,
         address: cleanAddress,
         bvn: cleanBvn,
-        kyc_status: 'verified',
+        kyc_status: 'submitted',
         kyc_doc_url: kycDocUrl,
       })
       if (dbError) throw new Error(dbError.message)
@@ -210,8 +211,11 @@ export default function KYC() {
         throw new Error(`Broker account setup failed: ${(e as Error).message}`)
       }
 
+      // Broker succeeded — mark as verified and save account ID together
       if (pacAccountId) {
-        const { error: updateErr } = await supabase.from('profiles').update({ pac_account_id: pacAccountId }).eq('id', user.id)
+        const { error: updateErr } = await supabase.from('profiles')
+          .update({ pac_account_id: pacAccountId, kyc_status: 'verified' })
+          .eq('id', user.id)
         if (updateErr) throw new Error(`Failed to save broker account: ${updateErr.message}`)
       }
 

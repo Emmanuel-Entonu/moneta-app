@@ -56,10 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = !isGet ? JSON.stringify(req.body) : undefined
 
   try {
-    console.log(`[pac-proxy] ${method} ${path}`)
+    console.log(`[pac-proxy] ${method} ${PAC_BASE}${path}`)
     const upstream = await fetch(`${PAC_BASE}${path}`, { method, headers, body })
     const data = await upstream.text()
-    console.log(`[pac-proxy] ${upstream.status} ${path}`)
+    if (upstream.status >= 400) {
+      console.error(`[pac-proxy] ${upstream.status} ${path} body=${data.slice(0, 600)}`)
+    } else {
+      console.log(`[pac-proxy] ${upstream.status} ${path}`)
+    }
     if (upstream.status === 401) _token = null
     res.status(upstream.status).setHeader('Content-Type', 'application/json').send(data)
   } catch (e) {

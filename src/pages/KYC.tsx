@@ -206,7 +206,8 @@ export default function KYC() {
           userId:    user.id,
         })
       } catch (e) {
-        console.warn('Broker account creation failed (will retry later):', e)
+        console.error('Broker account creation failed:', e)
+        throw new Error(`Broker account setup failed: ${(e as Error).message}`)
       }
 
       if (pacAccountId) {

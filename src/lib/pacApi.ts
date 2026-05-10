@@ -618,7 +618,7 @@ export async function createBrokerAccount(details: {
   console.log('[createBrokerAccount] clientId', clientId, sharedClientId ? '(shared)' : '(per-user)')
 
   // ── Step 2: Create investment account — always explicit, ID returned directly ──
-  const refCode = `MONETA-${Date.now().toString(36).toUpperCase()}`
+  const refCode = `MONETA-${Date.now().toString(36).toUpperCase()}`.slice(0, 20)
   const subBrokerIdentifier = (details.email || mobileNo).slice(0, 64)
   const accountLabel = `Moneta / ${refCode} / ${subBrokerIdentifier}`
 
@@ -636,8 +636,10 @@ export async function createBrokerAccount(details: {
       refCode,
     }
   )
-  console.log('[createBrokerAccount] investment account', JSON.stringify(investData).slice(0, 300))
-  const accountId = String(investData.id ?? '')
+  const accountId  = String(investData.id ?? '')
+  const accountNo  = String(investData.accountNo  ?? '')
+  const status     = String(investData.status     ?? '')
+  console.log('[createBrokerAccount] id=', accountId, 'accountNo=', accountNo, 'status=', status, 'label=', accountLabel)
   if (!accountId) throw new Error('Broker did not return an investment account ID')
   return accountId
 }

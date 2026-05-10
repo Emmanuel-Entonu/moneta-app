@@ -632,7 +632,7 @@ export async function createBrokerAccount(details: {
       accountUsage:         'LIVE',
       accountLabel,
       directCashSettlement: false,
-      autoApprove:          false,
+      autoApprove:          true,
       refCode,
     }
   )

@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (upstream.status >= 400) {
       console.error(`[pac-proxy] ${upstream.status} ${path} body=${data.slice(0, 600)}`)
     } else {
-      console.log(`[pac-proxy] ${upstream.status} ${path}`)
+      console.log(`[pac-proxy] ${upstream.status} ${path} body=${data.slice(0, 600)}`)
     }
     if (upstream.status === 401) _token = null
     res.status(upstream.status).setHeader('Content-Type', 'application/json').send(data)

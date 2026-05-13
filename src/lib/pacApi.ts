@@ -345,22 +345,12 @@ export async function cancelOrder(pacOrderId: string): Promise<PacOrderResponse>
 }
 
 export async function depositToAccount(accountId: string, amountNaira: number, paymentReference: string): Promise<void> {
-  const valueDate = new Date().toISOString().split('T')[0]
-  const idempotencyId = crypto.randomUUID()
-  const body = {
-    accountId,
-    branchId:    'b94b25a0-6546-49a5-8ee6-87046b9d602f',
-    channel:     'ELECTRONIC',
-    type:        'DEPOSIT',
-    amount:      amountNaira,
-    currency:    'NGN',
-    reference:   paymentReference,
-    valueDate,
-    autoApprove: true,
-    notes:       `Moneta app deposit — ref ${paymentReference}`,
-  }
   console.log('[depositToAccount] accountId', accountId, 'amount', amountNaira, 'ref', paymentReference)
-  await brokerPost('/investing/api/v1/cash_transactions', body, { 'x-idempotency-id': idempotencyId })
+  await brokerPost(`/investing/api/v1/investment/accounts/balance/${accountId}`, {
+    currency:  'NGN',
+    amount:    amountNaira,
+    updatedAt: new Date().toISOString(),
+  })
 }
 
 export interface PacOrderFill {
@@ -543,7 +533,6 @@ export async function createBrokerAccount(details: {
       mgmtType:             'SELF',
       accountUsage:         'LIVE',
       accountLabel,
-      tradingAccountNo:     '133318345',
       directCashSettlement: false,
       autoApprove:          false,
       refCode,

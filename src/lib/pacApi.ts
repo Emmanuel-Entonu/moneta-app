@@ -88,6 +88,7 @@ export interface PacAccount {
   balance: number
   currency: string
   status: string
+  subAccountId?: string
 }
 
 export interface PacOrderRequest {
@@ -283,18 +284,48 @@ export async function getIndexData() {
   return mdsGet(`/api/v1/price/index/all/summary`)
 }
 
+export async function getSubAccountBalance(subAccountId: string): Promise<number> {
+  const data = await brokerGet<Record<string, unknown>>(
+    `/reports/accounting/api/v1/sub-accounts/balance/${subAccountId}`
+  )
+  console.log('[getSubAccountBalance]', JSON.stringify(data))
+  return Number(
+    data.clearedBalance ?? data.cleared_balance ??
+    data.availableBalance ?? data.available_balance ??
+    data.cashBalance ?? data.balance ?? 0
+  )
+}
+
 export async function getAccountById(accountId: string): Promise<PacAccount> {
   const inv = await brokerGet<Record<string, unknown>>(
     `/investing/api/v1/investment/accounts/${accountId}`
   )
-  console.log('[getAccountById]', JSON.stringify(inv).slice(0, 500))
+  console.log('[getAccountById] full response:', JSON.stringify(inv))
+
+  // Extract subAccountId — try multiple common field names
+  const subAccountId = String(
+    inv.subAccountId ?? inv.subAccId ?? inv.subAccount?.id ??
+    (inv.subAccount as Record<string, unknown> | undefined)?.id ?? ''
+  ) || undefined
+
+  // Prefer sub-account cleared balance (where PAC actually tracks cash)
+  let balance = Number(inv.cashBalance ?? 0)
+  if (subAccountId) {
+    try {
+      balance = await getSubAccountBalance(subAccountId)
+    } catch (e) {
+      console.warn('[getAccountById] sub-account balance fetch failed, using cashBalance:', e)
+    }
+  }
+
   return {
     id:            String(inv.id ?? accountId),
     accountNumber: String(inv.accountNo ?? ''),
     accountName:   String(inv.accountLabel ?? inv.clientLabel ?? ''),
-    balance:       Number(inv.cashBalance ?? 0),
+    balance,
     currency:      String(inv.currency ?? 'NGN'),
     status:        String(inv.status ?? 'ACTIVE'),
+    subAccountId,
   }
 }
 
@@ -346,11 +377,13 @@ export async function cancelOrder(pacOrderId: string): Promise<PacOrderResponse>
 
 export async function depositToAccount(accountId: string, amountNaira: number, paymentReference: string): Promise<void> {
   console.log('[depositToAccount] accountId', accountId, 'amount', amountNaira, 'ref', paymentReference)
-  await brokerPost(`/investing/api/v1/investment/accounts/balance/${accountId}`, {
+  const result = await brokerPost<Record<string, unknown>>(
+    `/investing/api/v1/investment/accounts/balance/${accountId}`, {
     currency:  'NGN',
     amount:    amountNaira,
     updatedAt: new Date().toISOString(),
   })
+  console.log('[depositToAccount] response:', JSON.stringify(result))
 }
 
 export interface PacOrderFill {

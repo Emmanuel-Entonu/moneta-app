@@ -268,7 +268,6 @@ export default function Portfolio() {
   useEffect(() => {
     loadProfile()
     if (pacAccountId) {
-      loadAccount(pacAccountId)
       loadPositions(pacAccountId)
     }
     // Silently verify any pending payment ref.

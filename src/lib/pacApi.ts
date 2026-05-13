@@ -294,8 +294,8 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
       id:            String(data.accountId ?? accountId),
       accountNumber: String(data.accountNo ?? data.accountNumber ?? ''),
       accountName:   String(data.accountLabel ?? data.accountName ?? ''),
-      balance:       Number(data.totalValue ?? data.balance ?? 0),
-      currency:      String(data.reportCurrency ?? 'NGN'),
+      balance:       Number(data.cashBalance ?? data.totalValue ?? data.balance ?? 0),
+      currency:      String(data.reportCurrency ?? data.currency ?? 'NGN'),
       status:        'ACTIVE',
     }
   } catch (primaryErr) {

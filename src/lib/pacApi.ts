@@ -303,9 +303,9 @@ export async function getAccountById(accountId: string): Promise<PacAccount> {
   console.log('[getAccountById] full response:', JSON.stringify(inv))
 
   // Extract subAccountId — try multiple common field names
+  const subAccObj = inv.subAccount as Record<string, unknown> | undefined
   const subAccountId = String(
-    inv.subAccountId ?? inv.subAccId ?? inv.subAccount?.id ??
-    (inv.subAccount as Record<string, unknown> | undefined)?.id ?? ''
+    inv.subAccountId ?? inv.subAccId ?? subAccObj?.id ?? ''
   ) || undefined
 
   // Prefer sub-account cleared balance (where PAC actually tracks cash)

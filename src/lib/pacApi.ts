@@ -284,39 +284,17 @@ export async function getIndexData() {
 }
 
 export async function getAccountById(accountId: string): Promise<PacAccount> {
-  const valueDate = new Date().toISOString().split('T')[0]
-  try {
-    const data = await brokerGet<Record<string, unknown>>(
-      `/position/api/v1/ledgers/report/trading/account/${accountId}?valueDate=${valueDate}`
-    )
-    console.log('[getAccountById] position response', JSON.stringify(data).slice(0, 500))
-    return {
-      id:            String(data.accountId ?? accountId),
-      accountNumber: String(data.accountNo ?? data.accountNumber ?? ''),
-      accountName:   String(data.accountLabel ?? data.accountName ?? ''),
-      balance:       Number(data.cashBalance ?? data.totalValue ?? data.balance ?? 0),
-      currency:      String(data.reportCurrency ?? data.currency ?? 'NGN'),
-      status:        'ACTIVE',
-    }
-  } catch (primaryErr) {
-    // Fallback: fetch investment account directly (correct for new accounts with no trading history)
-    try {
-      const inv = await brokerGet<Record<string, unknown>>(
-        `/investing/api/v1/investment/accounts/${accountId}`
-      )
-      console.log('[getAccountById] investment account fallback', JSON.stringify(inv).slice(0, 500))
-      return {
-        id:            String(inv.id ?? accountId),
-        accountNumber: String(inv.accountNo ?? inv.refCode ?? ''),
-        accountName:   String(inv.accountLabel ?? inv.clientLabel ?? ''),
-        balance:       Number(inv.cashBalance ?? 0),
-        currency:      String(inv.currency ?? 'NGN'),
-        status:        String(inv.status ?? 'ACTIVE'),
-      }
-    } catch (fallbackErr) {
-      console.error('[getAccountById] both endpoints failed', { primaryErr, fallbackErr })
-      throw new Error(`Failed to load account: ${(fallbackErr as Error).message}`)
-    }
+  const inv = await brokerGet<Record<string, unknown>>(
+    `/investing/api/v1/investment/accounts/${accountId}`
+  )
+  console.log('[getAccountById]', JSON.stringify(inv).slice(0, 500))
+  return {
+    id:            String(inv.id ?? accountId),
+    accountNumber: String(inv.accountNo ?? ''),
+    accountName:   String(inv.accountLabel ?? inv.clientLabel ?? ''),
+    balance:       Number(inv.cashBalance ?? 0),
+    currency:      String(inv.currency ?? 'NGN'),
+    status:        String(inv.status ?? 'ACTIVE'),
   }
 }
 

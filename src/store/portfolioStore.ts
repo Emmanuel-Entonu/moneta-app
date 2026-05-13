@@ -95,8 +95,12 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   loadPositions: async (accountId) => {
     set({ loadingPortfolio: true, apiStatus: null })
     try {
-      const positions = await getClientPositions(accountId)
-      set({ positions })
+      const [positions, account] = await Promise.allSettled([
+        getClientPositions(accountId),
+        getAccountById(accountId),
+      ])
+      if (positions.status === 'fulfilled') set({ positions: positions.value })
+      if (account.status === 'fulfilled') set({ account: account.value })
     } catch (e) {
       const msg = (e as Error).message ?? String(e)
       console.error('loadPositions error:', msg)

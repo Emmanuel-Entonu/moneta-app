@@ -564,7 +564,8 @@ export async function createBrokerAccount(details: {
       accountUsage:         'LIVE',
       accountLabel,
       directCashSettlement: false,
-      autoApprove:          false,
+      autoApprove:          true,
+      tradingAccountNo:     '133318345',
       refCode,
     }
   )

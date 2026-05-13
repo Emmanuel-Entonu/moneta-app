@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { usePortfolioStore } from '../store/portfolioStore'
 import MonetaLogo from '../components/MonetaLogo'
 import type { PacOrderRequest } from '../lib/pacApi'
+import { depositToAccount } from '../lib/pacApi'
 
 export default function PaymentCallback() {
   const [params] = useSearchParams()
@@ -100,6 +101,16 @@ export default function PaymentCallback() {
         }
 
         await creditWallet(resolvedAmount)
+
+        // Credit the PAC investment account so orders can be placed immediately
+        const pacAccountId = useAuthStore.getState().pacAccountId
+        if (pacAccountId) {
+          try {
+            await depositToAccount(pacAccountId, resolvedAmount, ref)
+          } catch (e) {
+            console.warn('[PaymentCallback] PAC deposit failed (non-fatal):', e)
+          }
+        }
 
         if (pendingRaw) {
           try {

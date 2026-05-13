@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { initializePayment, verifyPayment, MONETA_CONFIGURED, type PaymentType } from '../lib/monetaApi'
-import { createBrokerAccount } from '../lib/pacApi'
+import { createBrokerAccount, depositToAccount } from '../lib/pacApi'
 
 interface OrderRecord {
   id: string
@@ -121,6 +121,10 @@ function VerifyPaymentSheet({ onClose, onCredited }: { onClose: () => void; onCr
         const amountToCredit = savedAmount > 0 ? savedAmount : res.amountNaira
         if (amountToCredit > 0) {
           await creditWallet(amountToCredit)
+          const pacAccountId = useAuthStore.getState().pacAccountId
+          if (pacAccountId) {
+            try { await depositToAccount(pacAccountId, amountToCredit, r) } catch (e) { console.warn('[Portfolio] PAC deposit failed:', e) }
+          }
           localStorage.removeItem('moneta_pending_ref')
           localStorage.removeItem('moneta_pending_amount')
           onCredited(amountToCredit)
@@ -281,6 +285,10 @@ export default function Portfolio() {
             const amount = pendingAmount > 0 ? pendingAmount : result.amountNaira
             if (amount > 0) {
               await useAuthStore.getState().creditWallet(amount)
+              const pid = useAuthStore.getState().pacAccountId
+              if (pid) {
+                try { await depositToAccount(pid, amount, pendingRef) } catch (e) { console.warn('[Portfolio] PAC deposit failed:', e) }
+              }
               setCreditBanner(amount)
             }
           }

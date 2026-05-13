@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { initializePayment, verifyPayment, MONETA_CONFIGURED, type PaymentType } from '../lib/monetaApi'
-import { createBrokerAccount, depositToAccount } from '../lib/pacApi'
+import { createBrokerAccount, depositToAccount, lookupAccountByNumber } from '../lib/pacApi'
 
 interface OrderRecord {
   id: string
@@ -251,7 +251,9 @@ export default function Portfolio() {
   const [orders, setOrders]             = useState<OrderRecord[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [brokerLinking, setBrokerLinking] = useState(false)
-  const [, setBrokerLinkError] = useState<string | null>(null)
+  const [brokerLinkError, setBrokerLinkError] = useState<string | null>(null)
+  const [linkAccountNo, setLinkAccountNo] = useState('')
+  const [showLinkExisting, setShowLinkExisting] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelErrors, setCancelErrors] = useState<Record<string, string>>({})
   const [supabaseIdMap, setSupabaseIdMap] = useState<Record<string, string>>({})
@@ -357,6 +359,24 @@ export default function Portfolio() {
     }
   }
 
+  async function linkExistingAccount() {
+    const no = linkAccountNo.trim()
+    if (!no || !userId) return
+    setBrokerLinking(true); setBrokerLinkError(null)
+    try {
+      const found = await lookupAccountByNumber(no)
+      if (!found) throw new Error(`Account ${no} not found on PAC. Check the number and try again.`)
+      await supabase.from('profiles').update({ pac_account_id: found.id }).eq('id', userId)
+      await loadProfile()
+      setShowLinkExisting(false)
+      setLinkAccountNo('')
+    } catch (e: unknown) {
+      setBrokerLinkError((e as Error).message)
+    } finally {
+      setBrokerLinking(false)
+    }
+  }
+
   const sorted = [...positions].sort((a, b) => b.marketValue - a.marketValue)
 
   return (
@@ -391,7 +411,7 @@ export default function Portfolio() {
         </div>
       )}
 
-      {/* Broker account not linked — retry using saved KYC data */}
+      {/* Broker account not linked — retry using saved KYC data or link existing */}
       {kycStatus === 'verified' && !pacAccountId && (
         <div style={{ margin: '12px 16px 0', background: 'linear-gradient(135deg, #1e3a5f, #1d4ed8)', borderRadius: 16, padding: '14px 16px', boxShadow: '0 4px 16px rgba(29,78,216,0.25)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -402,11 +422,32 @@ export default function Portfolio() {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ color: '#fff', fontWeight: 800, fontSize: 13, margin: 0 }}>Broker Account Not Linked</p>
-              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Your KYC is verified — tap to activate your trading account</p>
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Your KYC is verified — create or link a trading account</p>
             </div>
             <button onClick={retryBrokerLink} disabled={brokerLinking} style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#1d4ed8', fontWeight: 800, fontSize: 12, border: 'none', cursor: brokerLinking ? 'wait' : 'pointer', flexShrink: 0, opacity: brokerLinking ? 0.7 : 1 }}>
-              {brokerLinking ? 'Linking…' : 'Link Now'}
+              {brokerLinking ? 'Linking…' : 'Create New'}
             </button>
+          </div>
+          {/* Link existing account by number */}
+          <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 12 }}>
+            {!showLinkExisting ? (
+              <button onClick={() => setShowLinkExisting(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                Already have an account? Link by account number
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  value={linkAccountNo}
+                  onChange={(e) => setLinkAccountNo(e.target.value)}
+                  placeholder="e.g. 0000027202"
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: '1.5px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 13, fontWeight: 600 }}
+                />
+                <button onClick={linkExistingAccount} disabled={brokerLinking || !linkAccountNo.trim()} style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#1d4ed8', fontWeight: 800, fontSize: 12, border: 'none', cursor: brokerLinking ? 'wait' : 'pointer', flexShrink: 0, opacity: brokerLinking || !linkAccountNo.trim() ? 0.6 : 1 }}>
+                  {brokerLinking ? '…' : 'Link'}
+                </button>
+              </div>
+            )}
+            {brokerLinkError && <p style={{ color: '#fca5a5', fontSize: 11, fontWeight: 600, marginTop: 6 }}>{brokerLinkError}</p>}
           </div>
         </div>
       )}

@@ -284,6 +284,36 @@ export async function getIndexData() {
   return mdsGet(`/api/v1/price/index/all/summary`)
 }
 
+// Find an investment account UUID by its display account number (e.g. "0000027202")
+export async function lookupAccountByNumber(accountNo: string): Promise<PacAccount | null> {
+  // Try 1: some PAC deployments accept accountNo directly as the path param
+  try {
+    const acc = await getAccountById(accountNo)
+    if (acc.id && acc.id !== accountNo) return acc   // got a real UUID back
+    if (acc.accountNumber === accountNo) return acc
+  } catch {}
+
+  // Try 2: list endpoint with accountNo query param
+  try {
+    const data = await brokerGet<Record<string, unknown>>(
+      `/investing/api/v1/investment/accounts?accountNo=${encodeURIComponent(accountNo)}&size=5`
+    )
+    console.log('[lookupAccountByNumber] list response:', JSON.stringify(data).slice(0, 600))
+    const list =
+      (data as { content?: unknown[] }).content ??
+      (data as { data?: unknown[] }).data ??
+      (Array.isArray(data) ? data : [])
+    const match = (list as Record<string, unknown>[]).find(
+      (a) => String(a.accountNo ?? '') === accountNo
+    )
+    if (match?.id) return getAccountById(String(match.id))
+  } catch (e) {
+    console.warn('[lookupAccountByNumber] list lookup failed:', e)
+  }
+
+  return null
+}
+
 export async function getSubAccountBalance(subAccountId: string): Promise<number> {
   const data = await brokerGet<Record<string, unknown>>(
     `/reports/accounting/api/v1/sub-accounts/balance/${subAccountId}`

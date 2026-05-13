@@ -285,15 +285,12 @@ export async function getIndexData() {
 }
 
 export async function getSubAccountBalance(subAccountId: string): Promise<number> {
-  const data = await brokerGet<Record<string, unknown>>(
-    `/reports/accounting/api/v1/sub-accounts/balance/${subAccountId}`
+  const valueDate = new Date().toISOString().split('T')[0]
+  const data = await brokerGet<{ amount: number; currency: string }>(
+    `/reports/accounting/api/v1/sub-accounts/balance/${subAccountId}?valueDate=${valueDate}`
   )
   console.log('[getSubAccountBalance]', JSON.stringify(data))
-  return Number(
-    data.clearedBalance ?? data.cleared_balance ??
-    data.availableBalance ?? data.available_balance ??
-    data.cashBalance ?? data.balance ?? 0
-  )
+  return Number(data.amount ?? 0)
 }
 
 export async function getAccountById(accountId: string): Promise<PacAccount> {

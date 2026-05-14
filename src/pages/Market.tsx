@@ -308,12 +308,15 @@ export default function Market() {
       </div>
 
       {/* ── DARK BODY ── */}
-      <div style={{ background: '#ffffff', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
+      <div style={{ background: '#070e1a', minHeight: 'calc(100% - 300px)', paddingBottom: 100 }}>
 
         {/* Top Movers section */}
         {!loadingMarket && topGainer && topLoser && mostActive && (
           <div style={{ padding: '20px 0 0' }}>
-            <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', letterSpacing: 1, paddingLeft: 16, marginBottom: 12 }}>Top Movers</p>
+            <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 1.2, paddingLeft: 16, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ display: 'inline-block', width: 2.5, height: 11, background: '#34d399', borderRadius: 2, flexShrink: 0 }} />
+              Top Movers
+            </p>
             <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingLeft: 16, paddingRight: 16, paddingBottom: 4, scrollbarWidth: 'none' }}>
               <MoverCard label="Top Gainer"  stock={topGainer}  accent="#10b981" onPress={() => navigate(`/trade/${topGainer.symbol}`)} />
               <MoverCard label="Top Loser"   stock={topLoser}   accent="#ef4444" onPress={() => navigate(`/trade/${topLoser.symbol}`)} />
@@ -361,10 +364,11 @@ export default function Market() {
 
         {/* Stock count */}
         <div style={{ padding: '14px 20px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', letterSpacing: 0.7 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 0.7, display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ display: 'inline-block', width: 2.5, height: 11, background: '#34d399', borderRadius: 2 }} />
             {category === 'All' ? 'All Equities' : category}
           </span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.35)' }}>{filtered.length} {filtered.length === 1 ? 'security' : 'securities'}</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>{filtered.length} {filtered.length === 1 ? 'security' : 'securities'}</span>
         </div>
 
         {/* Stock list — floating card */}

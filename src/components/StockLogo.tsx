@@ -88,26 +88,23 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
   const initials = symbol.replace(/[^A-Z]/gi, '').slice(0, 3).toUpperCase()
 
   if (domain && !failed) {
-    // Use Google's higher-quality FaviconV2 endpoint (used by Chrome / Workspace).
-    // Returns the best available logo at up to 128px. Falls back to colored avatar
-    // only on a real network error (onError).
-    const src =
-      `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON` +
-      `&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`
+    // Clearbit logo API returns clean, high-quality PNGs (up to 512px) for
+    // company domains — far better than favicon services for stock logos.
+    const src = `https://logo.clearbit.com/${domain}`
 
     return (
       <div style={{
         width: size, height: size, borderRadius: radius, flexShrink: 0,
         background: '#ffffff',
-        border: '1.5px solid rgba(255,255,255,0.12)',
+        border: '1.5px solid rgba(255,255,255,0.1)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.28)',
       }}>
         <img
           src={src}
           alt={symbol}
-          style={{ width: '80%', height: '80%', objectFit: 'contain' }}
+          style={{ width: '75%', height: '75%', objectFit: 'contain' }}
           onError={() => setFailed(true)}
         />
       </div>
@@ -117,12 +114,12 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
   return (
     <div style={{
       width: size, height: size, borderRadius: radius, flexShrink: 0,
-      background: `linear-gradient(145deg, ${color}30, ${color}14)`,
-      border: `1.5px solid ${color}45`,
+      background: `linear-gradient(145deg, ${color}28, ${color}10)`,
+      border: `1.5px solid ${color}40`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: `0 2px 10px ${color}18`,
+      boxShadow: `0 2px 12px ${color}20, inset 0 1px 0 rgba(255,255,255,0.06)`,
     }}>
-      <span style={{ fontSize: Math.round(size * 0.24), fontWeight: 900, color, letterSpacing: -0.5 }}>
+      <span style={{ fontSize: Math.round(size * 0.26), fontWeight: 900, color, letterSpacing: -0.5, lineHeight: 1 }}>
         {initials}
       </span>
     </div>

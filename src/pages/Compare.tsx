@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { usePortfolioStore } from '../store/portfolioStore'
@@ -35,8 +35,18 @@ function getComparePoints(symbol: string, changePercent: number, n = 32): number
 }
 
 function CompareChart({ stocks, colors }: { stocks: PacMarketData[]; colors: string[] }) {
-  const W = 320, H = 130
-  const PAD = { top: 12, bottom: 12, left: 4, right: 4 }
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [W, setW] = useState(320)
+  const H = 140
+  const PAD = { top: 14, bottom: 8, left: 38, right: 6 }
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setW(Math.floor(e.contentRect.width)))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const allSeries = useMemo(
     () => stocks.map((s) => getComparePoints(s.symbol, s.changePercent)),
@@ -46,9 +56,9 @@ function CompareChart({ stocks, colors }: { stocks: PacMarketData[]; colors: str
   const allValues = allSeries.flat()
   const rawMin = Math.min(...allValues)
   const rawMax = Math.max(...allValues)
-  const range = rawMax - rawMin || 0.001
-  const yMin = rawMin - range * 0.1
-  const yMax = rawMax + range * 0.1
+  const dataRange = rawMax - rawMin || 0.0005
+  const yMin = rawMin - dataRange * 0.2
+  const yMax = rawMax + dataRange * 0.2
   const yRange = yMax - yMin
 
   const n = allSeries[0]?.length ?? 32
@@ -58,8 +68,13 @@ function CompareChart({ stocks, colors }: { stocks: PacMarketData[]; colors: str
   function toX(i: number) { return PAD.left + (i / (n - 1)) * chartW }
   function toY(v: number) { return PAD.top + ((yMax - v) / yRange) * chartH }
 
-  // Zero line
+  // 5 evenly-spaced ticks spanning the actual data range
+  const nTicks = 5
+  const ticks = Array.from({ length: nTicks }, (_, i) => yMin + (i / (nTicks - 1)) * yRange)
+  const tickBand = yRange / nTicks
+
   const zeroY = toY(0)
+  const showZero = zeroY >= PAD.top - 2 && zeroY <= H - PAD.bottom + 2
 
   function makePath(pts: number[]) {
     let d = `M ${toX(0).toFixed(1)} ${toY(pts[0]).toFixed(1)}`
@@ -72,44 +87,51 @@ function CompareChart({ stocks, colors }: { stocks: PacMarketData[]; colors: str
   }
 
   return (
-    <svg width={W} height={H} style={{ overflow: 'visible' }}>
-      {/* Grid lines */}
-      {[-0.02, -0.01, 0, 0.01, 0.02].map((v) => {
-        const y = toY(v)
-        if (y < PAD.top - 2 || y > H - PAD.bottom + 2) return null
-        return (
-          <g key={v}>
-            <line
-              x1={PAD.left} y1={y} x2={W - PAD.right} y2={y}
-              stroke={v === 0 ? '#94a3b8' : '#f1f5f9'}
-              strokeWidth={v === 0 ? 1.5 : 1}
-              strokeDasharray={v === 0 ? '4 3' : undefined}
-            />
-            <text x={PAD.left - 2} y={y + 3.5} fontSize={8} fill="#94a3b8" textAnchor="end">
-              {v > 0 ? '+' : ''}{(v * 100).toFixed(1)}%
-            </text>
-          </g>
-        )
-      })}
+    <div ref={containerRef} style={{ width: '100%' }}>
+      <svg width={W} height={H} style={{ overflow: 'visible', display: 'block' }}>
+        {/* Dynamic grid lines — scaled to actual data range */}
+        {ticks.map((v) => {
+          const y = toY(v)
+          const isNearZero = showZero && Math.abs(v) < tickBand * 0.25
+          return (
+            <g key={v.toFixed(6)}>
+              <line
+                x1={PAD.left} y1={y} x2={W - PAD.right} y2={y}
+                stroke={isNearZero ? '#94a3b8' : '#e2e8f0'}
+                strokeWidth={isNearZero ? 1.5 : 0.8}
+                strokeDasharray={isNearZero ? '4 3' : undefined}
+              />
+              <text x={PAD.left - 3} y={y + 3.5} fontSize={8} fill="#94a3b8" textAnchor="end">
+                {v >= 0 ? '+' : ''}{(v * 100).toFixed(2)}%
+              </text>
+            </g>
+          )
+        })}
 
-      {/* Zero base dot */}
-      <circle cx={toX(0)} cy={zeroY} r={3} fill="#94a3b8" />
+        {/* Extra zero line when it falls between ticks */}
+        {showZero && !ticks.some(v => Math.abs(v) < tickBand * 0.25) && (
+          <line x1={PAD.left} y1={zeroY} x2={W - PAD.right} y2={zeroY}
+            stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 3" />
+        )}
 
-      {/* Stock paths */}
-      {allSeries.map((pts, idx) => {
-        const color = colors[idx]
-        const path = makePath(pts)
-        const endX = toX(n - 1)
-        const endY = toY(pts[n - 1])
+        {/* Baseline dot at day-open (index 0) */}
+        {showZero && <circle cx={toX(0)} cy={zeroY} r={3} fill="#94a3b8" />}
 
-        return (
-          <g key={idx}>
-            <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx={endX} cy={endY} r={3.5} fill={color} />
-          </g>
-        )
-      })}
-    </svg>
+        {/* Stock paths */}
+        {allSeries.map((pts, idx) => {
+          const color = colors[idx]
+          const path = makePath(pts)
+          const endX = toX(n - 1)
+          const endY = toY(pts[n - 1])
+          return (
+            <g key={idx}>
+              <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx={endX} cy={endY} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />
+            </g>
+          )
+        })}
+      </svg>
+    </div>
   )
 }
 
@@ -245,9 +267,7 @@ export default function Compare() {
             Intraday Performance
           </p>
 
-          <div style={{ overflowX: 'auto' }}>
-            <CompareChart stocks={selectedStocks} colors={colors} />
-          </div>
+          <CompareChart stocks={selectedStocks} colors={colors} />
 
           {/* Legend */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 10 }}>

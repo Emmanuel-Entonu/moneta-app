@@ -36,6 +36,51 @@ export function generateSparklineArea(symbol: string, isUp: boolean, w = 64, h =
   return { line, area }
 }
 
+// Generates a realistic 1-day chart from actual OHLCV data so each stock looks unique.
+// The noise amplitude is proportional to the stock's real high-low trading range.
+export function generateDayChart(
+  symbol: string,
+  open: number,
+  high: number,
+  low: number,
+  close: number,
+  w = 340,
+  h = 140
+): { line: string; area: string; points: number[] } {
+  const seed = symbol.split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 3), 0)
+  const n = 60
+  const tradingRange = Math.max(high - low, close * 0.003)
+  const rawPrices: number[] = [open]
+
+  for (let i = 1; i < n - 1; i++) {
+    const r1 = ((seed * (i + 5) * 37 + i * 23) % 10000) / 10000
+    const r2 = ((seed * (i + 11) * 19 + i * 7) % 10000) / 10000
+    const noise = (r1 - 0.5) * tradingRange * 0.22 + (r2 - 0.5) * tradingRange * 0.08
+    const prev = rawPrices[i - 1]
+    const drift = (close - prev) / (n - i) * 0.45
+    const next = Math.max(low * 0.997, Math.min(high * 1.003, prev + drift + noise))
+    rawPrices.push(next)
+  }
+  rawPrices.push(close)
+
+  const minP = Math.min(...rawPrices)
+  const maxP = Math.max(...rawPrices)
+  const range = maxP - minP || 1
+  const pad = h * 0.12
+  const pts = rawPrices.map((p, i) => [
+    (i / (n - 1)) * w,
+    pad + ((maxP - p) / range) * (h - pad * 2),
+  ] as [number, number])
+
+  let line = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`
+  for (let i = 1; i < n; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]
+    const cpx = ((x0 + x1) / 2).toFixed(1)
+    line += ` Q ${cpx} ${y0.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`
+  }
+  return { line, area: line + ` L ${w} ${h} L 0 ${h} Z`, points: rawPrices }
+}
+
 export function generateIntradayChart(
   symbol: string,
   currentPrice: number,

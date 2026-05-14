@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
-import { generateIntradayChart } from '../lib/sparkline'
+import { generateIntradayChart, generateDayChart } from '../lib/sparkline'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { initializePayment } from '../lib/monetaApi'
@@ -72,7 +72,7 @@ const PERIOD_LABELS: Record<Period, string[]> = {
   '3M': ['Mo 1', 'Mo 2', 'Mo 3'],
 }
 
-function PriceChart({ symbol, price, isUp }: { symbol: string; price: number; isUp: boolean }) {
+function PriceChart({ symbol, price, open, high, low, isUp }: { symbol: string; price: number; open: number; high: number; low: number; isUp: boolean }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [dims, setDims] = useState({ w: 340, h: 150 })
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
@@ -107,7 +107,9 @@ function PriceChart({ symbol, price, isUp }: { symbol: string; price: number; is
     return () => { cancelled = true }
   }, [symbol, period]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fallback = generateIntradayChart(symbol + period, price, isUp, dims.w, dims.h)
+  const fallback = (period === '1D' && open > 0 && high > 0 && low > 0)
+    ? generateDayChart(symbol, open, high, low, price, dims.w, dims.h)
+    : generateIntradayChart(symbol + period, price, isUp, dims.w, dims.h)
   const realPaths = realPoints ? buildChartPaths(realPoints, dims.w, dims.h) : null
   const line = realPaths?.line ?? fallback.line
   const area = realPaths?.area ?? fallback.area
@@ -304,7 +306,7 @@ export default function Trade() {
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>today</span>
           </div>
         </div>
-        <PriceChart symbol={stock.symbol} price={stock.price} isUp={isUp} />
+        <PriceChart symbol={stock.symbol} price={stock.price} open={stock.open} high={stock.high} low={stock.low} isUp={isUp} />
       </div>
 
       {/* OHLV */}

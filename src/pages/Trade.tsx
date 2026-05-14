@@ -465,8 +465,8 @@ export default function Trade() {
                 ['Order type', receipt.orderType],
                 receipt.validation ? ['Commission + Fees', fmt(receipt.validation.commission + receipt.validation.fees)] : null,
                 ['Total', fmt(receipt.total)],
-              ] as ([string, string] | null)[]).filter(Boolean).map(([label, value], i, arr) => (
-                <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value], i, arr) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{label}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: label === 'Total' ? (receipt.side === 'BUY' ? '#34d399' : '#f87171') : '#fff' }}>{value}</span>
                 </div>
@@ -479,8 +479,8 @@ export default function Trade() {
                 ['Status', 'Submitted'],
                 receipt.orderId ? ['Order ID', receipt.orderId.length > 20 ? receipt.orderId.slice(0, 20) + '…' : receipt.orderId] : null,
                 ['Time', receipt.timestamp.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }) + '  ·  ' + receipt.timestamp.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })],
-              ] as ([string, string] | null)[]).filter(Boolean).map(([label, value], i, arr) => (
-                <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value], i, arr) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
                   <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{label}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: label === 'Status' ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{value}</span>
                 </div>

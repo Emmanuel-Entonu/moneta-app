@@ -12,6 +12,19 @@ type Side = 'BUY' | 'SELL'
 type OrderType = 'MARKET' | 'LIMIT'
 type Period = '1D' | '1W' | '1M' | '3M'
 
+type ReceiptData = {
+  symbol: string
+  name: string
+  side: Side
+  qty: number
+  price: number
+  orderType: OrderType
+  total: number
+  validation: PacValidationResult | null
+  orderId?: string | null
+  timestamp: Date
+}
+
 function fmt(n: number) {
   return '₦' + n.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
@@ -191,6 +204,8 @@ export default function Trade() {
   const [validating, setValidating] = useState(false)
   const [validation, setValidation] = useState<PacValidationResult | null>(null)
   const [, setValidationError] = useState<string | null>(null)
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null)
+  const pendingReceiptRef = useRef<Omit<ReceiptData, 'orderId'> | null>(null)
   const pacAccount = usePortfolioStore((s) => s.account)
   const walletBalance = pacAccount?.balance ?? useAuthStore((s) => s.walletBalance)
 
@@ -198,9 +213,13 @@ export default function Trade() {
 
   useEffect(() => { if (marketData.length === 0) loadMarketData() }, [])
   useEffect(() => {
-    if (orderResult?.success) {
-      const t = setTimeout(() => { clearOrderResult(); navigate('/portfolio') }, 2800)
-      return () => clearTimeout(t)
+    if (orderResult?.success && pendingReceiptRef.current) {
+      setReceipt({
+        ...pendingReceiptRef.current,
+        orderId: orderResult.orderId,
+      })
+      pendingReceiptRef.current = null
+      clearOrderResult()
     }
   }, [orderResult])
 
@@ -409,6 +428,82 @@ export default function Trade() {
         </div>
       )}
 
+      {/* Order Receipt Screen */}
+      {receipt && (
+        <div style={{ position: 'fixed', inset: 0, background: '#070e1a', zIndex: 200, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', paddingBottom: 'env(safe-area-inset-bottom,0px)', animation: 'fadeIn 0.25s ease both' }}>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 20px 24px' }}>
+
+            {/* Animated checkmark */}
+            <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'linear-gradient(135deg,#059669,#047857)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, boxShadow: '0 0 48px rgba(5,150,105,0.45)', animation: 'popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <polyline points="8 21 16 29 32 13" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ strokeDasharray: 40, strokeDashoffset: 40, animation: 'checkDraw 0.4s ease 0.35s forwards' }} />
+              </svg>
+            </div>
+
+            <h1 style={{ fontSize: 30, fontWeight: 900, color: '#fff', letterSpacing: -0.8, marginBottom: 8, textAlign: 'center' }}>Order Submitted</h1>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: 32, fontWeight: 500, maxWidth: 260, lineHeight: 1.5 }}>
+              Your order has been sent to the NGX market
+            </p>
+
+            {/* Order card */}
+            <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <p style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: -0.5, marginBottom: 2 }}>{receipt.symbol}</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{receipt.name}</p>
+                </div>
+                <span style={{ padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 800, background: receipt.side === 'BUY' ? 'rgba(5,150,105,0.2)' : 'rgba(220,38,38,0.2)', color: receipt.side === 'BUY' ? '#34d399' : '#f87171', border: `1px solid ${receipt.side === 'BUY' ? 'rgba(5,150,105,0.4)' : 'rgba(220,38,38,0.3)'}` }}>
+                  {receipt.side}
+                </span>
+              </div>
+              {([
+                ['Quantity', `${receipt.qty.toLocaleString()} units`],
+                ['Price per unit', `₦${receipt.price.toFixed(2)}`],
+                ['Order type', receipt.orderType],
+                receipt.validation ? ['Commission + Fees', fmt(receipt.validation.commission + receipt.validation.fees)] : null,
+                ['Total', fmt(receipt.total)],
+              ] as ([string, string] | null)[]).filter(Boolean).map(([label, value], i, arr) => (
+                <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: label === 'Total' ? (receipt.side === 'BUY' ? '#34d399' : '#f87171') : '#fff' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Meta card */}
+            <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 8 }}>
+              {([
+                ['Status', 'Submitted'],
+                receipt.orderId ? ['Order ID', receipt.orderId.length > 20 ? receipt.orderId.slice(0, 20) + '…' : receipt.orderId] : null,
+                ['Time', receipt.timestamp.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }) + '  ·  ' + receipt.timestamp.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })],
+              ] as ([string, string] | null)[]).filter(Boolean).map(([label, value], i, arr) => (
+                <div key={label as string} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: label === 'Status' ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom actions */}
+          <div style={{ padding: '12px 20px 32px', display: 'flex', gap: 10 }}>
+            <button
+              onClick={() => { setReceipt(null); setQuantity('') }}
+              style={{ flex: 1, padding: '15px', borderRadius: 16, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+            >
+              New Trade
+            </button>
+            <button
+              onClick={() => { setReceipt(null); navigate('/portfolio') }}
+              style={{ flex: 2, padding: '15px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 20px rgba(5,150,105,0.35)', border: 'none' }}
+            >
+              View Portfolio
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Confirm sheet — stays light so it contrasts with dark page */}
       {showConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', zIndex: 100 }} onClick={() => setShowConfirm(false)}>
@@ -503,6 +598,11 @@ export default function Trade() {
                       setMonetaLoading(false)
                     }
                     return
+                  }
+                  pendingReceiptRef.current = {
+                    symbol: stock.symbol, name: stock.name, side, qty,
+                    price: effectivePrice, orderType, total: orderTotal,
+                    validation, timestamp: new Date(),
                   }
                   if (side === 'BUY' && paySource === 'wallet') {
                     await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })

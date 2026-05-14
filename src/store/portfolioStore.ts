@@ -24,7 +24,7 @@ interface PortfolioState {
   loadingPortfolio: boolean
   loadingMarket: boolean
   orderLoading: boolean
-  orderResult: { success: boolean; message: string } | null
+  orderResult: { success: boolean; message: string; orderId?: string | null } | null
 
   pacOrders: PacOrderListItem[]
   loadingOrders: boolean
@@ -167,8 +167,13 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
         orderResult: {
           success,
           message: result.routingMessage ?? result.message ?? (success ? 'Order placed' : 'Order failed'),
+          orderId: result.id ?? result.orderId ?? null,
         },
       })
+      // Refresh account balance immediately after a successful order
+      if (success) {
+        get().loadAccount(order.accountId).catch(() => {})
+      }
       // Log to Supabase — wrapped separately so a logging failure never overwrites the order result
       try {
         const { supabase } = await import('../lib/supabase')

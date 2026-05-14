@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { usePortfolioStore } from '../store/portfolioStore'
 import { useAuthStore } from '../store/authStore'
 import { generateIntradayChart, generateDayChart } from '../lib/sparkline'
@@ -190,11 +190,13 @@ function PriceChart({ symbol, price, open, high, low, isUp }: { symbol: string; 
 export default function Trade() {
   const { symbol } = useParams<{ symbol: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { marketData, positions, orderLoading, orderResult, placeOrder, clearOrderResult, loadMarketData } = usePortfolioStore()
   const { pacAccountId } = useAuthStore()
   const kycStatus = useAuthStore((s) => s.kycStatus)
 
-  const [side, setSide] = useState<Side>('BUY')
+  const initialSide: Side = searchParams.get('side')?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY'
+  const [side, setSide] = useState<Side>(initialSide)
   const [orderType, setOrderType] = useState<OrderType>('MARKET')
   const [quantity, setQuantity] = useState('')
   const [limitPrice, setLimitPrice] = useState('')
@@ -261,8 +263,11 @@ export default function Trade() {
   const isUp = stock.changePercent >= 0
   const effectivePrice = orderType === 'LIMIT' && limitPrice ? parseFloat(limitPrice) : stock.price
   const qty = parseInt(quantity) || 0
+  const maxSellQty = holding?.quantity ?? 0
   const estimatedTotal = effectivePrice * qty
   const orderTotal = validation?.totalValue ?? estimatedTotal
+  const sellQtyInvalid = side === 'SELL' && qty > maxSellQty
+  const sellNoHolding  = side === 'SELL' && maxSellQty === 0
 
   return (
     <div style={{ minHeight: '100svh', background: '#070e1a', display: 'flex', flexDirection: 'column', paddingBottom: 100 }}>
@@ -348,20 +353,43 @@ export default function Trade() {
 
         {/* Quantity */}
         <div>
-          <label style={labelStyle}>Quantity (Units)</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <label style={labelStyle}>Quantity (Units)</label>
+            {side === 'SELL' && maxSellQty > 0 && (
+              <button onClick={() => setQuantity(String(maxSellQty))} style={{ fontSize: 11, fontWeight: 700, color: '#f87171', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', padding: '3px 10px', borderRadius: 20, cursor: 'pointer' }}>
+                Sell All ({maxSellQty.toLocaleString()})
+              </button>
+            )}
+          </div>
           <div style={{ position: 'relative' }}>
             <input
-              type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="0"
-              style={{ width: '100%', padding: '14px 80px 14px 16px', borderRadius: 10, border: '1.5px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#ffffff', fontSize: 22, fontWeight: 900, letterSpacing: -0.5, boxSizing: 'border-box' }}
+              type="number" min="1" max={side === 'SELL' ? maxSellQty : undefined}
+              value={quantity}
+              onChange={(e) => {
+                const v = parseInt(e.target.value) || 0
+                if (side === 'SELL' && v > maxSellQty) setQuantity(String(maxSellQty))
+                else setQuantity(e.target.value)
+              }}
+              placeholder="0"
+              style={{ width: '100%', padding: '14px 80px 14px 16px', borderRadius: 10, border: `1.5px solid ${sellQtyInvalid ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.1)'}`, background: 'rgba(255,255,255,0.05)', color: '#ffffff', fontSize: 22, fontWeight: 900, letterSpacing: -0.5, boxSizing: 'border-box' }}
             />
             <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: 4 }}>
               {['+1', '+10'].map((d) => (
-                <button key={d} onClick={() => setQuantity((q) => String((parseInt(q) || 0) + parseInt(d.replace('+', ''))))} style={{ padding: '4px 8px', borderRadius: 7, background: 'rgba(5,150,105,0.2)', color: '#34d399', fontSize: 11, fontWeight: 700 }}>
+                <button key={d} onClick={() => {
+                  const next = (parseInt(quantity) || 0) + parseInt(d.replace('+', ''))
+                  setQuantity(String(side === 'SELL' ? Math.min(next, maxSellQty) : next))
+                }} style={{ padding: '4px 8px', borderRadius: 7, background: 'rgba(5,150,105,0.2)', color: '#34d399', fontSize: 11, fontWeight: 700 }}>
                   {d}
                 </button>
               ))}
             </div>
           </div>
+          {sellNoHolding && (
+            <p style={{ fontSize: 12, color: '#f87171', fontWeight: 600, marginTop: 6 }}>You don't own any {symbol} shares to sell.</p>
+          )}
+          {!sellNoHolding && sellQtyInvalid && (
+            <p style={{ fontSize: 12, color: '#f87171', fontWeight: 600, marginTop: 6 }}>You only own {maxSellQty.toLocaleString()} units.</p>
+          )}
         </div>
 
         {/* Limit price */}
@@ -401,7 +429,7 @@ export default function Trade() {
         {/* CTA */}
         <button
           onClick={() => kycStatus !== 'verified' ? setShowKycGate(true) : setShowConfirm(true)}
-          disabled={!qty || qty <= 0 || orderLoading}
+          disabled={!qty || qty <= 0 || orderLoading || sellQtyInvalid || sellNoHolding}
           style={{ padding: '16px', borderRadius: 16, fontWeight: 900, fontSize: 17, letterSpacing: 0.2, cursor: (!qty || qty <= 0 || orderLoading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', background: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.08)' : side === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)', color: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.25)' : '#fff', boxShadow: (!qty || qty <= 0 || orderLoading) ? 'none' : side === 'BUY' ? '0 6px 24px rgba(5,150,105,0.38)' : '0 6px 24px rgba(220,38,38,0.32)' }}
         >
           {orderLoading ? 'Placing Order…' : `Place ${side} Order`}
@@ -445,9 +473,15 @@ export default function Trade() {
             </div>
 
             <h1 style={{ fontSize: 30, fontWeight: 900, color: '#fff', letterSpacing: -0.8, marginBottom: 8, textAlign: 'center' }}>Order Submitted</h1>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: 32, fontWeight: 500, maxWidth: 260, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: receipt.side === 'SELL' ? 12 : 32, fontWeight: 500, maxWidth: 260, lineHeight: 1.5 }}>
               Your order has been sent to the NGX market
             </p>
+            {receipt.side === 'SELL' && (
+              <div style={{ marginBottom: 24, padding: '10px 16px', borderRadius: 12, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', display: 'flex', alignItems: 'flex-start', gap: 8, maxWidth: 320 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 500, lineHeight: 1.5 }}>Sale proceeds settle in <strong style={{ color: '#60a5fa' }}>T+3 business days</strong>. Your cash balance will reflect the proceeds after NGX settlement.</span>
+              </div>
+            )}
 
             {/* Order card */}
             <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 12 }}>
@@ -568,6 +602,12 @@ export default function Trade() {
                   </div>
                 )}
                 {monetaError && <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, background: '#fff5f5', border: '1px solid #fecaca', fontSize: 11, color: '#991b1b', fontWeight: 600 }}>{monetaError}</div>}
+              </div>
+            )}
+            {side === 'SELL' && (
+              <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe', fontSize: 12, color: '#1e40af', fontWeight: 600, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>Proceeds from this sale are settled in <strong>T+3 business days</strong> per NGX rules. Your cash balance will update once settlement clears.</span>
               </div>
             )}
             {!pacAccountId && (

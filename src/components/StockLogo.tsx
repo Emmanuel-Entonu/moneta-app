@@ -82,15 +82,16 @@ interface StockLogoProps {
 }
 
 export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoProps) {
-  const [failed, setFailed] = useState(false)
+  // 'primary' → Clearbit  'secondary' → Google SOCIAL favicon  'fallback' → initials
+  const [phase, setPhase] = useState<'primary' | 'secondary' | 'fallback'>('primary')
   const domain = SYMBOL_DOMAIN[symbol]
   const color = tickerColor(symbol)
   const initials = symbol.replace(/[^A-Z]/gi, '').slice(0, 3).toUpperCase()
 
-  if (domain && !failed) {
-    // Clearbit logo API returns clean, high-quality PNGs (up to 512px) for
-    // company domains — far better than favicon services for stock logos.
-    const src = `https://logo.clearbit.com/${domain}`
+  if (domain && phase !== 'fallback') {
+    const src = phase === 'primary'
+      ? `https://logo.clearbit.com/${domain}`
+      : `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${domain}&size=128`
 
     return (
       <div style={{
@@ -105,7 +106,7 @@ export default function StockLogo({ symbol, size = 46, radius = 14 }: StockLogoP
           src={src}
           alt={symbol}
           style={{ width: '75%', height: '75%', objectFit: 'contain' }}
-          onError={() => setFailed(true)}
+          onError={() => setPhase(phase === 'primary' ? 'secondary' : 'fallback')}
         />
       </div>
     )

@@ -626,12 +626,12 @@ export default function Portfolio() {
               const dotColor = ALLOC_COLORS[idx % ALLOC_COLORS.length]
               const pct = (pos.marketValue / totalValue) * 100
               return (
-                <button key={pos.symbol} onClick={() => navigate(`/trade/${pos.symbol}`)} style={{ background: '#0e1c2f', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '16px 18px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
-                  onPointerEnter={(e) => { e.currentTarget.style.borderColor = dotColor + '60' }}
-                  onPointerLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}
+                <div key={pos.symbol} style={{ background: '#0e1c2f', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '16px 18px', textAlign: 'left', width: '100%', transition: 'border-color 0.15s', boxSizing: 'border-box' }}
+                  onPointerEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = dotColor + '60' }}
+                  onPointerLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.07)' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => navigate(`/trade/${pos.symbol}`)}>
                       <StockLogo symbol={pos.symbol} size={44} radius={14} />
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
@@ -652,7 +652,7 @@ export default function Portfolio() {
                   <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 3, marginBottom: 10, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${pct}%`, borderRadius: 3, background: `linear-gradient(90deg,${dotColor},${dotColor}aa)`, transition: 'width 0.5s ease' }} />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 0' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 0', marginBottom: 12 }}>
                     {[
                       { label: 'Avg Cost', value: `₦${pos.averageCost.toFixed(2)}`, color: '#ffffff' },
                       { label: 'Current',  value: `₦${pos.currentPrice.toFixed(2)}`, color: '#ffffff' },
@@ -664,7 +664,15 @@ export default function Portfolio() {
                       </div>
                     ))}
                   </div>
-                </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => navigate(`/trade/${pos.symbol}`)} style={{ flex: 1, padding: '9px 0', borderRadius: 10, background: 'rgba(5,150,105,0.15)', border: '1px solid rgba(5,150,105,0.3)', color: '#34d399', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                      Buy More
+                    </button>
+                    <button onClick={() => navigate(`/trade/${pos.symbol}?side=sell`)} style={{ flex: 1, padding: '9px 0', borderRadius: 10, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                      Sell
+                    </button>
+                  </div>
+                </div>
               )
             })}
           </div>

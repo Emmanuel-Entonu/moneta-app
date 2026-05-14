@@ -17,7 +17,6 @@ export default function PaymentCallback() {
   const [orderSymbol, setOrderSymbol] = useState<string | null>(null)
   const [orderFailed, setOrderFailed] = useState(false)
   const creditWallet = useAuthStore((s) => s.creditWallet)
-  const debitWallet  = useAuthStore((s) => s.debitWallet)
   const authLoading  = useAuthStore((s) => s.loading)
   const ran = useRef(false)
 
@@ -118,9 +117,7 @@ export default function PaymentCallback() {
             setOrderSymbol(order.symbol)
             await usePortfolioStore.getState().placeOrder(order)
             const orderResult = usePortfolioStore.getState().orderResult
-            if (orderResult?.success) {
-              await debitWallet(resolvedAmount)
-            } else {
+            if (!orderResult?.success) {
               setOrderFailed(true)
             }
           } catch {

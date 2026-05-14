@@ -2,14 +2,15 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const PAC_BASE  = process.env.VITE_BROKER_BASE_URL || 'https://api.prod.mywealthcare.io'
 const TENANT_ID = process.env.VITE_PAC_TENANT_ID   || 'pac-sec'
-const USERNAME  = process.env.VITE_PAC_USERNAME     || 'moneta-user'
-const PASSWORD  = process.env.VITE_PAC_PASSWORD     || 'izV6ZBQkpr$$ZlGe'
+const USERNAME  = process.env.VITE_PAC_USERNAME     || ''
+const PASSWORD  = process.env.VITE_PAC_PASSWORD     || ''
 
 let _token: string | null = null
 let _tokenExpiry = 0
 
 async function getServerToken(): Promise<string> {
   if (_token && Date.now() < _tokenExpiry) return _token
+  if (!USERNAME || !PASSWORD) throw new Error('PAC credentials not configured — set VITE_PAC_USERNAME and VITE_PAC_PASSWORD env vars')
   const res = await fetch(`${PAC_BASE}/administration/api/v1/users/token/daemon`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-tenant-id': TENANT_ID },

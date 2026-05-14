@@ -25,7 +25,8 @@ function isMarketOpen() {
   const now = new Date()
   const day = now.getUTCDay()
   const total = now.getUTCHours() * 60 + now.getUTCMinutes()
-  return day >= 1 && day <= 5 && total >= 540 && total < 810
+  // NGX trading: 09:30–14:30 WAT = 08:30–13:30 UTC
+  return day >= 1 && day <= 5 && total >= 510 && total < 810
 }
 
 function Sparkline({ symbol, isUp, w = 72, h = 32 }: { symbol: string; isUp: boolean; w?: number; h?: number }) {
@@ -163,7 +164,13 @@ export default function Market() {
   const [category, setCategory] = useState('All')
   const [nseIndex, setNseIndex] = useState<number | null>(null)
   const [nseIndexChange, setNseIndexChange] = useState<number | null>(null)
+  const [marketOpen, setMarketOpen] = useState(isMarketOpen)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const id = setInterval(() => setMarketOpen(isMarketOpen()), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => { loadMarketData() }, [])
   useEffect(() => { startLivePrices() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -182,7 +189,6 @@ export default function Market() {
   const gainers = marketData.filter((s) => s.changePercent > 0)
   const losers  = marketData.filter((s) => s.changePercent < 0)
   const neutral = marketData.filter((s) => s.changePercent === 0)
-  const marketOpen = isMarketOpen()
   const nseChange = +(marketData.reduce((a, s) => a + s.changePercent, 0) / (marketData.length || 1)).toFixed(2)
   const gainerPct = marketData.length ? (gainers.length / marketData.length) * 100 : 50
 

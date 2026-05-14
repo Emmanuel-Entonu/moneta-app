@@ -52,6 +52,7 @@ interface PortfolioState {
 // Module-level WebSocket state — lives outside Zustand so it survives re-renders
 let _ws: WebSocket | null = null
 let _wsReconnect: ReturnType<typeof setTimeout> | null = null
+let _wsStopped = false
 
 export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   account: null,
@@ -224,6 +225,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   clearOrderResult: () => set({ orderResult: null }),
 
   startLivePrices: () => {
+    _wsStopped = false
     if (_ws && _ws.readyState < 2) return
     const key    = import.meta.env.VITE_MDS_API_KEY ?? 'deAaDavXQDFQNV7oUVZa'
     const tenant = import.meta.env.VITE_MDS_TENANT_ID ?? 'pac-sec'
@@ -263,13 +265,14 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
       _ws.onclose = () => {
         set({ wsConnected: false })
         if (_wsReconnect) clearTimeout(_wsReconnect)
-        _wsReconnect = setTimeout(connect, 5000)
+        if (!_wsStopped) _wsReconnect = setTimeout(connect, 5000)
       }
     }
     connect()
   },
 
   stopLivePrices: () => {
+    _wsStopped = true
     if (_wsReconnect) clearTimeout(_wsReconnect)
     _ws?.close()
     _ws = null

@@ -209,7 +209,8 @@ export default function Trade() {
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const pendingReceiptRef = useRef<Omit<ReceiptData, 'orderId'> | null>(null)
   const pacAccount = usePortfolioStore((s) => s.account)
-  const walletBalance = pacAccount?.balance ?? useAuthStore((s) => s.walletBalance)
+  const authWalletBalance = useAuthStore((s) => s.walletBalance)
+  const walletBalance = pacAccount?.balance ?? authWalletBalance
 
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 

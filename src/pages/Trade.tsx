@@ -506,15 +506,6 @@ export default function Trade() {
                   }
                   if (side === 'BUY' && paySource === 'wallet') {
                     await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })
-                    const result = usePortfolioStore.getState().orderResult
-                    if (result?.success) {
-                      try {
-                        await debitWallet(orderTotal)
-                      } catch (e: unknown) {
-                        setMonetaError(`Order placed but wallet debit failed: ${(e as Error).message}`)
-                        return  // keep sheet open so error is visible
-                      }
-                    }
                     setShowConfirm(false); return
                   }
                   await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal: orderTotal })

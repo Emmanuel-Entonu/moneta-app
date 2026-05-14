@@ -191,7 +191,8 @@ export default function Trade() {
   const [validating, setValidating] = useState(false)
   const [validation, setValidation] = useState<PacValidationResult | null>(null)
   const [, setValidationError] = useState<string | null>(null)
-  const walletBalance = useAuthStore((s) => s.walletBalance)
+  const pacAccount = usePortfolioStore((s) => s.account)
+  const walletBalance = pacAccount?.balance ?? useAuthStore((s) => s.walletBalance)
   const debitWallet = useAuthStore((s) => s.debitWallet)
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 

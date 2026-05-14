@@ -193,7 +193,7 @@ export default function Trade() {
   const [, setValidationError] = useState<string | null>(null)
   const pacAccount = usePortfolioStore((s) => s.account)
   const walletBalance = pacAccount?.balance ?? useAuthStore((s) => s.walletBalance)
-  const debitWallet = useAuthStore((s) => s.debitWallet)
+
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
   useEffect(() => { if (marketData.length === 0) loadMarketData() }, [])

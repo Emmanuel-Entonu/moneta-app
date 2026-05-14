@@ -23,10 +23,156 @@ type ReceiptData = {
   validation: PacValidationResult | null
   orderId?: string | null
   timestamp: Date
+  balanceBefore: number
 }
 
 function fmt(n: number) {
   return '₦' + n.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function OrderReceipt({ receipt, pacAccountId, onNewTrade, onViewPortfolio }: {
+  receipt: ReceiptData
+  pacAccountId: string | null
+  onNewTrade: () => void
+  onViewPortfolio: () => void
+}) {
+  const account    = usePortfolioStore((s) => s.account)
+  const loadAccount = usePortfolioStore((s) => s.loadAccount)
+  const [balStatus, setBalStatus] = useState<'polling' | 'updated' | 'timeout'>('polling')
+  const liveBalance = account?.balance ?? null
+
+  // Poll PAC balance at increasing intervals — debit usually reflects within 3–8s
+  useEffect(() => {
+    if (!pacAccountId) return
+    const delays = [1500, 3500, 7000, 13000, 22000]
+    const timers = delays.map(d => window.setTimeout(() => loadAccount(pacAccountId), d))
+    const giveUp = window.setTimeout(() => setBalStatus(s => s === 'polling' ? 'timeout' : s), 25000)
+    return () => { timers.forEach(window.clearTimeout); window.clearTimeout(giveUp) }
+  }, [pacAccountId])
+
+  useEffect(() => {
+    if (liveBalance === null) return
+    // For buys: balance should decrease. For sells: stays same until T+3 (mark updated anyway)
+    if (receipt.side === 'SELL') { setBalStatus('updated'); return }
+    if (Math.abs(liveBalance - receipt.balanceBefore) > 1) setBalStatus('updated')
+  }, [liveBalance])
+
+  const isBuy = receipt.side === 'BUY'
+  const accentColor = isBuy ? '#34d399' : '#f87171'
+  const accentBg    = isBuy ? 'rgba(5,150,105,0.45)' : 'rgba(220,38,38,0.45)'
+  const displayBalance = liveBalance ?? (receipt.balanceBefore - (isBuy ? receipt.total : 0))
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#070e1a', zIndex: 200, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', paddingBottom: 'env(safe-area-inset-bottom,0px)', animation: 'fadeIn 0.25s ease both' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '44px 20px 24px' }}>
+
+        {/* Icon */}
+        <div style={{ width: 92, height: 92, borderRadius: '50%', background: `linear-gradient(135deg,${isBuy ? '#059669,#047857' : '#dc2626,#b91c1c'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: `0 0 56px ${accentBg}`, animation: 'popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+          <svg width="42" height="42" viewBox="0 0 40 40" fill="none">
+            {isBuy
+              ? <polyline points="8 21 16 29 32 13" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ strokeDasharray: 40, strokeDashoffset: 40, animation: 'checkDraw 0.4s ease 0.35s forwards' }} />
+              : <><line x1="10" y1="10" x2="30" y2="30" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" style={{ strokeDasharray: 35, strokeDashoffset: 35, animation: 'checkDraw 0.3s ease 0.35s forwards' }} /><line x1="30" y1="10" x2="10" y2="30" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" style={{ strokeDasharray: 35, strokeDashoffset: 35, animation: 'checkDraw 0.3s ease 0.5s forwards' }} /></>
+            }
+          </svg>
+        </div>
+
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', letterSpacing: -0.8, marginBottom: 4, textAlign: 'center' }}>
+          {isBuy ? 'Order Placed!' : 'Sell Order Placed!'}
+        </h1>
+        <p style={{ fontSize: 22, fontWeight: 900, color: accentColor, letterSpacing: -0.5, marginBottom: 6 }}>
+          {isBuy ? '−' : '+'}{fmt(receipt.total)}
+        </p>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 500, marginBottom: 28, textAlign: 'center' }}>
+          {receipt.qty.toLocaleString()} × {receipt.symbol} @ ₦{receipt.price.toFixed(2)}
+        </p>
+
+        {/* Live balance card */}
+        <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', padding: '18px 20px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>Cash Balance</p>
+            {balStatus === 'polling' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 14, height: 14, border: `2px solid ${accentColor}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>Refreshing…</span>
+              </div>
+            ) : (
+              <p style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: -0.8, lineHeight: 1, animation: balStatus === 'updated' ? 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none' }}>
+                {fmt(displayBalance)}
+              </p>
+            )}
+          </div>
+          {balStatus === 'updated' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 20, background: `${isBuy ? 'rgba(5,150,105' : 'rgba(59,130,246'}.0.18)`, border: `1px solid ${isBuy ? 'rgba(5,150,105' : 'rgba(59,130,246'}.0.3)` }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isBuy ? '#34d399' : '#60a5fa'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 700, color: isBuy ? '#34d399' : '#60a5fa' }}>Updated</span>
+            </div>
+          )}
+          {balStatus === 'timeout' && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>May take a moment</span>
+          )}
+        </div>
+
+        {receipt.side === 'SELL' && (
+          <div style={{ width: '100%', marginBottom: 12, padding: '12px 16px', borderRadius: 14, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.22)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500, lineHeight: 1.5 }}>Proceeds settle in <strong style={{ color: '#60a5fa' }}>T+3 business days</strong> per NGX rules. Your balance will update once NGX clears the transaction.</span>
+          </div>
+        )}
+
+        {/* Order detail rows */}
+        <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 18, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', marginBottom: 12 }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${isBuy ? '#05966920,#04785720' : '#dc262620,#b91c1c20'})`, border: `1px solid ${isBuy ? 'rgba(5,150,105,0.3)' : 'rgba(220,38,38,0.25)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 10, fontWeight: 900, color: accentColor }}>{receipt.symbol.slice(0, 3)}</span>
+              </div>
+              <div>
+                <p style={{ fontSize: 15, fontWeight: 900, color: '#fff', letterSpacing: -0.3 }}>{receipt.symbol}</p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{receipt.name}</p>
+              </div>
+            </div>
+            <span style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 800, background: isBuy ? 'rgba(5,150,105,0.18)' : 'rgba(220,38,38,0.18)', color: accentColor, border: `1px solid ${isBuy ? 'rgba(5,150,105,0.35)' : 'rgba(220,38,38,0.28)'}` }}>{receipt.side}</span>
+          </div>
+          {([
+            ['Quantity',          `${receipt.qty.toLocaleString()} units`],
+            ['Price per unit',    `₦${receipt.price.toFixed(2)}`],
+            ['Order type',        receipt.orderType],
+            receipt.validation ? ['Commission + Fees', fmt(receipt.validation.commission + receipt.validation.fees)] : null,
+            ['Total',             fmt(receipt.total)],
+          ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value], i, arr) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: label === 'Total' ? accentColor : '#fff' }}>{value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Meta */}
+        <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', marginBottom: 8 }}>
+          {([
+            ['Status',   'Submitted ✓'],
+            receipt.orderId ? ['Order ID', receipt.orderId.length > 22 ? receipt.orderId.slice(0, 22) + '…' : receipt.orderId] : null,
+            ['Time',     receipt.timestamp.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }) + ' · ' + receipt.timestamp.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })],
+          ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value], i, arr) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 18px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.32)', fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: label === 'Status' ? accentColor : 'rgba(255,255,255,0.6)' }}>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ padding: '12px 20px 32px', display: 'flex', gap: 10 }}>
+        <button onClick={onNewTrade} style={{ flex: 1, padding: '15px', borderRadius: 16, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+          New Trade
+        </button>
+        <button onClick={onViewPortfolio} style={{ flex: 2, padding: '15px', borderRadius: 16, background: `linear-gradient(135deg,${isBuy ? '#059669,#047857' : '#1d4ed8,#1e40af'})`, color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', boxShadow: `0 4px 20px ${isBuy ? 'rgba(5,150,105,0.35)' : 'rgba(29,78,216,0.35)'}`, border: 'none' }}>
+          View Portfolio
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function parseHistoricalPrices(raw: unknown, currentPrice: number): number[] {
@@ -461,84 +607,12 @@ export default function Trade() {
 
       {/* Order Receipt Screen */}
       {receipt && (
-        <div style={{ position: 'fixed', inset: 0, background: '#070e1a', zIndex: 200, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', paddingBottom: 'env(safe-area-inset-bottom,0px)', animation: 'fadeIn 0.25s ease both' }}>
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 20px 24px' }}>
-
-            {/* Animated checkmark */}
-            <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'linear-gradient(135deg,#059669,#047857)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, boxShadow: '0 0 48px rgba(5,150,105,0.45)', animation: 'popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                <polyline points="8 21 16 29 32 13" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ strokeDasharray: 40, strokeDashoffset: 40, animation: 'checkDraw 0.4s ease 0.35s forwards' }} />
-              </svg>
-            </div>
-
-            <h1 style={{ fontSize: 30, fontWeight: 900, color: '#fff', letterSpacing: -0.8, marginBottom: 8, textAlign: 'center' }}>Order Submitted</h1>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: receipt.side === 'SELL' ? 12 : 32, fontWeight: 500, maxWidth: 260, lineHeight: 1.5 }}>
-              Your order has been sent to the NGX market
-            </p>
-            {receipt.side === 'SELL' && (
-              <div style={{ marginBottom: 24, padding: '10px 16px', borderRadius: 12, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', display: 'flex', alignItems: 'flex-start', gap: 8, maxWidth: 320 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 500, lineHeight: 1.5 }}>Sale proceeds settle in <strong style={{ color: '#60a5fa' }}>T+3 business days</strong>. Your cash balance will reflect the proceeds after NGX settlement.</span>
-              </div>
-            )}
-
-            {/* Order card */}
-            <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 12 }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: -0.5, marginBottom: 2 }}>{receipt.symbol}</p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{receipt.name}</p>
-                </div>
-                <span style={{ padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 800, background: receipt.side === 'BUY' ? 'rgba(5,150,105,0.2)' : 'rgba(220,38,38,0.2)', color: receipt.side === 'BUY' ? '#34d399' : '#f87171', border: `1px solid ${receipt.side === 'BUY' ? 'rgba(5,150,105,0.4)' : 'rgba(220,38,38,0.3)'}` }}>
-                  {receipt.side}
-                </span>
-              </div>
-              {([
-                ['Quantity', `${receipt.qty.toLocaleString()} units`],
-                ['Price per unit', `₦${receipt.price.toFixed(2)}`],
-                ['Order type', receipt.orderType],
-                receipt.validation ? ['Commission + Fees', fmt(receipt.validation.commission + receipt.validation.fees)] : null,
-                ['Total', fmt(receipt.total)],
-              ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value], i, arr) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '13px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: label === 'Total' ? (receipt.side === 'BUY' ? '#34d399' : '#f87171') : '#fff' }}>{value}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Meta card */}
-            <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 8 }}>
-              {([
-                ['Status', 'Submitted'],
-                receipt.orderId ? ['Order ID', receipt.orderId.length > 20 ? receipt.orderId.slice(0, 20) + '…' : receipt.orderId] : null,
-                ['Time', receipt.timestamp.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' }) + '  ·  ' + receipt.timestamp.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })],
-              ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value], i, arr) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: label === 'Status' ? '#34d399' : 'rgba(255,255,255,0.65)' }}>{value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom actions */}
-          <div style={{ padding: '12px 20px 32px', display: 'flex', gap: 10 }}>
-            <button
-              onClick={() => { setReceipt(null); setQuantity('') }}
-              style={{ flex: 1, padding: '15px', borderRadius: 16, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-            >
-              New Trade
-            </button>
-            <button
-              onClick={() => { setReceipt(null); navigate('/portfolio') }}
-              style={{ flex: 2, padding: '15px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 20px rgba(5,150,105,0.35)', border: 'none' }}
-            >
-              View Portfolio
-            </button>
-          </div>
-        </div>
+        <OrderReceipt
+          receipt={receipt}
+          pacAccountId={pacAccountId}
+          onNewTrade={() => { setReceipt(null); setQuantity('') }}
+          onViewPortfolio={() => { setReceipt(null); navigate('/portfolio') }}
+        />
       )}
 
       {/* Confirm sheet — stays light so it contrasts with dark page */}
@@ -646,6 +720,7 @@ export default function Trade() {
                     symbol: stock.symbol, name: stock.name, side, qty,
                     price: effectivePrice, orderType, total: orderTotal,
                     validation, timestamp: new Date(),
+                    balanceBefore: walletBalance,
                   }
                   if (side === 'BUY' && paySource === 'wallet') {
                     await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal })

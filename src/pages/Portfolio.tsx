@@ -495,7 +495,7 @@ export default function Portfolio() {
             </button>
             <div style={{ display: 'flex', gap: 0, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 14 }}>
               {[
-                { label: 'Cash Balance', val: fmt(walletBalance) },
+                { label: 'Cash Balance', val: fmt(account?.balance ?? 0) },
                 { label: 'Holdings', val: String(positions.length) },
                 { label: 'Account', val: account?.accountNumber ?? '—' },
               ].map(({ label, val }, i) => (

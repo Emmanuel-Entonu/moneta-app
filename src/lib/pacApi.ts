@@ -573,6 +573,8 @@ export async function createBrokerAccount(details: {
       directCashSettlement: false,
       autoApprove:          false,
       refCode,
+      tradingAccountNo:     MONETA_TRADING_ACCOUNT_NO,
+      clearingAccountNo:    MONETA_CLEARING_ACCOUNT_NO,
     }
   )
   const accountId  = String(investData.id ?? '')

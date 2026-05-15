@@ -543,7 +543,7 @@ export async function createBrokerAccount(details: {
 }): Promise<string> {
   const mobileNo = details.phone.replace(/\D/g, '')
 
-  const clientId  = '6f3df2e6-f92f-4ed9-833e-71816d301bdf'
+  const clientId  = '019e2ad4-e669-7777-8969-52a5edeac77b'
   const productId = '019e01ab-0727-74c1-9c60-81830bf546ba'
   const branchId  = 'b94b25a0-6546-49a5-8ee6-87046b9d602f'
 

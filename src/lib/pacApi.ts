@@ -567,7 +567,7 @@ export async function createBrokerAccount(details: {
       accountUsage:         'LIVE',
       accountLabel,
       directCashSettlement: false,
-      autoApprove:          false,
+      autoApprove:          true,
       refCode,
       // Top-level fields (legacy / fallback)
       tradingAccountNo:     MONETA_TRADING_ACCOUNT_NO,

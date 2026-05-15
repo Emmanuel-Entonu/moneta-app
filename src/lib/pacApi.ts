@@ -569,8 +569,15 @@ export async function createBrokerAccount(details: {
       directCashSettlement: false,
       autoApprove:          false,
       refCode,
+      // Top-level fields (legacy / fallback)
       tradingAccountNo:     MONETA_TRADING_ACCOUNT_NO,
       clearingAccountNo:    MONETA_CLEARING_ACCOUNT_NO,
+      // Structured trading account — required for order placement per PAC docs
+      tradingAccounts: [{
+        tradingAccountLabel: 'Moneta Technology Ltd Trading Account',
+        tradingAccountNo:    MONETA_TRADING_ACCOUNT_NO,
+        clearingAccountNo:   MONETA_CLEARING_ACCOUNT_NO,
+      }],
     }
   )
   const accountId  = String(investData.id ?? '')

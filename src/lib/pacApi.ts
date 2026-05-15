@@ -346,20 +346,25 @@ export async function getClientPositions(accountId: string): Promise<PacPosition
   }
 }
 
+const MONETA_TRADING_ACCOUNT_NO  = '133329549'
+const MONETA_CLEARING_ACCOUNT_NO = 'C000739329MT'
+
 export async function placeOrder(order: PacOrderRequest): Promise<PacOrderResponse> {
   const body = {
-    accountId:    order.accountId,
-    secId:        order.symbol,
-    side:         order.side,
-    requestedQty: order.quantity,
-    tif:          'DAY',
-    marketCode:   'NGX',
-    currency:     'NGN',
-    numberOfLegs: 1,
-    assetType:    'EQUITY',
-    allOrNone:    false,
-    autoApprove:  true,
-    channel:      'MOBILE',
+    accountId:          order.accountId,
+    secId:              order.symbol,
+    side:               order.side,
+    requestedQty:       order.quantity,
+    tif:                'DAY',
+    marketCode:         'NGX',
+    currency:           'NGN',
+    numberOfLegs:       1,
+    assetType:          'EQUITY',
+    allOrNone:          false,
+    autoApprove:        true,
+    channel:            'MOBILE',
+    tradingAccountNo:   MONETA_TRADING_ACCOUNT_NO,
+    clearingAccountNo:  MONETA_CLEARING_ACCOUNT_NO,
     ...(order.orderType === 'LIMIT' && order.limitPrice ? { limitPrice: order.limitPrice } : {}),
   }
   const idempotencyId = crypto.randomUUID()
@@ -439,18 +444,20 @@ export interface PacValidationResult {
 
 export async function validateOrder(order: PacOrderRequest): Promise<PacValidationResult> {
   const body = {
-    accountId:    order.accountId,
-    secId:        order.symbol,
-    side:         order.side,
-    requestedQty: order.quantity,
-    tif:          'DAY',
-    marketCode:   'NGX',
-    currency:     'NGN',
-    numberOfLegs: 1,
-    assetType:    'EQUITY',
-    allOrNone:    false,
-    autoApprove:  true,
-    channel:      'MOBILE',
+    accountId:         order.accountId,
+    secId:             order.symbol,
+    side:              order.side,
+    requestedQty:      order.quantity,
+    tif:               'DAY',
+    marketCode:        'NGX',
+    currency:          'NGN',
+    numberOfLegs:      1,
+    assetType:         'EQUITY',
+    allOrNone:         false,
+    autoApprove:       true,
+    channel:           'MOBILE',
+    tradingAccountNo:  MONETA_TRADING_ACCOUNT_NO,
+    clearingAccountNo: MONETA_CLEARING_ACCOUNT_NO,
     ...(order.orderType === 'LIMIT' && order.limitPrice ? { limitPrice: order.limitPrice } : {}),
   }
   const data = await brokerPost<Record<string, unknown>>(

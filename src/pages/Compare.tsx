@@ -206,7 +206,7 @@ const STAT_ROWS = [
 ]
 
 export default function Compare() {
-  const { marketData, loadMarketData, loadingMarket } = usePortfolioStore()
+  const { marketData, loadMarketData } = usePortfolioStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [selected, setSelected] = useState<string[]>([])

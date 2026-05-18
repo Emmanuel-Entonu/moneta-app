@@ -157,8 +157,9 @@ export default function Settings() {
   useEffect(() => {
     if (!user) return
     supabase.from('profiles').select('*').eq('id', user.id).single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data) { setProfile(data as ProfileData); setSaved(data as ProfileData) }
+        else if (error) console.error('[Settings] profile fetch error:', error.message)
       })
   }, [user])
 

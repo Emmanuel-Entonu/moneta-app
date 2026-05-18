@@ -17,7 +17,7 @@ export default function Login() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const err = await signIn(email, password)
+    const err = await signIn(email.trim(), password)
     setLoading(false)
     if (err) setError(err)
     else navigate('/market')

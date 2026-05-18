@@ -95,25 +95,24 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
   loadPositions: async (accountId) => {
     set({ loadingPortfolio: true, apiStatus: null })
-    try {
-      const [positions, account] = await Promise.allSettled([
-        getClientPositions(accountId),
-        getAccountById(accountId),
-      ])
-      if (positions.status === 'fulfilled') set({ positions: positions.value })
-      if (account.status === 'fulfilled') set({ account: account.value })
-    } catch (e) {
-      const msg = (e as Error).message ?? String(e)
+    const [positions, account] = await Promise.allSettled([
+      getClientPositions(accountId),
+      getAccountById(accountId),
+    ])
+    if (positions.status === 'fulfilled') {
+      set({ positions: positions.value })
+    } else {
+      const msg = (positions.reason as Error)?.message ?? String(positions.reason)
       console.error('loadPositions error:', msg)
-      // 404 means the broker account doesn't exist yet — show empty, no error banner
-      if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
-        set({ positions: [] })
-      } else {
+      // 404 = new account with no trading history — show empty, no error banner
+      if (!msg.includes('404') && !msg.toLowerCase().includes('not found')) {
         set({ positions: [], apiStatus: `ERROR: ${msg}` })
+      } else {
+        set({ positions: [] })
       }
-    } finally {
-      set({ loadingPortfolio: false })
     }
+    if (account.status === 'fulfilled') set({ account: account.value })
+    set({ loadingPortfolio: false })
   },
 
   loadOrders: async (accountId) => {
@@ -227,7 +226,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   startLivePrices: () => {
     _wsStopped = false
     if (_ws && _ws.readyState < 2) return
-    const key    = import.meta.env.VITE_MDS_API_KEY ?? 'deAaDavXQDFQNV7oUVZa'
+    const key    = import.meta.env.VITE_MDS_API_KEY ?? ''
     const tenant = import.meta.env.VITE_MDS_TENANT_ID ?? 'pac-sec'
 
     function connect() {

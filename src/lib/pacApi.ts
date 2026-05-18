@@ -504,7 +504,7 @@ function normalizeMover(d: MdsMover): PacMarketData {
     symbol:        sym,
     name:          String(d.securityName ?? d.name ?? SECURITY_NAMES[sym] ?? sym),
     price,
-    change:        price - open,
+    change:        open > 0 ? price - open : 0,
     changePercent: pct,
     volume:        Number(d.volTraded ?? d.volume ?? 0),
     high:          Number(d.high ?? 0),

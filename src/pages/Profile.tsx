@@ -37,10 +37,12 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return
     supabase.from('profiles').select('*').eq('id', user.id).single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data) {
           setProfile(data as ProfileData)
           setSavedProfile(data as ProfileData)
+        } else if (error) {
+          console.error('[Profile] fetch error:', error.message)
         }
       })
   }, [user])

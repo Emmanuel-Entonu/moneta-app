@@ -1,148 +1,112 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import nodeFetch from 'node-fetch'
-import { HttpsProxyAgent } from 'https-proxy-agent'
 
-const CLIENT_ID  = process.env.VITE_MONETA_CLIENT_ID     ?? ''
-const CLIENT_SEC = process.env.VITE_MONETA_CLIENT_SECRET ?? ''
-const NIBSS_SVC  = process.env.VITE_MONETA_SERVICE_KEY   ?? ''
-const FIXIE_URL  = process.env.FIXIE_URL                 ?? ''
+const APP_ID     = process.env.DOJAH_APP_ID     ?? ''
+const SECRET_KEY = process.env.DOJAH_SECRET_KEY ?? ''
+const BASE_URL   = 'https://api.dojah.io'
 
-const PROXY      = 'https://moneta-proxy.fly.dev'
-const MONETA_API = 'https://api.moneta.ng'
-
-const proxyAgent = FIXIE_URL ? new HttpsProxyAgent(FIXIE_URL) : undefined
-
-let _token: string | null = null
-
-function svcHeaders(token: string): Record<string, string> {
+function dojahHeaders(): Record<string, string> {
   return {
-    'Content-Type':    'application/json',
-    'Accept':          'application/json',
-    'X-Service-Token': token,
+    'Content-Type':  'application/json',
+    'Accept':        'application/json',
+    'AppId':         APP_ID,
+    'Authorization': SECRET_KEY,
   }
 }
 
-async function getToken(): Promise<string> {
-  if (_token) return _token
-  const creds = Buffer.from(`${CLIENT_ID}:${CLIENT_SEC}:${NIBSS_SVC}`).toString('base64')
-  console.log('[nibss] fetching token via', PROXY, 'fixie=', !!FIXIE_URL)
-  const res = await nodeFetch(`${PROXY}/api/v2/generate-access-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Auth-Token': creds },
-    agent: proxyAgent,
+async function dojahPost(path: string, body: object) {
+  const url = `${BASE_URL}${path}`
+  console.log(`[bvn] POST ${url}`, JSON.stringify(body).slice(0, 200))
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: dojahHeaders(),
+    body:    JSON.stringify(body),
   })
   const text = await res.text()
-  console.log('[nibss token]', res.status, text.slice(0, 200))
-  const data = JSON.parse(text) as { status: boolean; data?: string; message?: string }
-  if (!data.status || !data.data) throw new Error(data.message ?? 'Token request failed')
-  _token = data.data
-  return data.data
-}
-
-async function apiPost(path: string, token: string, body: object) {
-  const url = `${MONETA_API}${path}`
-  console.log(`[nibss] POST ${url} proxy=${!!proxyAgent} body=${JSON.stringify(body).slice(0, 200)}`)
-  const res = await nodeFetch(url, {
-    method: 'POST',
-    headers: svcHeaders(token),
-    body: JSON.stringify(body),
-    agent: proxyAgent,
-  })
-  const text = await res.text()
-  const ct = res.headers.get('content-type') ?? 'unknown'
-  console.log(`[nibss] POST ${path} status=${res.status} ct=${ct}: ${text.slice(0, 600)}`)
-  try { return { status: res.status, json: JSON.parse(text) } }
-  catch { return { status: res.status, json: { error: `non-JSON (${res.status}) ct=${ct}: ${text.slice(0, 300)}` } } }
-}
-
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
-
-function hasBvnDetails(json: unknown): boolean {
-  const data = (json as { data?: unknown })?.data
-  if (!data) return false
-  if (Array.isArray(data)) return data.length > 0
-  return typeof data === 'object' && Object.keys(data as Record<string, unknown>).length > 0
+  console.log(`[bvn] ${path} status=${res.status}:`, text.slice(0, 600))
+  let json: unknown
+  try { json = JSON.parse(text) }
+  catch { json = { error: `non-JSON (${res.status}): ${text.slice(0, 300)}` } }
+  return { status: res.status, json: json as Record<string, unknown> }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Origin',  '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   if (req.method === 'OPTIONS') return res.status(204).end()
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' })
+
+  if (!APP_ID || !SECRET_KEY) {
+    return res.status(500).json({ error: 'Dojah credentials not configured (DOJAH_APP_ID / DOJAH_SECRET_KEY)' })
+  }
 
   const body = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) as {
-    action?: string
-    bvn?: string
+    action?:    string
+    bvn?:       string
     reference?: string
-    otp?: string
+    otp?:       string
   }
   const action = String(body.action ?? 'query').trim().toLowerCase()
 
-  console.log('[nibss] handler bvn action=', action, 'fixie_set=', !!FIXIE_URL)
+  console.log('[bvn] action=', action)
 
   try {
-    const token = await getToken()
+    if (action === 'query') {
+      const { bvn } = body
+      if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
 
-    if (action === 'verify-otp' || action === 'get-bvn-details') {
+      const { status, json } = await dojahPost('/api/v1/kyc/bvn/send/otp', { bvn })
+
+      // Dojah returns { entity: { reference_id: "..." } }
+      // KYC.tsx looks for: data.reference / data.ref / data.customer_reference
+      const entity = (json.entity ?? {}) as Record<string, unknown>
+      const referenceId = entity.reference_id ?? entity.referenceId
+
+      if (!referenceId) {
+        const errMsg = String((json.error as string) ?? (json.message as string) ?? 'BVN lookup failed — please check your BVN and try again')
+        console.warn('[bvn] no reference_id. response:', JSON.stringify(json).slice(0, 600))
+        return res.status(status >= 400 ? status : 502).json({ error: errMsg })
+      }
+
+      return res.status(200).json({
+        status: true,
+        data: { reference: String(referenceId) },
+      })
+    }
+
+    if (action === 'verify-otp') {
       const { reference, otp } = body
       if (!reference || !otp) return res.status(400).json({ error: 'reference and otp required' })
 
-      const otpResult = await apiPost('/api/v2/bvn/verify/otp', token, {
-        customer_reference: reference,
+      const { status, json } = await dojahPost('/api/v1/kyc/bvn/verify/otp', {
+        reference_id: reference,
         otp,
       })
-      if (!otpResult.json?.status) return res.status(otpResult.status).json(otpResult.json)
 
-      let lastDetails: Awaited<ReturnType<typeof apiPost>> | null = null
-      const delays = [30000, 5000, 5000, 5000, 5000, 5000]
-      for (let attempt = 0; attempt < delays.length; attempt++) {
-        await sleep(delays[attempt])
-        const details = await apiPost('/api/v2/bvn/details', token, {
-          scope:              'profile',
-          customer_reference: reference,
-        })
-        lastDetails = details
-        if (details.status >= 200 && details.status < 300 && details.json?.status && hasBvnDetails(details.json)) {
-          return res.status(details.status).json(details.json)
-        }
-        console.warn(
-          '[nibss] details not ready',
-          `attempt=${attempt + 1}/${delays.length}`,
-          `status=${details.status}`,
-          JSON.stringify(details.json).slice(0, 300),
-        )
+      // Dojah returns { entity: { first_name, last_name, date_of_birth, ... } }
+      // KYC.tsx reads: data.first_name, data.surname ?? data.last_name, data.date_of_birth ?? data.dob
+      const entity = (json.entity ?? {}) as Record<string, unknown>
+
+      if (status < 200 || status >= 300 || !entity.first_name) {
+        const errMsg = String((json.error as string) ?? (json.message as string) ?? 'OTP verification failed — please try again')
+        return res.status(status >= 400 ? status : 502).json({ error: errMsg })
       }
 
-      return res.status(lastDetails?.status ?? 504).json(
-        lastDetails?.json ?? { status: false, message: 'BVN details not ready', data: [], statusCode: 504 },
-      )
+      return res.status(200).json({
+        status: true,
+        data: {
+          first_name:    entity.first_name,
+          last_name:     entity.last_name,
+          surname:       entity.last_name,
+          date_of_birth: entity.date_of_birth ?? entity.dob,
+          dob:           entity.date_of_birth ?? entity.dob,
+        },
+      })
     }
 
-    if (action !== 'query') return res.status(400).json({ error: `Unknown BVN action: ${action}` })
-
-    const { bvn } = body
-    if (!bvn || bvn.length !== 11) return res.status(400).json({ error: 'Invalid BVN (must be 11 digits)' })
-
-    const { status, json } = await apiPost('/api/v2/bvn/query', token, {
-      bvn,
-      scope:        'profile',
-      channel_code: 'mobile_app',
-    })
-    const data = (json as { data?: unknown }).data
-    const d = (Array.isArray(data) ? data[0] : data ?? json) as Record<string, unknown>
-    const nested = d?.customer as Record<string, unknown> | undefined
-    const reference = d?.customer_reference ?? d?.customerReference ?? d?.reference ?? d?.ref ??
-      nested?.customer_reference ?? nested?.customerReference
-
-    if (status >= 200 && status < 300 && !reference) {
-      console.warn('[nibss] query returned no reference. keys=', Object.keys(d), 'raw=', JSON.stringify(json).slice(0, 600))
-    }
-
-    return res.status(status).json(json)
+    return res.status(400).json({ error: `Unknown action: ${action}` })
 
   } catch (e) {
-    _token = null
     return res.status(500).json({ error: String(e) })
   }
 }

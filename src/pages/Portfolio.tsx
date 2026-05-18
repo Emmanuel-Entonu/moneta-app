@@ -251,7 +251,7 @@ export default function Portfolio() {
   const [orders, setOrders]             = useState<OrderRecord[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [brokerLinking, setBrokerLinking] = useState(false)
-  const [, setBrokerLinkError] = useState<string | null>(null)
+  const [brokerLinkError, setBrokerLinkError] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelErrors, setCancelErrors] = useState<Record<string, string>>({})
   const [supabaseIdMap, setSupabaseIdMap] = useState<Record<string, string>>({})
@@ -408,6 +408,9 @@ export default function Portfolio() {
               {brokerLinking ? 'Linking…' : 'Link Now'}
             </button>
           </div>
+          {brokerLinkError && (
+            <p style={{ fontSize: 11, color: '#fca5a5', fontWeight: 600, marginTop: 8, lineHeight: 1.4 }}>{brokerLinkError}</p>
+          )}
         </div>
       )}
 

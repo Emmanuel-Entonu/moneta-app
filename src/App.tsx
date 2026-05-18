@@ -50,12 +50,12 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  if ((!kycStatus || kycStatus === 'pending') && location.pathname !== '/kyc') {
-    return <Navigate to="/kyc" replace />
-  }
-
   if (!localStorage.getItem(`moneta_onboarded_${user.id}`) && location.pathname !== '/kyc') {
     return <Navigate to="/onboarding" replace />
+  }
+
+  if ((!kycStatus || kycStatus === 'pending') && location.pathname !== '/kyc') {
+    return <Navigate to="/kyc" replace />
   }
 
   return <>{children}</>

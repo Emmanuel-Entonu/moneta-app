@@ -177,11 +177,14 @@ export default function Market() {
 
   useEffect(() => {
     getIndexData().then(raw => {
-      const list = (Array.isArray(raw) ? raw : []) as Record<string, unknown>[]
-      const asi = list.find(i => i.symbol === 'ASI') ?? list[0]
+      // MDS may return [...] directly or wrap it as { data: [...] }
+      const r = raw as Record<string, unknown>
+      const unwrapped = Array.isArray(raw) ? raw : Array.isArray(r?.data) ? r.data : Array.isArray(r?.result) ? r.result : []
+      const list = unwrapped as Record<string, unknown>[]
+      const asi = list.find(i => String(i.symbol ?? i.indexCode ?? i.code ?? '').toUpperCase() === 'ASI') ?? list[0]
       if (!asi) return
-      const val = Number(asi.value ?? 0)
-      const chg = Number(asi.changePerc ?? 0)
+      const val = Number(asi.value ?? asi.indexValue ?? asi.lastPx ?? asi.closingPrice ?? 0)
+      const chg = Number(asi.changePerc ?? asi.percentageChange ?? asi.changePercent ?? asi.percChange ?? 0)
       if (val > 0) { setNseIndex(val); setNseIndexChange(chg) }
     }).catch(() => {})
   }, [])

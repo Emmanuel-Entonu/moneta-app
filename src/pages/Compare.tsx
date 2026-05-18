@@ -206,10 +206,12 @@ const STAT_ROWS = [
 ]
 
 export default function Compare() {
-  const { marketData } = usePortfolioStore()
+  const { marketData, loadMarketData, loadingMarket } = usePortfolioStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [selected, setSelected] = useState<string[]>([])
+
+  useEffect(() => { if (marketData.length === 0) loadMarketData() }, [])
 
   // Pre-select stock when navigating from a trade page (?with=SYMBOL)
   useEffect(() => {

@@ -84,6 +84,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         kyc_status: 'pending',
         wallet_balance: 0,
       })
+    } else {
+      console.error('[loadProfile] fetch error:', fetchError.message)
     }
 
     set({ profileReady: true })

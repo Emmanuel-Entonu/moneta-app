@@ -300,10 +300,11 @@ function PriceChart({ symbol, price, open, high, low, isUp }: { symbol: string; 
           <path d={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           {hoverX !== null && hoverIdx !== null && (() => {
             const pad = dims.h * 0.12
-            const pts2 = points.map((p, i) => {
-              const minP = Math.min(...points), maxP = Math.max(...points), range = maxP - minP || 1
-              return [(i / (n - 1)) * dims.w, pad + ((maxP - p) / range) * (dims.h - pad * 2)] as [number, number]
-            })
+            const minP = Math.min(...points), maxP = Math.max(...points), range = maxP - minP || 1
+            const pts2 = points.map((p, i) => [
+              (i / (n - 1)) * dims.w,
+              pad + ((maxP - p) / range) * (dims.h - pad * 2),
+            ] as [number, number])
             const [, hy] = pts2[hoverIdx]
             return (
               <g>
@@ -363,6 +364,7 @@ export default function Trade() {
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
   useEffect(() => { if (marketData.length === 0) loadMarketData() }, [])
+  useEffect(() => { return () => { clearOrderResult() } }, []) // clear stale result on unmount
   useEffect(() => {
     if (orderResult?.success && pendingReceiptRef.current) {
       setReceipt({
@@ -699,9 +701,9 @@ export default function Trade() {
                     setMonetaLoading(true); setMonetaError(null)
                     try {
                       localStorage.setItem('moneta_pending_order', JSON.stringify({ accountId: pacAccountId, symbol: stock.symbol, side: 'BUY', quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal }))
-                      const { reference, authorizationUrl } = await initializePayment(userEmail, estimatedTotal, 'card')
+                      const { reference, authorizationUrl } = await initializePayment(userEmail, orderTotal, 'card')
                       localStorage.setItem('moneta_pending_ref', reference)
-                      localStorage.setItem('moneta_pending_amount', String(estimatedTotal))
+                      localStorage.setItem('moneta_pending_amount', String(orderTotal))
                       if (Capacitor.isNativePlatform()) {
                         setShowConfirm(false)
                         await Browser.open({ url: authorizationUrl })

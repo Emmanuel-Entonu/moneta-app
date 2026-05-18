@@ -126,7 +126,7 @@ export default function KYC() {
       return
     }
 
-    const readyAt = Date.now() + 30000
+    const readyAt = Date.now() + 5000
     const tick = () => setOtpWaitSeconds(Math.max(0, Math.ceil((readyAt - Date.now()) / 1000)))
     tick()
     const timer = window.setInterval(tick, 1000)
@@ -364,7 +364,7 @@ export default function KYC() {
               {bvnReference && !bvnDone && (
                 <div style={{ marginTop: 12, padding: 14, background: '#f0fdf4', borderRadius: 12, border: '1px solid #a7f3d0' }}>
                   <p style={{ fontSize: 12, color: '#065f46', fontWeight: 700, marginBottom: 10 }}>
-                    {otpWaitSeconds > 0 ? `OTP sent. You can verify in ${otpWaitSeconds}s` : 'OTP sent to your BVN-linked number'}
+                    {otpWaitSeconds > 0 ? `OTP sent — ready to verify in ${otpWaitSeconds}s` : 'OTP sent to your BVN-linked number'}
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <input

@@ -41,7 +41,6 @@ const SLIDES = [
 
 export default function Onboarding() {
   const [current, setCurrent] = useState(0)
-  const [, setAnimDir] = useState<'next' | 'prev'>('next')
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
 
@@ -60,7 +59,6 @@ export default function Onboarding() {
 
   function next() {
     if (current < SLIDES.length - 1) {
-      setAnimDir('next')
       setCurrent(current + 1)
     } else {
       finish()
@@ -69,7 +67,6 @@ export default function Onboarding() {
 
   function prev() {
     if (current > 0) {
-      setAnimDir('prev')
       setCurrent(current - 1)
     }
   }

@@ -138,9 +138,10 @@ export async function verifyPayment(reference: string): Promise<{
   // data.status is always true/200 if the HTTP call worked — check the inner payment status
   const paymentStatus = String(data.data?.status ?? '').toLowerCase()
   const success = paymentStatus === 'success'
+  // Moneta amounts are in kobo (same convention as Paystack) — divide by 100 to get naira
   return {
     success,
-    amountNaira: data.data?.amount ?? 0,
+    amountNaira: (data.data?.amount ?? 0) / 100,
     message: data.message ?? (success ? 'Payment successful' : 'Payment not completed'),
   }
 }

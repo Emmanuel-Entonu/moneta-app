@@ -114,9 +114,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         )
       }
 
-      return res.status(lastDetails?.status ?? 504).json(
-        lastDetails?.json ?? { status: false, message: 'BVN details not ready', data: [], statusCode: 504 },
-      )
+      // OTP was accepted — BVN is verified. Details endpoint unavailable (NIBSS issue).
+      // Return success with empty data so user can fill in their details manually.
+      console.warn('[nibss] details endpoint unavailable after all attempts — returning OTP-verified success with no profile data')
+      return res.status(200).json({ status: true, message: 'BVN verified', data: {} })
     }
 
     if (action !== 'query') return res.status(400).json({ error: `Unknown BVN action: ${action}` })

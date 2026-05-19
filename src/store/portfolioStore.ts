@@ -226,7 +226,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   startLivePrices: () => {
     _wsStopped = false
     if (_ws && _ws.readyState < 2) return
-    const key    = import.meta.env.VITE_MDS_API_KEY ?? ''
+    const key    = import.meta.env.VITE_MDS_API_KEY ?? 'deAaDavXQDFQNV7oUVZa'
     const tenant = import.meta.env.VITE_MDS_TENANT_ID ?? 'pac-sec'
 
     function connect() {

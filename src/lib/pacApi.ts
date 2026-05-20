@@ -346,8 +346,6 @@ export async function getClientPositions(accountId: string): Promise<PacPosition
   }
 }
 
-const MONETA_TRADING_ACCOUNT_NO  = '133329549'
-const MONETA_CLEARING_ACCOUNT_NO = 'C000739329MT'
 
 export async function placeOrder(order: PacOrderRequest): Promise<PacOrderResponse> {
   const body = {
@@ -569,15 +567,6 @@ export async function createBrokerAccount(details: {
       directCashSettlement: false,
       autoApprove:          true,
       refCode,
-      // Top-level fields (legacy / fallback)
-      tradingAccountNo:     MONETA_TRADING_ACCOUNT_NO,
-      clearingAccountNo:    MONETA_CLEARING_ACCOUNT_NO,
-      // Structured trading account — required for order placement per PAC docs
-      tradingAccounts: [{
-        tradingAccountLabel: 'Moneta Technology Ltd Trading Account',
-        tradingAccountNo:    MONETA_TRADING_ACCOUNT_NO,
-        clearingAccountNo:   MONETA_CLEARING_ACCOUNT_NO,
-      }],
     }
   )
   const accountId  = String(investData.id ?? '')

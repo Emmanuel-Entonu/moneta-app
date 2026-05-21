@@ -72,7 +72,6 @@ export default function CacsStatus() {
             {STEPS.map((step, i) => {
               const done = idx >= i + 1
               const active = idx === i || (i === 0 && idx >= 1)
-              const color = done || active ? '#34d399' : 'rgba(255,255,255,0.2)'
               const bgColor = done ? 'rgba(5,150,105,0.25)' : active ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.05)'
               const borderColor = done || active ? 'rgba(5,150,105,0.5)' : 'rgba(255,255,255,0.1)'
               return (

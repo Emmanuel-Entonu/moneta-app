@@ -87,16 +87,15 @@ export default function Admin() {
     setLoading(true)
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, kyc_status, cacs_status, cacs_doc_url, pac_account_id, created_at')
+      .select('id, full_name, email, kyc_status, cacs_status, cacs_doc_url, pac_account_id, created_at')
       .order('created_at', { ascending: false })
 
     if (error) { console.error(error); setLoading(false); return }
 
-    // Fetch emails from auth — requires service role; this approach uses profile join via user metadata
     const rows: UserRow[] = (data ?? []).map((p) => ({
       id: p.id,
       full_name: p.full_name ?? null,
-      email: null, // filled below if available
+      email: p.email ?? null,
       kyc_status: p.kyc_status ?? null,
       cacs_status: p.cacs_status ?? null,
       cacs_doc_url: p.cacs_doc_url ?? null,
@@ -122,7 +121,7 @@ export default function Admin() {
   }
 
   const filtered = users.filter((u) => {
-    const matchFilter = filter === 'all' || u.cacs_status === filter || (filter === 'pending' && !u.cacs_status)
+    const matchFilter = filter === 'all' || u.cacs_status === filter
     const matchSearch = !search || (u.full_name ?? '').toLowerCase().includes(search.toLowerCase()) || (u.email ?? '').toLowerCase().includes(search.toLowerCase()) || (u.pac_account_id ?? '').toLowerCase().includes(search.toLowerCase())
     return matchFilter && matchSearch
   })
@@ -252,7 +251,7 @@ export default function Admin() {
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
                 type="text"
-                placeholder="Search name / PAC ID…"
+                placeholder="Search name / email / PAC ID…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{ padding: '8px 14px', borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 13, color: '#0f172a', width: 220, outline: 'none' }}
@@ -273,7 +272,7 @@ export default function Admin() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-                    {['Name', 'PAC Account ID', 'KYC Status', 'CACS Status', 'Submitted', 'Document', 'Actions'].map((h) => (
+                    {['Name / Email', 'PAC Account ID', 'KYC Status', 'CACS Status', 'Joined', 'Document', 'Actions'].map((h) => (
                       <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontWeight: 700, color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -283,7 +282,7 @@ export default function Admin() {
                     <tr key={u.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f1f5f9' : 'none', background: i % 2 === 0 ? '#fff' : '#fafbfd' }}>
                       <td style={{ padding: '13px 16px', whiteSpace: 'nowrap' }}>
                         <p style={{ fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>{u.full_name ?? '—'}</p>
-                        <p style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{u.id.slice(0, 8)}…</p>
+                        <p style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>{u.email ?? <span style={{ color: '#94a3b8' }}>no email yet</span>}</p>
                       </td>
                       <td style={{ padding: '13px 16px', fontFamily: 'monospace', fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>
                         {u.pac_account_id ?? <span style={{ color: '#94a3b8' }}>—</span>}

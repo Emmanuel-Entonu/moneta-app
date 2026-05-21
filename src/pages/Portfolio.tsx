@@ -405,7 +405,7 @@ export default function Portfolio() {
             <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: 8, fontWeight: 500 }}>
               {cacsStatus === 'pending'
                 ? 'Your CACS form is under review. You\'ll be able to trade once your NGX/CSCS account is approved (1–3 business days).'
-                : 'Your investment account is ready. To start buying and selling stocks, you need a CSCS trading account — submit the CACS form to get started.'}
+                : 'One last step before you can trade. Submit the CACS form to register your NGX/CSCS trading account — it\'s a regulatory requirement and takes just a few minutes.'}
             </p>
             {cacsStatus === 'pending' && (
               <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a', fontSize: 12, color: '#92400e', fontWeight: 600, textAlign: 'center' }}>

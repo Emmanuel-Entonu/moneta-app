@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
-      .select('pac_account_id, kyc_status, wallet_balance, cacs_status, cacs_doc_url')
+      .select('pac_account_id, kyc_status, wallet_balance, cacs_status, cacs_doc_url, email')
       .eq('id', user.id)
       .single()
 
@@ -77,6 +77,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         pacAccountId = null
         await supabase.from('profiles').update({ pac_account_id: null }).eq('id', user.id)
       }
+      // Backfill email if not yet stored (existing users pre-date this column)
+      if (!profile.email && user.email) {
+        supabase.from('profiles').update({ email: user.email }).eq('id', user.id).then(() => {})
+      }
       set({
         pacAccountId,
         kycStatus: (profile.kyc_status as AuthState['kycStatus']) ?? 'pending',
@@ -87,6 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } else if (!fetchError || fetchError.code === 'PGRST116') {
       await supabase.from('profiles').upsert({
         id: user.id,
+        email: user.email ?? null,
         kyc_status: 'pending',
         wallet_balance: 0,
       })

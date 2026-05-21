@@ -341,6 +341,7 @@ export default function Trade() {
   const { marketData, positions, orderLoading, orderResult, placeOrder, clearOrderResult, loadMarketData } = usePortfolioStore()
   const { pacAccountId } = useAuthStore()
   const kycStatus = useAuthStore((s) => s.kycStatus)
+  const cacsStatus = useAuthStore((s) => s.cacsStatus)
 
   const initialSide: Side = searchParams.get('side')?.toUpperCase() === 'SELL' ? 'SELL' : 'BUY'
   const [side, setSide] = useState<Side>(initialSide)
@@ -349,6 +350,7 @@ export default function Trade() {
   const [limitPrice, setLimitPrice] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
   const [showKycGate, setShowKycGate] = useState(false)
+  const [showCacsGate, setShowCacsGate] = useState(false)
   const [paySource, setPaySource] = useState<'wallet' | 'moneta'>('wallet')
   const [monetaLoading, setMonetaLoading] = useState(false)
   const [monetaError, setMonetaError] = useState<string | null>(null)
@@ -576,7 +578,7 @@ export default function Trade() {
 
         {/* CTA */}
         <button
-          onClick={() => kycStatus !== 'verified' ? setShowKycGate(true) : setShowConfirm(true)}
+          onClick={() => kycStatus !== 'verified' ? setShowKycGate(true) : cacsStatus !== 'approved' ? setShowCacsGate(true) : setShowConfirm(true)}
           disabled={!qty || qty <= 0 || orderLoading || sellQtyInvalid || sellNoHolding}
           style={{ padding: '16px', borderRadius: 16, fontWeight: 900, fontSize: 17, letterSpacing: 0.2, cursor: (!qty || qty <= 0 || orderLoading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', background: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.08)' : side === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)', color: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.25)' : '#fff', boxShadow: (!qty || qty <= 0 || orderLoading) ? 'none' : side === 'BUY' ? '0 6px 24px rgba(5,150,105,0.38)' : '0 6px 24px rgba(220,38,38,0.32)' }}
         >
@@ -602,6 +604,35 @@ export default function Trade() {
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowKycGate(false)} style={{ flex: 1, padding: '14px', borderRadius: 16, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Maybe Later</button>
               <button onClick={() => navigate('/kyc')} style={{ flex: 2, padding: '14px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(5,150,105,0.32)', border: 'none' }}>Complete KYC</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CACS Gate Modal */}
+      {showCacsGate && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '0 20px' }} onClick={() => setShowCacsGate(false)}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#fff', borderRadius: 24, padding: '28px 24px 24px', boxShadow: '0 24px 64px rgba(0,0,0,0.3)', animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#eff6ff', border: '2px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', textAlign: 'center', marginBottom: 10, letterSpacing: -0.4 }}>
+              {cacsStatus === 'pending' ? 'Account Under Review' : 'Trading Account Required'}
+            </h3>
+            <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: 24, fontWeight: 500 }}>
+              {cacsStatus === 'pending'
+                ? 'Your CACS form is being reviewed. Trading will be enabled automatically once your NGX/CSCS account is approved (1–3 business days).'
+                : 'You need a CSCS trading account to place orders on the NGX. Submit the CACS form to activate your account — it only takes a few minutes.'}
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowCacsGate(false)} style={{ flex: 1, padding: '14px', borderRadius: 16, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                {cacsStatus === 'pending' ? 'Got It' : 'Maybe Later'}
+              </button>
+              <button onClick={() => { setShowCacsGate(false); navigate(cacsStatus === 'pending' ? '/cacs-status' : '/cacs') }} style={{ flex: 2, padding: '14px', borderRadius: 16, background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(29,78,216,0.32)', border: 'none' }}>
+                {cacsStatus === 'pending' ? 'Track Status' : 'Submit CACS Form'}
+              </button>
             </div>
           </div>
         </div>

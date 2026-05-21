@@ -9,6 +9,8 @@ interface AuthState {
   profileReady: boolean
   pacAccountId: string | null
   kycStatus: 'pending' | 'submitted' | 'verified' | 'rejected'
+  cacsStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected'
+  cacsDocUrl: string | null
   walletBalance: number
 
   setSession: (session: Session | null) => void
@@ -28,6 +30,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profileReady: false,
   pacAccountId: null,
   kycStatus: 'pending',
+  cacsStatus: 'not_submitted',
+  cacsDocUrl: null,
   walletBalance: 0,
 
   setSession: (session) => {
@@ -52,7 +56,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     await supabase.auth.signOut()
-    set({ user: null, session: null, pacAccountId: null, kycStatus: 'pending', walletBalance: 0, profileReady: false })
+    set({ user: null, session: null, pacAccountId: null, kycStatus: 'pending', cacsStatus: 'not_submitted', cacsDocUrl: null, walletBalance: 0, profileReady: false })
   },
 
   loadProfile: async () => {
@@ -61,7 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
-      .select('pac_account_id, kyc_status, wallet_balance')
+      .select('pac_account_id, kyc_status, wallet_balance, cacs_status, cacs_doc_url')
       .eq('id', user.id)
       .single()
 
@@ -76,6 +80,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         pacAccountId,
         kycStatus: (profile.kyc_status as AuthState['kycStatus']) ?? 'pending',
+        cacsStatus: (profile.cacs_status as AuthState['cacsStatus']) ?? 'not_submitted',
+        cacsDocUrl: profile.cacs_doc_url ?? null,
         walletBalance: profile.wallet_balance ?? 0,
       })
     } else if (!fetchError || fetchError.code === 'PGRST116') {

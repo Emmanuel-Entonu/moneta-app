@@ -17,6 +17,9 @@ import Compare from './pages/Compare'
 import Onboarding from './pages/Onboarding'
 import KYC from './pages/KYC'
 import PaymentCallback from './pages/PaymentCallback'
+import CacsRequest from './pages/CacsRequest'
+import CacsStatus from './pages/CacsStatus'
+import Admin from './pages/Admin'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading, profileReady, kycStatus } = useAuthStore()
@@ -134,6 +137,9 @@ export default function App() {
         <Route path="/compare" element={<RequireAuth><Compare /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+        <Route path="/cacs" element={<RequireAuth><CacsRequest /></RequireAuth>} />
+        <Route path="/cacs-status" element={<RequireAuth><CacsStatus /></RequireAuth>} />
+        <Route path="/admin" element={<Admin />} />
 
         <Route path="*" element={<Navigate to="/market" replace />} />
       </Routes>

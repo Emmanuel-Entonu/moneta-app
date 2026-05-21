@@ -242,7 +242,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 
 export default function Portfolio() {
   const { positions, account, loadingPortfolio, loadPositions, cancelOrder, pacOrders, loadingOrders, loadOrders, orderFills, loadingFillsId, loadFills } = usePortfolioStore()
-  const { pacAccountId, loadProfile, kycStatus } = useAuthStore()
+  const { pacAccountId, loadProfile, kycStatus, cacsStatus } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
   const [showFund, setShowFund]         = useState(false)
@@ -256,6 +256,7 @@ export default function Portfolio() {
   const [cancelErrors, setCancelErrors] = useState<Record<string, string>>({})
   const [supabaseIdMap, setSupabaseIdMap] = useState<Record<string, string>>({})
   const [expandedFillId, setExpandedFillId] = useState<string | null>(null)
+  const [dismissCacsPopup, setDismissCacsPopup] = useState(false)
   const userId = useAuthStore((s) => s.user?.id)
   const userEmail = useAuthStore((s) => s.user?.email ?? '')
 
@@ -388,6 +389,41 @@ export default function Portfolio() {
             <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, margin: 0, lineHeight: 1.4 }}>Complete your identity check to trade stocks on the NGX</p>
           </div>
           <button onClick={() => navigate('/kyc')} style={{ padding: '8px 14px', background: '#fff', borderRadius: 20, color: '#b45309', fontWeight: 800, fontSize: 12, border: 'none', cursor: 'pointer', flexShrink: 0 }}>Verify Now</button>
+        </div>
+      )}
+
+      {/* CACS prompt popup — shows when user has a PAC account but no CSCS trading account yet */}
+      {pacAccountId && cacsStatus !== 'approved' && !dismissCacsPopup && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '0 20px' }}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#fff', borderRadius: 24, padding: '28px 24px 24px', boxShadow: '0 24px 64px rgba(0,0,0,0.3)', animation: 'slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#eff6ff', border: '2px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', textAlign: 'center', marginBottom: 8, letterSpacing: -0.4 }}>Activate Your Trading Account</h3>
+            <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: 8, fontWeight: 500 }}>
+              {cacsStatus === 'pending'
+                ? 'Your CACS form is under review. You\'ll be able to trade once your NGX/CSCS account is approved (1–3 business days).'
+                : 'Your investment account is ready. To start buying and selling stocks, you need a CSCS trading account — submit the CACS form to get started.'}
+            </p>
+            {cacsStatus === 'pending' && (
+              <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a', fontSize: 12, color: '#92400e', fontWeight: 600, textAlign: 'center' }}>
+                Status: Under Review — we'll notify you when it's approved
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setDismissCacsPopup(true)} style={{ flex: 1, padding: '13px', borderRadius: 14, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#64748b', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                Maybe Later
+              </button>
+              <button
+                onClick={() => { setDismissCacsPopup(true); navigate(cacsStatus === 'pending' ? '/cacs-status' : '/cacs') }}
+                style={{ flex: 2, padding: '13px', borderRadius: 14, background: cacsStatus === 'pending' ? 'linear-gradient(135deg,#1d4ed8,#1e40af)' : 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: cacsStatus === 'pending' ? '0 4px 16px rgba(29,78,216,0.32)' : '0 4px 16px rgba(5,150,105,0.32)', border: 'none' }}
+              >
+                {cacsStatus === 'pending' ? 'Track Status' : 'Submit CACS Form'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -583,6 +619,32 @@ export default function Portfolio() {
                 <AllocationBar positions={sorted} />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* CSCS status widget */}
+        {pacAccountId && (
+          <div
+            onClick={() => navigate(cacsStatus === 'approved' ? '/cacs-status' : cacsStatus === 'pending' ? '/cacs-status' : '/cacs')}
+            style={{ margin: '16px 12px 0', borderRadius: 16, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', background: cacsStatus === 'approved' ? 'rgba(5,150,105,0.12)' : cacsStatus === 'pending' ? 'rgba(251,191,36,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${cacsStatus === 'approved' ? 'rgba(5,150,105,0.3)' : cacsStatus === 'pending' ? 'rgba(251,191,36,0.3)' : 'rgba(239,68,68,0.25)'}` }}
+          >
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: cacsStatus === 'approved' ? 'rgba(5,150,105,0.2)' : cacsStatus === 'pending' ? 'rgba(251,191,36,0.15)' : 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {cacsStatus === 'approved'
+                ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                : cacsStatus === 'pending'
+                ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              }
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 1 }}>
+                NGX/CSCS Trading Account
+              </p>
+              <p style={{ fontSize: 11, color: cacsStatus === 'approved' ? '#34d399' : cacsStatus === 'pending' ? '#fbbf24' : '#f87171', fontWeight: 600 }}>
+                {cacsStatus === 'approved' ? 'Active — Trading enabled' : cacsStatus === 'pending' ? 'Under Review — 1–3 business days' : 'Not submitted — Tap to activate'}
+              </p>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
           </div>
         )}
 

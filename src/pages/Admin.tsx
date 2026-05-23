@@ -422,7 +422,7 @@ export default function Admin() {
                                 {rejecting === u.id ? '…' : 'Reject'}
                               </button>
                             )}
-                            {u.cacs_status === 'approved' && u.cacs_status !== 'rejected' && (
+                            {u.cacs_status === 'approved' && (
                               <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, fontStyle: 'italic' }}>No actions</span>
                             )}
                           </div>

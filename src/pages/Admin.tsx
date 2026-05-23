@@ -137,7 +137,7 @@ export default function Admin() {
   // ── Login ────────────────────────────────────────────────────────────────────
   if (!authed) {
     return (
-      <div style={{ minHeight: '100vh', width: '100%', display: 'flex', fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999 }}>
 
         {/* Left branding panel */}
         <div style={{ flex: '0 0 45%', background: 'linear-gradient(160deg,#0a1628 0%,#0f2318 60%,#062318 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 56px', position: 'relative', overflow: 'hidden' }}>
@@ -260,10 +260,10 @@ export default function Admin() {
 
   // ── Dashboard ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#f1f5f9', fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', background: '#f1f5f9', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999, overflow: 'hidden' }}>
 
       {/* ── Sidebar ── */}
-      <aside className="admin-sidebar" style={{ width: 240, background: '#0f172a', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
+      <aside className="admin-sidebar" style={{ width: 240, background: '#0f172a', display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100%', overflowY: 'auto' }}>
         {/* Logo */}
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -310,7 +310,7 @@ export default function Admin() {
       </aside>
 
       {/* ── Main ── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%', overflow: 'hidden' }}>
 
         {/* Top header */}
         <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 32px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -333,7 +333,7 @@ export default function Admin() {
           </div>
         </header>
 
-        <div style={{ flex: 1, padding: '28px 32px', overflowY: 'auto' }}>
+        <div style={{ flex: 1, padding: '28px 32px', overflowY: 'auto', minHeight: 0 }}>
 
           {/* Page title */}
           <div style={{ marginBottom: 24 }}>

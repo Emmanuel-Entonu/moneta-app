@@ -137,38 +137,82 @@ export default function Admin() {
   // ── Login ────────────────────────────────────────────────────────────────────
   if (!authed) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: "'Inter', system-ui, sans-serif" }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
+      <div style={{ minHeight: '100vh', width: '100%', display: 'flex', fontFamily: "'Inter', system-ui, sans-serif" }}>
+
+        {/* Left branding panel */}
+        <div style={{ flex: '0 0 45%', background: 'linear-gradient(160deg,#0a1628 0%,#0f2318 60%,#062318 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 56px', position: 'relative', overflow: 'hidden' }}>
+          {/* Grid texture */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+          {/* Glow */}
+          <div style={{ position: 'absolute', bottom: -80, left: -80, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(5,150,105,0.18) 0%,transparent 70%)', pointerEvents: 'none' }} />
+
           {/* Logo */}
-          <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#059669,#047857)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(5,150,105,0.4)' }}>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: 'linear-gradient(135deg,#059669,#047857)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 32px rgba(5,150,105,0.45)' }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
               </div>
-              <span style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>Moneta</span>
+              <div>
+                <p style={{ fontSize: 20, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5, lineHeight: 1 }}>Moneta</p>
+                <p style={{ fontSize: 10, color: '#34d399', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>Admin Portal</p>
+              </div>
             </div>
-            <p style={{ fontSize: 13, color: '#64748b', fontWeight: 500, letterSpacing: 0.5, textTransform: 'uppercase' }}>Admin Portal</p>
           </div>
 
-          {/* Card */}
-          <div style={{ background: '#1e293b', borderRadius: 20, padding: '36px 32px', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc', marginBottom: 6, letterSpacing: -0.3 }}>Sign in to continue</h2>
-            <p style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500, marginBottom: 28 }}>Authorized Moneta personnel only</p>
+          {/* Center content */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h1 style={{ fontSize: 36, fontWeight: 900, color: '#f8fafc', letterSpacing: -1, lineHeight: 1.15, marginBottom: 16 }}>
+              Moneta<br />Management<br /><span style={{ color: '#34d399' }}>Console</span>
+            </h1>
+            <p style={{ fontSize: 14, color: '#64748b', fontWeight: 500, lineHeight: 1.7, maxWidth: 320 }}>
+              Review CACS submissions, approve trading accounts, and manage user access for the NGX trading platform.
+            </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Feature pills */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 32 }}>
+              {[
+                'CACS Form Review & Approval',
+                'NGX/CSCS Account Management',
+                'Real-time User Status Tracking',
+              ].map((f) => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(5,150,105,0.2)', border: '1px solid rgba(5,150,105,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 500 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <p style={{ fontSize: 11, color: '#334155', fontWeight: 500 }}>© 2025 Moneta Securities · Internal Use Only</p>
+          </div>
+        </div>
+
+        {/* Right login panel */}
+        <div style={{ flex: 1, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 64px' }}>
+          <div style={{ width: '100%', maxWidth: 400 }}>
+            <div style={{ marginBottom: 36 }}>
+              <h2 style={{ fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: -0.6, marginBottom: 6 }}>Sign in</h2>
+              <p style={{ fontSize: 14, color: '#64748b', fontWeight: 500 }}>Enter your admin credentials to access the portal</p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.3, textTransform: 'uppercase' }}>Username</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Username</label>
                 <input
                   value={username}
                   onChange={(e) => { setUsername(e.target.value); setAuthError(null) }}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   placeholder="MONETA.ADMIN"
                   autoComplete="off"
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1.5px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#f8fafc', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none', letterSpacing: 0.5 }}
+                  style={{ width: '100%', padding: '13px 16px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none', letterSpacing: 0.5 }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.3, textTransform: 'uppercase' }}>Password</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8, letterSpacing: 0.3, textTransform: 'uppercase' }}>Password</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPass ? 'text' : 'password'}
@@ -176,38 +220,39 @@ export default function Admin() {
                     onChange={(e) => { setPassword(e.target.value); setAuthError(null) }}
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                     placeholder="••••••••"
-                    style={{ width: '100%', padding: '12px 44px 12px 16px', borderRadius: 10, border: '1.5px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#f8fafc', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none' }}
+                    style={{ width: '100%', padding: '13px 48px 13px 16px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none' }}
                   />
-                  <button onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 0, display: 'flex' }}>
+                  <button onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, display: 'flex' }}>
                     {showPass
-                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     }
                   </button>
                 </div>
               </div>
 
               {authError && (
-                <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', fontSize: 13, color: '#fca5a5', fontWeight: 600 }}>{authError}</div>
+                <div style={{ padding: '11px 14px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: '#991b1b', fontWeight: 600 }}>{authError}</div>
               )}
 
               <button
                 onClick={handleLogin}
-                style={{ padding: '13px', background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: 'pointer', border: 'none', marginTop: 4, boxShadow: '0 4px 16px rgba(5,150,105,0.35)', letterSpacing: 0.2 }}
+                style={{ padding: '14px', background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: 'pointer', border: 'none', marginTop: 4, boxShadow: '0 4px 20px rgba(5,150,105,0.3)', letterSpacing: 0.2, width: '100%' }}
               >
                 Access Admin Portal
               </button>
             </div>
-          </div>
 
-          <p style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: '#334155', fontWeight: 500 }}>
-            Moneta Securities · Internal Use Only
-          </p>
+            <p style={{ marginTop: 28, fontSize: 11, color: '#cbd5e1', textAlign: 'center', fontWeight: 500 }}>
+              This system is restricted to authorized Moneta personnel only.<br />Unauthorized access is prohibited.
+            </p>
+          </div>
         </div>
+
         <style>{`
           @keyframes spin { to { transform: rotate(360deg); } }
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          input:focus { border-color: rgba(5,150,105,0.6) !important; box-shadow: 0 0 0 3px rgba(5,150,105,0.15) !important; }
+          input:focus { border-color: #059669 !important; box-shadow: 0 0 0 3px rgba(5,150,105,0.12) !important; }
         `}</style>
       </div>
     )

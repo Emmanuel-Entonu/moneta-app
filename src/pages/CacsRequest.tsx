@@ -126,8 +126,8 @@ export default function CacsRequest() {
 
         {/* Download */}
         <a
-          href="/PAC%20SECURITIES%20FORM-ACCOUNT%20OPENING%20FORM.pdf"
-          download="PAC SECURITIES FORM-ACCOUNT OPENING FORM.pdf"
+          href="/account-opening-form.pdf"
+          download="PAC Securities Account Opening Form.pdf"
           style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', background: 'rgba(29,78,216,0.15)', border: '1.5px solid rgba(59,130,246,0.35)', borderRadius: 18, textDecoration: 'none', cursor: 'pointer' }}
         >
           <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

@@ -77,12 +77,12 @@ function RowMenu({ userId, cacsStatus, onReject }: { userId: string; cacsStatus:
   if (cacsStatus === 'rejected') return null
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(!open)} style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+      <button onClick={() => setOpen(!open)} style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
       </button>
       {open && (
         <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, zIndex: 50, minWidth: 160, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-          <button onClick={() => { onReject(userId); setOpen(false) }} style={{ width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => { onReject(userId); setOpen(false) }} style={{ width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             Reject application
           </button>
@@ -300,7 +300,7 @@ export default function Admin() {
               <p style={{ fontSize: 10, color: '#6b7280', fontWeight: 400, marginTop: 2 }}>Super Admin</p>
             </div>
           </div>
-          <button onClick={handleLogout} style={{ width: '100%', padding: '7px', borderRadius: 6, background: 'transparent', border: '1px solid #374151', color: '#9ca3af', fontWeight: 500, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <button onClick={handleLogout} style={{ width: '100%', height: 30, borderRadius: 4, background: 'transparent', border: '1px solid #374151', color: '#9ca3af', fontWeight: 600, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign out
           </button>
@@ -321,7 +321,7 @@ export default function Admin() {
             {/* Environment badge — operators must always know which DB they're on */}
             <span style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', padding: '3px 8px', borderRadius: 4, border: '1.5px solid #fca5a5', background: '#fef2f2', letterSpacing: 0.5 }}>PRODUCTION</span>
             <div style={{ width: 1, height: 20, background: '#e5e7eb' }} />
-            <button onClick={loadUsers} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
+            <button onClick={loadUsers} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 12px', borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
               Refresh
             </button>
@@ -370,7 +370,7 @@ export default function Admin() {
                 style={{ width: '100%', padding: '7px 12px 7px 32px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: 13, color: '#111827', outline: 'none', background: '#fff' }} />
             </div>
             {search && (
-              <button onClick={() => setSearch('')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#f9fafb', fontSize: 12, fontWeight: 500, color: '#6b7280', cursor: 'pointer' }}>
+              <button onClick={() => setSearch('')} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px', borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', fontSize: 12, fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>
                 Clear
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -387,7 +387,7 @@ export default function Admin() {
               </div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 }}>Failed to load users</p>
               <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>{loadError}</p>
-              <button onClick={loadUsers} style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>Retry</button>
+              <button onClick={loadUsers} style={{ height: 30, padding: '0 14px', borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>Retry</button>
             </div>
           ) : loading ? (
             // Skeleton rows — match actual table layout
@@ -418,7 +418,7 @@ export default function Admin() {
                 {search ? 'Try a different name, email, or PAC ID.' : filter !== 'all' ? 'Switch to "All" to see all users.' : 'Users will appear here once they sign up.'}
               </p>
               {(search || filter !== 'all') && (
-                <button onClick={() => { setSearch(''); setFilter('all') }} style={{ marginTop: 16, padding: '7px 16px', borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>Clear filters</button>
+                <button onClick={() => { setSearch(''); setFilter('all') }} style={{ marginTop: 14, height: 30, padding: '0 14px', borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>Clear filters</button>
               )}
             </div>
           ) : (
@@ -490,7 +490,7 @@ export default function Admin() {
                             <>
                               {u.cacs_status !== 'approved' && (
                                 <button onClick={() => setStatus(u.id, 'approved')} disabled={acting === u.id}
-                                  style={{ padding: '4px 12px', borderRadius: 5, background: acting === u.id ? '#f3f4f6' : '#10b981', color: acting === u.id ? '#9ca3af' : '#fff', fontWeight: 600, fontSize: 12, border: 'none', cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                                  style={{ height: 28, padding: '0 10px', borderRadius: 4, background: acting === u.id ? '#f9fafb' : '#059669', color: acting === u.id ? '#9ca3af' : '#fff', fontWeight: 600, fontSize: 12, border: `1px solid ${acting === u.id ? '#e5e7eb' : '#047857'}`, cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
                                   {acting === u.id ? '…' : 'Approve'}
                                 </button>
                               )}

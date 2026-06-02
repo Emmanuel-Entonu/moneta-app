@@ -426,7 +426,6 @@ export default function KYC() {
             {showPersonalDetails && (
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
-                <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" hint="Optional — not provided by BVN" />
                 <Field
                   label="Date of Birth"
                   value={dob}

@@ -659,7 +659,6 @@ export default function Admin() {
                 { label: 'Full Name',     value: kycUser.full_name ?? '—',        mono: false },
                 { label: 'Email',         value: kycUser.email ?? '—',            mono: false },
                 { label: 'Phone Number',  value: kycUser.phone ?? '—',            mono: false },
-                { label: 'BVN',           value: kycUser.bvn ? `${kycUser.bvn.slice(0,3)}****${kycUser.bvn.slice(-2)}` : '—', mono: true },
                 { label: 'ID Type',       value: kycUser.id_type ?? '—',          mono: false },
                 { label: 'ID Number',     value: kycUser.id_number ?? '—',        mono: true  },
                 { label: 'PAC Account ID',value: kycUser.pac_account_id ?? '—',   mono: true  },
@@ -669,6 +668,21 @@ export default function Admin() {
                   <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: mono ? 'monospace' : undefined }}>{value}</p>
                 </div>
               ))}
+              {/* BVN with verified badge */}
+              <div>
+                <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>BVN</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', fontFamily: 'monospace' }}>
+                    {kycUser.bvn ? `${kycUser.bvn.slice(0,3)}****${kycUser.bvn.slice(-2)}` : '—'}
+                  </p>
+                  {kycUser.bvn && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 7px', borderRadius: 20, background: '#f0fdf4', border: '1px solid #a7f3d0', fontSize: 10, fontWeight: 700, color: '#059669' }}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Verified
+                    </span>
+                  )}
+                </div>
+              </div>
               <div>
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>CACS Status</p>
                 <StatusBadge status={kycUser.cacs_status} />

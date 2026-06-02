@@ -263,8 +263,8 @@ export default function Admin() {
 
         {/* Logo */}
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(16,185,129,0.5)' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(145deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 24px rgba(16,185,129,0.5), inset 0 1px 0 rgba(255,255,255,0.2)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="2 20 2 4 12 14 22 4 22 20"/></svg>
           </div>
           <div>
             <p style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>Moneta</p>
@@ -345,8 +345,8 @@ export default function Admin() {
       <aside style={{ width: 220, background: '#0a0a0a', display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid #000', flexShrink: 0 }}>
         <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(145deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 12px rgba(16,185,129,0.4)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="2 20 2 4 12 14 22 4 22 20"/></svg>
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: -0.3, lineHeight: 1 }}>Moneta</p>

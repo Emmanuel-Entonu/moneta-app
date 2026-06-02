@@ -241,71 +241,83 @@ export default function Admin() {
   // ── Login ──────────────────────────────────────────────────────────────────
   if (!authed) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999 }}>
-      <div style={{ flex: '0 0 46%', background: '#030b17', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '52px 64px', position: 'relative', overflow: 'hidden' }}>
-        {/* Ballpit 3D background — isolated in error boundary so a WebGL crash can't blank the page */}
+
+      {/* ── Left panel ── */}
+      <div style={{ flex: '0 0 46%', background: '#000', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '52px 64px', position: 'relative', overflow: 'hidden' }}>
+
+        {/* Ballpit */}
         <BallpitBoundary>
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
             <Ballpit
-              count={80}
+              count={90}
               gravity={0.01}
               friction={0.9975}
               wallBounce={0.95}
               followCursor={false}
-              colors={[0x00d084, 0x6366f1, 0x34d399, 0x818cf8, 0x00ff99]}
+              colors={[0x10b981, 0x34d399, 0x059669, 0x6ee7b7, 0x00ff99, 0xffffff]}
             />
           </div>
         </BallpitBoundary>
-        {/* Subtle grid overlay */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none', zIndex: 1 }} />
-        {/* Soft dark vignette — keep text readable without hiding balls */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(3,11,23,0.6) 0%, rgba(3,11,23,0.1) 40%, rgba(3,11,23,0.15) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+
+        {/* Grid overlay */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none', zIndex: 1 }} />
+        {/* Bottom vignette so text is readable */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0.2) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+
+        {/* Logo */}
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(16,185,129,0.5)' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
           <div>
-            <p style={{ fontSize: 18, fontWeight: 900, color: '#f1f5f9', letterSpacing: -0.5, lineHeight: 1 }}>Moneta</p>
-            <span style={{ display: 'inline-block', marginTop: 4, padding: '2px 8px', borderRadius: 4, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', fontSize: 9, fontWeight: 800, color: '#34d399', letterSpacing: 2, textTransform: 'uppercase' }}>Admin Portal</span>
+            <p style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: -0.5, lineHeight: 1 }}>Moneta</p>
+            <span style={{ display: 'inline-block', marginTop: 4, padding: '2px 8px', borderRadius: 4, background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.4)', fontSize: 9, fontWeight: 800, color: '#34d399', letterSpacing: 2, textTransform: 'uppercase' }}>Admin Portal</span>
           </div>
         </div>
+
+        {/* Headline */}
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <h1 style={{ fontSize: 52, fontWeight: 900, letterSpacing: -2.5, lineHeight: 1.04, marginBottom: 20 }}>
-            <span style={{ color: '#f1f5f9' }}>Moneta<br />Management<br /></span>
+          <h1 style={{ fontSize: 54, fontWeight: 900, letterSpacing: -2.5, lineHeight: 1.04, marginBottom: 20 }}>
+            <span style={{ color: '#fff' }}>Moneta<br />Management<br /></span>
             <span style={{ background: 'linear-gradient(90deg,#10b981,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Console</span>
           </h1>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.75)', fontWeight: 500, lineHeight: 1.75, maxWidth: 380 }}>Review CACS submissions, approve NGX/CSCS trading accounts, and manage platform access.</p>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', fontWeight: 500, lineHeight: 1.75, maxWidth: 380 }}>Review CACS submissions, approve NGX/CSCS trading accounts, and manage platform access.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 36 }}>
             {['CACS Form Review & Instant Approval', 'NGX / CSCS Account Lifecycle Management', 'Real-time User Status & KYC Tracking'].map((f) => (
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{f}</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>{f}</span>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ position: 'relative', zIndex: 2, fontSize: 11, color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>© 2025 Moneta Securities · Internal Use Only</p>
+
+        <p style={{ position: 'relative', zIndex: 2, fontSize: 11, color: 'rgba(255,255,255,0.2)', fontWeight: 500 }}>© 2025 Moneta Securities · Internal Use Only</p>
       </div>
-      <div style={{ flex: 1, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 72px' }}>
+
+      {/* ── Right panel ── */}
+      <div style={{ flex: 1, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 72px' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
           <div style={{ marginBottom: 36 }}>
-            <h2 style={{ fontSize: 26, fontWeight: 900, color: '#0f172a', letterSpacing: -0.8, marginBottom: 6 }}>Sign in</h2>
-            <p style={{ fontSize: 14, color: '#64748b', fontWeight: 500 }}>Authorized personnel only. All access is logged.</p>
+            <h2 style={{ fontSize: 28, fontWeight: 900, color: '#0a0a0a', letterSpacing: -0.8, marginBottom: 6 }}>Sign in</h2>
+            <p style={{ fontSize: 14, color: '#6b7280', fontWeight: 500 }}>Authorized personnel only. All access is logged.</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 7, letterSpacing: 0.6, textTransform: 'uppercase' }}>Username</label>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#111827', marginBottom: 7, letterSpacing: 0.7, textTransform: 'uppercase' }}>Username</label>
               <input value={username} onChange={(e) => { setUsername(e.target.value); setAuthError(null) }} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} placeholder="MONETA.ADMIN" autoComplete="off"
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1.5px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none', letterSpacing: 0.5 }} />
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', color: '#0a0a0a', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none', letterSpacing: 0.5 }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 7, letterSpacing: 0.6, textTransform: 'uppercase' }}>Password</label>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#111827', marginBottom: 7, letterSpacing: 0.7, textTransform: 'uppercase' }}>Password</label>
               <div style={{ position: 'relative' }}>
                 <input type={showPass ? 'text' : 'password'} value={password} onChange={(e) => { setPassword(e.target.value); setAuthError(null) }} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} placeholder="••••••••"
-                  style={{ width: '100%', padding: '12px 46px 12px 16px', borderRadius: 8, border: '1.5px solid #e2e8f0', background: '#fff', color: '#0f172a', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none' }} />
-                <button onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
-                  {showPass ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  style={{ width: '100%', padding: '12px 46px 12px 16px', borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', color: '#0a0a0a', fontSize: 14, fontWeight: 600, boxSizing: 'border-box', outline: 'none' }} />
+                <button onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex' }}>
+                  {showPass
+                    ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                     : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
                 </button>
               </div>
@@ -313,16 +325,15 @@ export default function Admin() {
             {authError && (
               <div style={{ padding: '10px 14px', borderRadius: 6, background: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: '#991b1b', fontWeight: 600 }}>{authError}</div>
             )}
-            <button onClick={handleLogin} style={{ padding: '13px', background: '#10b981', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer', border: 'none', width: '100%' }}>
+            <button onClick={handleLogin} style={{ padding: '14px', background: '#0a0a0a', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer', border: 'none', width: '100%', letterSpacing: 0.3 }}>
               Access Admin Portal
             </button>
           </div>
-          <p style={{ marginTop: 28, fontSize: 11, color: '#cbd5e1', textAlign: 'center', fontWeight: 500 }}>Restricted to authorized Moneta personnel only.</p>
+          <p style={{ marginTop: 28, fontSize: 11, color: '#d1d5db', textAlign: 'center', fontWeight: 500 }}>Restricted to authorized Moneta personnel only.</p>
         </div>
       </div>
+
       <style>{`
-        @keyframes orb1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(28px,-28px) scale(1.08)}}
-        @keyframes orb2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-18px,32px) scale(1.05)}}
         input:focus{border-color:#10b981!important;box-shadow:0 0 0 3px rgba(16,185,129,0.1)!important}
         *{box-sizing:border-box;margin:0;padding:0}
       `}</style>

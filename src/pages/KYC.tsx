@@ -394,8 +394,12 @@ export default function KYC() {
                           const name    = String(d.first_name ?? d.full_name ?? '').trim()
                           const surname = String(d.surname ?? d.last_name ?? '').trim()
                           const rawDob  = String(d.DateOfBirth ?? d.date_of_birth ?? d.dob ?? '')
+                          const rawPhone = String(d.phone_number ?? d.phoneNumber ?? d.mobile_number ?? d.mobileNumber ?? d.phone ?? d.mobile ?? '').trim()
+                          const rawAddr  = String(d.residential_address ?? d.residentialAddress ?? d.address ?? d.home_address ?? d.homeAddress ?? '').trim()
                           if (name) setFullName(surname ? `${name} ${surname}` : name)
                           if (rawDob) { const p = new Date(rawDob); setDob(isNaN(p.getTime()) ? rawDob : p.toISOString().split('T')[0]) }
+                          if (rawPhone) setPhone(rawPhone)
+                          if (rawAddr) setAddress(rawAddr)
                           setBvnDone(true)
                         } catch (e: unknown) {
                           setBvnError((e as Error).message ?? 'Network error.')

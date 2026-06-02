@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { Component, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import Ballpit from '../components/Ballpit'
+
+class BallpitBoundary extends Component<{ children: ReactNode }, { crashed: boolean }> {
+  state = { crashed: false }
+  static getDerivedStateFromError() { return { crashed: true } }
+  render() { return this.state.crashed ? null : this.props.children }
+}
 
 const ADMIN_USER = 'MONETA.ADMIN'
 const ADMIN_PASS = 'EMMA123X'
@@ -186,17 +193,19 @@ export default function Admin() {
   if (!authed) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999 }}>
       <div style={{ flex: '0 0 46%', background: '#030b17', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '52px 64px', position: 'relative', overflow: 'hidden' }}>
-        {/* Ballpit 3D background */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
-          <Ballpit
-            count={80}
-            gravity={0.01}
-            friction={0.9975}
-            wallBounce={0.95}
-            followCursor={false}
-            colors={[0x00d084, 0x6366f1, 0x34d399, 0x818cf8, 0x00ff99]}
-          />
-        </div>
+        {/* Ballpit 3D background — isolated in error boundary so a WebGL crash can't blank the page */}
+        <BallpitBoundary>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
+            <Ballpit
+              count={80}
+              gravity={0.01}
+              friction={0.9975}
+              wallBounce={0.95}
+              followCursor={false}
+              colors={[0x00d084, 0x6366f1, 0x34d399, 0x818cf8, 0x00ff99]}
+            />
+          </div>
+        </BallpitBoundary>
         {/* Subtle grid overlay */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none', zIndex: 1 }} />
         {/* Soft dark vignette — keep text readable without hiding balls */}

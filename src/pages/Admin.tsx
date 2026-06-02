@@ -187,14 +187,14 @@ export default function Admin() {
     <div style={{ position: 'fixed', inset: 0, display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999 }}>
       <div style={{ flex: '0 0 46%', background: '#030b17', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '52px 64px', position: 'relative', overflow: 'hidden' }}>
         {/* Ballpit 3D background */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
           <Ballpit
             count={80}
             gravity={0.01}
             friction={0.9975}
             wallBounce={0.95}
             followCursor={false}
-            colors={[0x064e3b, 0x059669, 0x10b981, 0x6366f1, 0x34d399]}
+            colors={[0x00d084, 0x6366f1, 0x34d399, 0x818cf8, 0x00ff99]}
           />
         </div>
         {/* Subtle grid overlay */}

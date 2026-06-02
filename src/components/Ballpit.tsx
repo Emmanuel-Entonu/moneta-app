@@ -1,6 +1,6 @@
 import { gsap } from 'gsap'
 import { Observer } from 'gsap/Observer'
-import React, { useEffect, useRef } from 'react'
+import React, { useLayoutEffect, useRef } from 'react'
 import {
   ACESFilmicToneMapping,
   AmbientLight,
@@ -757,15 +757,19 @@ const Ballpit: React.FC<BallpitProps> = ({ className = '', followCursor = true, 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const instanceRef = useRef<CreateBallpitReturn | null>(null)
 
-  useEffect(() => {
+  // useLayoutEffect fires after DOM is committed + layout is computed,
+  // so offsetWidth/offsetHeight are available for proper canvas sizing.
+  useLayoutEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     instanceRef.current = createBallpit(canvas, { followCursor, ...props })
-    return () => { instanceRef.current?.dispose() }
+    // Fallback resize in next frame in case initial layout read returned 0
+    const rafId = requestAnimationFrame(() => { instanceRef.current?.three.resize() })
+    return () => { cancelAnimationFrame(rafId); instanceRef.current?.dispose() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return <canvas className={className} ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+  return <canvas className={className} ref={canvasRef} style={{ display: 'block', width: '100%', height: '100%' }} />
 }
 
 export default Ballpit

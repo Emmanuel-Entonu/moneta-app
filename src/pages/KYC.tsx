@@ -99,7 +99,6 @@ export default function KYC() {
   // BVN & personal data
   const [bvn, setBvn] = useState('')
   const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
   const [dob, setDob] = useState('')
   const [address, setAddress] = useState('')
 
@@ -159,7 +158,6 @@ export default function KYC() {
     try {
       // Final sanitization before any network call
       const cleanName    = fullName.trim().slice(0, 255)
-      const cleanPhone   = phone.replace(/\D/g, '').replace(/^234/, '0').slice(0, 15)
       const cleanAddress = address.trim().slice(0, 255)
       const cleanBvn     = bvn.replace(/\D/g, '').slice(0, 11)
       const cleanIdNum   = idNumber.trim().replace(/[^a-zA-Z0-9\-\/]/g, '').slice(0, 50)
@@ -181,7 +179,6 @@ export default function KYC() {
       const { error: dbError } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: cleanName,
-        phone: cleanPhone,
         date_of_birth: dob || null,
         address: cleanAddress,
         bvn: cleanBvn,
@@ -197,7 +194,7 @@ export default function KYC() {
         pacAccountId = await createBrokerAccount({
           fullName:  cleanName,
           email:     user.email ?? '',
-          phone:     cleanPhone,
+          phone:     '',
           bvn:       cleanBvn,
           dob,
           address:   cleanAddress,
@@ -392,7 +389,6 @@ export default function KYC() {
                           const middleName = String(d.middle_name ?? '').trim()
                           const surname = String(d.surname ?? d.last_name ?? '').trim()
                           const rawDob  = String(d.DateOfBirth ?? d.date_of_birth ?? d.dob ?? '')
-                          // BVN profile scope does not return phone — must be entered manually
                           const street = String(d.address ?? d.residential_address ?? d.residentialAddress ?? d.home_address ?? '').trim()
                           const city   = String(d.city ?? '').trim()
                           const state  = String(d.state_of_origin ?? d.stateOfOrigin ?? '').trim()

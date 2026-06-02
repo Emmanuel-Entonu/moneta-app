@@ -237,13 +237,21 @@ export default function Settings() {
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
 
-        {/* Page title */}
-        <p style={{
-          fontSize: 27, fontWeight: 900, letterSpacing: -0.7, lineHeight: 1,
-          background: 'linear-gradient(95deg, #34d399 0%, #059669 55%, #6ee7b7 100%)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-          marginBottom: 20, position: 'relative', zIndex: 1,
-        }}>Account</p>
+        {/* Page title + logout */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, position: 'relative', zIndex: 1 }}>
+          <p style={{
+            fontSize: 27, fontWeight: 900, letterSpacing: -0.7, lineHeight: 1,
+            background: 'linear-gradient(95deg, #34d399 0%, #059669 55%, #6ee7b7 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          }}>Account</p>
+          <button
+            onClick={() => setShowSignOut(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.35)', color: '#fca5a5', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Log Out
+          </button>
+        </div>
 
         {/* Avatar + name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 24, position: 'relative', zIndex: 1 }}>

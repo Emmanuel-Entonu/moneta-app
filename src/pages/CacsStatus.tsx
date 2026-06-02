@@ -19,7 +19,7 @@ function stepIndex(status: CacsStatus): number {
 
 export default function CacsStatus() {
   const navigate = useNavigate()
-  const { cacsStatus, cacsDocUrl } = useAuthStore()
+  const { cacsStatus, cacsDocUrl, cacsRejectionReason } = useAuthStore()
   const idx = stepIndex(cacsStatus)
   const isRejected = cacsStatus === 'rejected'
 
@@ -55,6 +55,12 @@ export default function CacsStatus() {
             </div>
             <h2 style={{ fontSize: 24, fontWeight: 900, color: '#fff', letterSpacing: -0.6, marginBottom: 6 }}>Form Rejected</h2>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: 500, lineHeight: 1.6 }}>There was an issue with your submission. Please resubmit with a corrected, signed form.</p>
+            {cacsRejectionReason && (
+              <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.25)', textAlign: 'left' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Reason</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', lineHeight: 1.5 }}>{cacsRejectionReason}</p>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ textAlign: 'center', marginBottom: 32 }}>

@@ -356,7 +356,7 @@ export default function Trade() {
   const [monetaError, setMonetaError] = useState<string | null>(null)
   const [validating, setValidating] = useState(false)
   const [validation, setValidation] = useState<PacValidationResult | null>(null)
-  const [, setValidationError] = useState<string | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<ReceiptData | null>(null)
   const pendingReceiptRef = useRef<Omit<ReceiptData, 'orderId'> | null>(null)
   const pacAccount = usePortfolioStore((s) => s.account)
@@ -671,6 +671,11 @@ export default function Trade() {
               <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12, background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.2)' }}>
                 <div style={{ width: 14, height: 14, border: '2px solid #059669', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
                 <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Calculating fees…</span>
+              </div>
+            )}
+            {validationError && (
+              <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 12, background: '#fff5f5', border: '1px solid #fecaca', fontSize: 12, color: '#991b1b', fontWeight: 600 }}>
+                Fee calculation failed: {validationError}
               </div>
             )}
             {validation && (

@@ -429,13 +429,15 @@ export default function Settings() {
       </Card>
 
       {/* SIGN OUT */}
-      <SectionHeader label="Account Actions" />
-      <Card>
-        <Row
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>}
-          label="Sign Out" danger onPress={() => setShowSignOut(true)} last
-        />
-      </Card>
+      <div style={{ padding: '24px 16px 40px' }}>
+        <button
+          onClick={() => setShowSignOut(true)}
+          style={{ width: '100%', padding: '15px', borderRadius: 16, background: '#fff', border: '1.5px solid #fecaca', color: '#dc2626', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: '0 1px 4px rgba(220,38,38,0.08)' }}
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign Out
+        </button>
+      </div>
 
       {/* Sign out sheet */}
       {showSignOut && (

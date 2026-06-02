@@ -33,13 +33,13 @@ type CacsFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'not_submitted'
 // ── Status palette ────────────────────────────────────────────────────────────
 // Defined once; never inline per-usage
 const STATUS: Record<string, { bg: string; color: string; border: string; dot: string; label: string }> = {
-  approved:      { bg: 'rgba(16,185,129,0.1)',  color: '#34d399', border: 'rgba(16,185,129,0.25)', dot: '#10b981', label: 'Approved' },
-  pending:       { bg: 'rgba(217,119,6,0.1)',   color: '#fbbf24', border: 'rgba(217,119,6,0.25)', dot: '#d97706', label: 'Pending' },
-  rejected:      { bg: 'rgba(220,38,38,0.1)',   color: '#f87171', border: 'rgba(220,38,38,0.25)', dot: '#dc2626', label: 'Rejected' },
-  not_submitted: { bg: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: 'rgba(255,255,255,0.1)', dot: 'rgba(255,255,255,0.25)', label: 'Not submitted' },
-  verified:      { bg: 'rgba(16,185,129,0.1)',  color: '#34d399', border: 'rgba(16,185,129,0.25)', dot: '#10b981', label: 'Verified' },
-  submitted:     { bg: 'rgba(59,130,246,0.1)',  color: '#93c5fd', border: 'rgba(59,130,246,0.25)', dot: '#3b82f6', label: 'Submitted' },
-  pending_kyc:   { bg: 'rgba(217,119,6,0.1)',   color: '#fbbf24', border: 'rgba(217,119,6,0.25)', dot: '#d97706', label: 'Pending KYC' },
+  approved:      { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0', dot: '#16a34a', label: 'Approved' },
+  pending:       { bg: '#fffbeb', color: '#92400e', border: '#fde68a', dot: '#d97706', label: 'Pending' },
+  rejected:      { bg: '#fef2f2', color: '#991b1b', border: '#fecaca', dot: '#dc2626', label: 'Rejected' },
+  not_submitted: { bg: '#f8fafc', color: '#475569', border: '#e2e8f0', dot: '#94a3b8', label: 'Not submitted' },
+  verified:      { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0', dot: '#16a34a', label: 'Verified' },
+  submitted:     { bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe', dot: '#3b82f6', label: 'Submitted' },
+  pending_kyc:   { bg: '#fffbeb', color: '#92400e', border: '#fde68a', dot: '#d97706', label: 'Pending KYC' },
 }
 
 const AVATAR_COLORS = ['#6366f1','#ec4899','#0ea5e9','#10b981','#f59e0b','#8b5cf6','#06b6d4','#f43f5e']
@@ -89,12 +89,12 @@ function RowMenu({ userId, cacsStatus, onReject }: { userId: string; cacsStatus:
   if (cacsStatus === 'rejected') return null
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(!open)} style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}>
+      <button onClick={() => setOpen(!open)} style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
       </button>
       {open && (
-        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, zIndex: 50, minWidth: 160, boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
-          <button onClick={() => { onReject(userId); setOpen(false) }} style={{ width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, zIndex: 50, minWidth: 160, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+          <button onClick={() => { onReject(userId); setOpen(false) }} style={{ width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             Reject application
           </button>
@@ -342,7 +342,7 @@ export default function Admin() {
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999, overflow: 'hidden', background: '#000' }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999, overflow: 'hidden', background: '#f8fafc' }}>
 
       {/* ── Sidebar ── */}
       <aside style={{ width: 220, background: '#000', display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
@@ -393,16 +393,16 @@ export default function Admin() {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', minWidth: 0 }}>
 
         {/* Topbar */}
-        <header style={{ background: '#0a0a0a', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 24px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-            <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>Management</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-            <span style={{ color: '#fff', fontWeight: 600 }}>CACS Review</span>
+            <span style={{ color: '#9ca3af', fontWeight: 400 }}>Management</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            <span style={{ color: '#111827', fontWeight: 700 }}>CACS Review</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', padding: '3px 8px', borderRadius: 4, border: '1.5px solid rgba(248,113,113,0.3)', background: 'rgba(220,38,38,0.12)', letterSpacing: 0.5 }}>PRODUCTION</span>
-            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)' }} />
-            <button onClick={loadUsers} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 12px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', padding: '3px 8px', borderRadius: 4, border: '1.5px solid #fca5a5', background: '#fef2f2', letterSpacing: 0.5 }}>PRODUCTION</span>
+            <div style={{ width: 1, height: 20, background: '#e5e7eb' }} />
+            <button onClick={loadUsers} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 12px', borderRadius: 4, border: '1px solid #e5e7eb', background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
               Refresh
             </button>
@@ -413,13 +413,13 @@ export default function Admin() {
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
 
           {/* Page header */}
-          <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h1 style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: -0.3 }}>CACS Submissions</h1>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>Review and approve NGX/CSCS account applications</p>
+              <h1 style={{ fontSize: 16, fontWeight: 700, color: '#111827', letterSpacing: -0.3 }}>CACS Submissions</h1>
+              <p style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>Review and approve NGX/CSCS account applications</p>
             </div>
             {counts.pending > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.3)', fontSize: 13, fontWeight: 600, color: '#fbbf24' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, background: '#fffbeb', border: '1px solid #fde68a', fontSize: 13, fontWeight: 600, color: '#92400e' }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
                 {counts.pending} pending review
               </div>
@@ -427,7 +427,7 @@ export default function Admin() {
           </div>
 
           {/* Stat summary strip */}
-          <div style={{ background: '#0a0a0a', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex' }}>
+          <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', display: 'flex' }}>
             {([
               { label: 'Total users',   val: counts.all,           active: filter === 'all',           key: 'all' as CacsFilter },
               { label: 'Pending',       val: counts.pending,       active: filter === 'pending',       key: 'pending' as CacsFilter },
@@ -436,132 +436,132 @@ export default function Admin() {
               { label: 'Not submitted', val: counts.not_submitted, active: filter === 'not_submitted', key: 'not_submitted' as CacsFilter },
             ]).map(({ label, val, active, key }, i) => (
               <button key={key} onClick={() => setFilter(key)}
-                style={{ flex: 1, padding: '14px 16px', background: active ? 'rgba(255,255,255,0.04)' : 'transparent', border: 'none', borderRight: i < 4 ? '1px solid rgba(255,255,255,0.07)' : 'none', borderBottom: active ? '2px solid #10b981' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' }}>
-                <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{val}</p>
-                <p style={{ fontSize: 12, color: active ? '#10b981' : 'rgba(255,255,255,0.35)', marginTop: 4, fontWeight: active ? 600 : 400 }}>{label}</p>
+                style={{ flex: 1, padding: '14px 16px', background: active ? '#f8fafc' : '#fff', border: 'none', borderRight: i < 4 ? '1px solid #e5e7eb' : 'none', borderBottom: active ? '2px solid #111827' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' }}>
+                <p style={{ fontSize: 20, fontWeight: 800, color: '#111827', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{val}</p>
+                <p style={{ fontSize: 12, color: active ? '#111827' : '#6b7280', marginTop: 4, fontWeight: active ? 700 : 400 }}>{label}</p>
               </button>
             ))}
           </div>
 
           {/* Filter / search bar */}
-          <div style={{ padding: '10px 24px', background: '#0a0a0a', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ padding: '10px 24px', background: '#fff', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" placeholder="Search name, email, PAC ID…" value={search} onChange={(e) => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '7px 12px 7px 32px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', fontSize: 13, color: '#fff', outline: 'none', background: 'rgba(255,255,255,0.06)' }} />
+                style={{ width: '100%', padding: '7px 12px 7px 32px', borderRadius: 6, border: '1px solid #e5e7eb', fontSize: 13, color: '#111827', outline: 'none', background: '#fff' }} />
             </div>
             {search && (
-              <button onClick={() => setSearch('')} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
+              <button onClick={() => setSearch('')} style={{ display: 'flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px', borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', fontSize: 12, fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>
                 Clear
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             )}
-            <p style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>{filtered.length} of {users.length}</p>
+            <p style={{ marginLeft: 'auto', fontSize: 12, color: '#9ca3af' }}>{filtered.length} of {users.length}</p>
           </div>
 
           {/* Table */}
           {loadError ? (
             <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style={{ width: 40, height: 40, borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>Failed to load users</p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>{loadError}</p>
-              <button onClick={loadUsers} style={{ height: 30, padding: '0 14px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>Retry</button>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 }}>Failed to load users</p>
+              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>{loadError}</p>
+              <button onClick={loadUsers} style={{ height: 30, padding: '0 14px', borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>Retry</button>
             </div>
           ) : loading ? (
             <div>
               {[...Array(8)].map((_, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '0 24px', height: 44, borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0d0d0d' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '0 24px', height: 44, borderBottom: '1px solid #f3f4f6', background: '#fff' }}>
                   <div style={{ flex: '0 0 240px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', animation: 'shimmer 1.4s ease infinite' }} />
-                    <div style={{ width: 120, height: 12, borderRadius: 4, background: 'rgba(255,255,255,0.07)', animation: 'shimmer 1.4s ease infinite' }} />
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#f3f4f6', animation: 'shimmer 1.4s ease infinite' }} />
+                    <div style={{ width: 120, height: 12, borderRadius: 4, background: '#f3f4f6', animation: 'shimmer 1.4s ease infinite' }} />
                   </div>
-                  <div style={{ flex: '0 0 160px' }}><div style={{ width: 90, height: 12, borderRadius: 4, background: 'rgba(255,255,255,0.07)', animation: 'shimmer 1.4s ease infinite' }} /></div>
-                  <div style={{ flex: '0 0 100px' }}><div style={{ width: 60, height: 20, borderRadius: 4, background: 'rgba(255,255,255,0.07)', animation: 'shimmer 1.4s ease infinite' }} /></div>
-                  <div style={{ flex: '0 0 120px' }}><div style={{ width: 70, height: 20, borderRadius: 4, background: 'rgba(255,255,255,0.07)', animation: 'shimmer 1.4s ease infinite' }} /></div>
-                  <div style={{ flex: '0 0 100px' }}><div style={{ width: 55, height: 12, borderRadius: 4, background: 'rgba(255,255,255,0.07)', animation: 'shimmer 1.4s ease infinite' }} /></div>
+                  <div style={{ flex: '0 0 160px' }}><div style={{ width: 90, height: 12, borderRadius: 4, background: '#f3f4f6', animation: 'shimmer 1.4s ease infinite' }} /></div>
+                  <div style={{ flex: '0 0 100px' }}><div style={{ width: 60, height: 20, borderRadius: 4, background: '#f3f4f6', animation: 'shimmer 1.4s ease infinite' }} /></div>
+                  <div style={{ flex: '0 0 120px' }}><div style={{ width: 70, height: 20, borderRadius: 4, background: '#f3f4f6', animation: 'shimmer 1.4s ease infinite' }} /></div>
+                  <div style={{ flex: '0 0 100px' }}><div style={{ width: 55, height: 12, borderRadius: 4, background: '#f3f4f6', animation: 'shimmer 1.4s ease infinite' }} /></div>
                 </div>
               ))}
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '64px 24px', textAlign: 'center' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div style={{ width: 44, height: 44, borderRadius: 8, background: '#f8fafc', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               </div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 4 }}>
                 {search ? 'No users match that search' : filter !== 'all' ? `No ${filter.replace('_', ' ')} applications` : 'No users yet'}
               </p>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+              <p style={{ fontSize: 13, color: '#6b7280' }}>
                 {search ? 'Try a different name, email, or PAC ID.' : filter !== 'all' ? 'Switch to "All" to see all users.' : 'Users will appear here once they sign up.'}
               </p>
               {(search || filter !== 'all') && (
-                <button onClick={() => { setSearch(''); setFilter('all') }} style={{ marginTop: 14, height: 30, padding: '0 14px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>Clear filters</button>
+                <button onClick={() => { setSearch(''); setFilter('all') }} style={{ marginTop: 14, height: 30, padding: '0 14px', borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>Clear filters</button>
               )}
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: '#050505', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                  <tr style={{ background: '#111827' }}>
                     {['User', 'PAC Account ID', 'KYC', 'CACS Status', 'Joined', 'Document', ''].map((h, i) => (
-                      <th key={`${h}-${i}`} style={{ padding: '0 16px', height: 34, textAlign: 'left', fontWeight: 600, color: 'rgba(255,255,255,0.3)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.6, whiteSpace: 'nowrap', borderRight: i < 6 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>{h}</th>
+                      <th key={`${h}-${i}`} style={{ padding: '0 16px', height: 36, textAlign: 'left', fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.6, whiteSpace: 'nowrap', borderRight: i < 6 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((u, i) => (
-                    <tr key={u.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', background: '#0d0d0d' }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#161616' }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#0d0d0d' }}>
+                    <tr key={u.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f3f4f6' : 'none', background: '#fff' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#f9fafb' }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#fff' }}>
 
                       {/* User */}
-                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid rgba(255,255,255,0.05)', minWidth: 220 }}>
+                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid #f3f4f6', minWidth: 220 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                           <div style={{ width: 26, height: 26, borderRadius: '50%', background: avatarBg(u.full_name), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{(u.full_name ?? '?').charAt(0).toUpperCase()}</span>
                           </div>
                           <div>
-                            <p style={{ fontWeight: 600, color: '#f1f5f9', lineHeight: 1.2 }}>{u.full_name ?? '—'}</p>
-                            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{u.email ?? 'no email'}</p>
+                            <p style={{ fontWeight: 600, color: '#111827', lineHeight: 1.2 }}>{u.full_name ?? '—'}</p>
+                            <p style={{ fontSize: 11, color: '#9ca3af' }}>{u.email ?? 'no email'}</p>
                           </div>
                         </div>
                       </td>
 
                       {/* PAC ID — truncated, copy on click */}
-                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid #f3f4f6' }}>
                         {u.pac_account_id ? (
-                          <button onClick={() => copyId(u.pac_account_id!)} title={u.pac_account_id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'monospace', fontSize: 12, color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.07)', padding: '3px 8px', borderRadius: 4, border: 'none', cursor: 'copy', fontWeight: 600 }}>
+                          <button onClick={() => copyId(u.pac_account_id!)} title={u.pac_account_id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'monospace', fontSize: 12, color: '#374151', background: '#f3f4f6', padding: '3px 8px', borderRadius: 4, border: 'none', cursor: 'copy', fontWeight: 600 }}>
                             {truncateId(u.pac_account_id)}
                             {copiedId === u.pac_account_id
                               ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                              : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                              : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             }
                           </button>
-                        ) : <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12 }}>—</span>}
+                        ) : <span style={{ color: '#d1d5db', fontSize: 12 }}>—</span>}
                       </td>
 
                       {/* KYC */}
-                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid rgba(255,255,255,0.05)' }}><StatusBadge status={u.kyc_status} /></td>
+                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid #f3f4f6' }}><StatusBadge status={u.kyc_status} /></td>
 
                       {/* CACS */}
-                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid rgba(255,255,255,0.05)' }}><StatusBadge status={u.cacs_status} /></td>
+                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid #f3f4f6' }}><StatusBadge status={u.cacs_status} /></td>
 
                       {/* Joined */}
-                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-                        <span title={absDate(u.created_at)} style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', cursor: 'default' }}>{relativeDate(u.created_at)}</span>
+                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid #f3f4f6' }}>
+                        <span title={absDate(u.created_at)} style={{ fontSize: 12, color: '#6b7280', cursor: 'default' }}>{relativeDate(u.created_at)}</span>
                       </td>
 
                       {/* Document */}
-                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid rgba(255,255,255,0.05)' }}>
+                      <td style={{ padding: '0 16px', height: 44, borderRight: '1px solid #f3f4f6' }}>
                         {u.cacs_doc_url
                           ? (
-                            <button onClick={() => setKycUser(u)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 26, padding: '0 10px', borderRadius: 4, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)', color: '#93c5fd', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                            <button onClick={() => setKycUser(u)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 26, padding: '0 10px', borderRadius: 4, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                               View KYC
                             </button>
                           )
-                          : <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)' }}>—</span>}
+                          : <span style={{ fontSize: 12, color: '#d1d5db' }}>—</span>}
                       </td>
 
                       {/* Actions — primary visible + ⋯ for secondary */}
@@ -573,7 +573,7 @@ export default function Admin() {
                             <>
                               {u.cacs_status !== 'approved' && (
                                 <button onClick={() => setStatus(u.id, 'approved')} disabled={acting === u.id}
-                                  style={{ height: 28, padding: '0 10px', borderRadius: 4, background: acting === u.id ? 'rgba(255,255,255,0.06)' : 'rgba(5,150,105,0.15)', color: acting === u.id ? 'rgba(255,255,255,0.25)' : '#34d399', fontWeight: 600, fontSize: 12, border: `1px solid ${acting === u.id ? 'rgba(255,255,255,0.08)' : 'rgba(5,150,105,0.35)'}`, cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                                  style={{ height: 28, padding: '0 10px', borderRadius: 4, background: acting === u.id ? '#f9fafb' : '#059669', color: acting === u.id ? '#9ca3af' : '#fff', fontWeight: 600, fontSize: 12, border: `1px solid ${acting === u.id ? '#e5e7eb' : '#047857'}`, cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
                                   {acting === u.id ? '…' : 'Approve'}
                                 </button>
                               )}
@@ -591,11 +591,11 @@ export default function Admin() {
 
           {/* Table footer */}
           {!loading && !loadError && filtered.length > 0 && (
-            <div style={{ padding: '10px 24px', borderTop: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>
+            <div style={{ padding: '10px 24px', borderTop: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ fontSize: 12, color: '#9ca3af' }}>
                 {filtered.length} result{filtered.length !== 1 ? 's' : ''} · {users.length} total users
               </p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>Changes take effect immediately</p>
+              <p style={{ fontSize: 11, color: '#d1d5db' }}>Changes take effect immediately</p>
             </div>
           )}
         </div>

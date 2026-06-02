@@ -692,15 +692,22 @@ export default function Trade() {
               <div style={{ marginBottom: 14 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Pay With</p>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {([
-                    { key: 'wallet' as const, label: 'Wallet', sub: `₦${walletBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })} available` },
-                    { key: 'moneta' as const, label: 'Moneta', sub: 'Card / Transfer / USSD' },
-                  ]).map(({ key, label, sub }) => (
-                    <button key={key} onClick={() => { setPaySource(key); setMonetaError(null) }} style={{ flex: 1, padding: '10px 12px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${paySource === key ? (side === 'BUY' ? '#059669' : '#dc2626') : 'var(--border)'}`, background: paySource === key ? (side === 'BUY' ? '#f0fdf4' : '#fff5f5') : '#fff', textAlign: 'left', transition: 'all 0.15s' }}>
-                      <p style={{ fontSize: 12, fontWeight: 800, color: paySource === key ? (side === 'BUY' ? '#059669' : '#dc2626') : 'var(--text)', marginBottom: 2 }}>{label}</p>
-                      <p style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>{sub}</p>
+                  {/* Wallet button */}
+                  <button onClick={() => { setPaySource('wallet'); setMonetaError(null) }} style={{ flex: 1, padding: '10px 12px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${paySource === 'wallet' ? '#059669' : 'var(--border)'}`, background: paySource === 'wallet' ? '#f0fdf4' : '#fff', textAlign: 'left', transition: 'all 0.15s' }}>
+                    <p style={{ fontSize: 12, fontWeight: 800, color: paySource === 'wallet' ? '#059669' : 'var(--text)', marginBottom: 2 }}>Wallet</p>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>{`₦${walletBalance.toLocaleString('en-NG', { minimumFractionDigits: 2 })} available`}</p>
+                  </button>
+
+                  {/* Moneta button — under construction */}
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <button onClick={() => { setPaySource('moneta'); setMonetaError(null) }} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${paySource === 'moneta' ? '#059669' : 'var(--border)'}`, background: paySource === 'moneta' ? '#f0fdf4' : '#fff', textAlign: 'left', transition: 'all 0.15s' }}>
+                      <p style={{ fontSize: 12, fontWeight: 800, color: paySource === 'moneta' ? '#059669' : 'var(--text)', marginBottom: 2 }}>Moneta</p>
+                      <p style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>Card / Transfer / USSD</p>
                     </button>
-                  ))}
+                    <div style={{ position: 'absolute', top: -8, right: -6, background: '#f59e0b', borderRadius: 6, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(0,0,0,0.18)' }}>
+                      <span style={{ fontSize: 8, fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: 0.4 }}>🚧 Under Construction</span>
+                    </div>
+                  </div>
                 </div>
                 {paySource === 'wallet' && walletBalance < orderTotal && (
                   <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#fff5f5', border: '1px solid #fecaca', fontSize: 12, color: '#991b1b', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

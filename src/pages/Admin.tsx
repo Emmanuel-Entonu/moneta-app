@@ -1,13 +1,6 @@
-import { Component, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import Ballpit from '../components/Ballpit'
-
-class BallpitBoundary extends Component<{ children: ReactNode }, { crashed: boolean }> {
-  state = { crashed: false }
-  static getDerivedStateFromError() { return { crashed: true } }
-  render() { return this.state.crashed ? null : this.props.children }
-}
+import LightPillar from '../components/LightPillar'
 
 const ADMIN_USER = 'MONETA.ADMIN'
 const ADMIN_PASS = 'EMMA123X'
@@ -245,19 +238,23 @@ export default function Admin() {
       {/* ── Left panel ── */}
       <div style={{ flex: '0 0 46%', background: '#000', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '52px 64px', position: 'relative', overflow: 'hidden' }}>
 
-        {/* Ballpit */}
-        <BallpitBoundary>
-          <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
-            <Ballpit
-              count={90}
-              gravity={0.01}
-              friction={0.9975}
-              wallBounce={0.95}
-              followCursor={false}
-              colors={[0x10b981, 0x34d399, 0x059669, 0x6ee7b7, 0x00ff99, 0xffffff]}
-            />
-          </div>
-        </BallpitBoundary>
+        {/* Light Pillar */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, width: '100%', height: '100%' }}>
+          <LightPillar
+            topColor="#10b981"
+            bottomColor="#000000"
+            intensity={1.2}
+            rotationSpeed={0.3}
+            glowAmount={0.002}
+            pillarWidth={3}
+            pillarHeight={0.4}
+            noiseIntensity={0.5}
+            pillarRotation={25}
+            interactive={false}
+            mixBlendMode="screen"
+            quality="high"
+          />
+        </div>
 
         {/* Grid overlay */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none', zIndex: 1 }} />

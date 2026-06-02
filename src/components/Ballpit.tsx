@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   ACESFilmicToneMapping,
   AmbientLight,
@@ -380,7 +380,7 @@ const Ballpit: React.FC<BallpitProps> = ({ className = '', followCursor = false,
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ref = useRef<ReturnType<typeof createBallpit> | null>(null)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     ref.current = createBallpit(canvas, { followCursor, ...props })

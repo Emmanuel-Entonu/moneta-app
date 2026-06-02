@@ -421,7 +421,19 @@ export default function KYC() {
             {showPersonalDetails && (
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
-                <Field label="NIN (National Identity Number)" value={idNumber} onChange={setIdNumber} placeholder="11-digit NIN" hint="Auto-filled from BVN where available" />
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(0,0,0,0.5)', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>NIN (National Identity Number)</p>
+                  <div style={{ padding: '13px 16px', borderRadius: 14, background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.08)', fontSize: 15, fontWeight: 600, color: idNumber ? '#111' : 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {idNumber ? (
+                      <>
+                        <span>{idNumber}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </>
+                    ) : (
+                      <span>Not provided by BVN</span>
+                    )}
+                  </div>
+                </div>
                 <Field
                   label="Date of Birth"
                   value={dob}

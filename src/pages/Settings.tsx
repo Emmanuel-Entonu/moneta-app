@@ -429,7 +429,7 @@ export default function Settings() {
       </Card>
 
       {/* SIGN OUT */}
-      <div style={{ padding: '24px 16px 40px' }}>
+      <div style={{ padding: '24px 16px calc(env(safe-area-inset-bottom, 0px) + 100px)' }}>
         <button
           onClick={() => setShowSignOut(true)}
           style={{ width: '100%', padding: '15px', borderRadius: 16, background: '#fff', border: '1.5px solid #fecaca', color: '#dc2626', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: '0 1px 4px rgba(220,38,38,0.08)' }}

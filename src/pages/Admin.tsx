@@ -157,10 +157,14 @@ export default function Admin() {
 
   async function setStatus(userId: string, status: 'approved' | 'rejected') {
     setActing(userId)
-    const { error } = await supabase.from('profiles').update({ cacs_status: status }).eq('id', userId)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ cacs_status: status })
+      .eq('id', userId)
+      .select('id')
     setActing(null)
-    if (error) {
-      setToast({ msg: error.message, ok: false })
+    if (error || !data?.length) {
+      setToast({ msg: error?.message ?? 'Permission denied — add UPDATE policy for anon in Supabase', ok: false })
     } else {
       setToast({ msg: `Application ${status}`, ok: true })
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, cacs_status: status } : u))

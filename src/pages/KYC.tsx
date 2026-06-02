@@ -9,7 +9,6 @@ type Step = 1 | 2 | 3
 
 
 const ID_TYPES = [
-  'National ID (NIN)',
   'International Passport',
   "Driver's Licence",
   "Voter's Card",
@@ -105,7 +104,7 @@ export default function KYC() {
   const [address, setAddress] = useState('')
 
   // Step 2
-  const [idType, setIdType] = useState('')
+  const [idType, setIdType] = useState('National ID (NIN)')
   const [idNumber, setIdNumber] = useState('')
 
   const [bvnDone, setBvnDone]           = useState(false)
@@ -426,6 +425,7 @@ export default function KYC() {
             {showPersonalDetails && (
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
+                <Field label="NIN (National Identity Number)" value={idNumber} onChange={setIdNumber} placeholder="11-digit NIN" hint="Auto-filled from BVN where available" />
                 <Field
                   label="Date of Birth"
                   value={dob}

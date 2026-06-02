@@ -351,7 +351,6 @@ export default function Admin() {
           <p style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: 1.5, padding: '0 8px', marginBottom: 4 }}>Management</p>
           {[
             { label: 'CACS Review', active: true, badge: counts.pending, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
-            { label: 'Users',       active: false, badge: 0, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
           ].map(({ label, icon, active, badge }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 8px', borderRadius: 6, marginBottom: 1, background: active ? 'rgba(16,185,129,0.12)' : 'transparent', color: active ? '#10b981' : 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, borderLeft: `2px solid ${active ? '#10b981' : 'transparent'}` }}>
               {icon}

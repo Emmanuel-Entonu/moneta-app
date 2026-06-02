@@ -670,7 +670,7 @@ export default function Portfolio() {
         )}
 
         {/* Empty */}
-        {!loadingPortfolio && positions.length === 0 && (
+        {!loadingPortfolio && positions.length === 0 && tab === 'holdings' && (
           <div style={{ padding: '48px 20px', textAlign: 'center' }}>
             <div style={{ width: 80, height: 80, borderRadius: 28, background: 'rgba(5,150,105,0.12)', border: '1px solid rgba(5,150,105,0.25)', margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>

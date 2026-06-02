@@ -729,10 +729,19 @@ export default function Trade() {
                 No broker account linked. Complete KYC to enable trading.
               </div>
             )}
+            {side === 'BUY' && paySource === 'moneta' && (
+              <div style={{ marginBottom: 14, padding: '12px 14px', borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 800, color: '#92400e', marginBottom: 2 }}>Not Available</p>
+                  <p style={{ fontSize: 12, color: '#b45309', fontWeight: 500, lineHeight: 1.4 }}>Moneta card payments are under construction. Please use your Wallet to complete this purchase.</p>
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: '14px', background: '#f8fafc', border: '1.5px solid var(--border)', borderRadius: 16, color: 'var(--text)', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
               <button
-                disabled={!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)}
+                disabled={!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'moneta') || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)}
                 onClick={async () => {
                   if (!pacAccountId) return
                   if (side === 'BUY' && paySource === 'moneta') {

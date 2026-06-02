@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Ballpit from '../components/Ballpit'
 
 const ADMIN_USER = 'MONETA.ADMIN'
 const ADMIN_PASS = 'EMMA123X'
@@ -185,10 +186,22 @@ export default function Admin() {
   if (!authed) return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', fontFamily: "'Inter', system-ui, sans-serif", zIndex: 9999 }}>
       <div style={{ flex: '0 0 46%', background: '#030b17', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '52px 64px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -120, right: -120, width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle,rgba(16,185,129,0.16) 0%,transparent 65%)', pointerEvents: 'none', animation: 'orb1 9s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: -160, left: -80, width: 520, height: 520, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.1) 0%,transparent 65%)', pointerEvents: 'none', animation: 'orb2 12s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 14 }}>
+        {/* Ballpit 3D background */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          <Ballpit
+            count={80}
+            gravity={0.01}
+            friction={0.9975}
+            wallBounce={0.95}
+            followCursor={false}
+            colors={[0x064e3b, 0x059669, 0x10b981, 0x6366f1, 0x34d399]}
+          />
+        </div>
+        {/* Subtle grid overlay */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none', zIndex: 1 }} />
+        {/* Dark gradient at bottom so text stays readable */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(3,11,23,0.85) 0%, rgba(3,11,23,0.3) 50%, rgba(3,11,23,0.4) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
@@ -197,7 +210,7 @@ export default function Admin() {
             <span style={{ display: 'inline-block', marginTop: 4, padding: '2px 8px', borderRadius: 4, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', fontSize: 9, fontWeight: 800, color: '#34d399', letterSpacing: 2, textTransform: 'uppercase' }}>Admin Portal</span>
           </div>
         </div>
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <h1 style={{ fontSize: 52, fontWeight: 900, letterSpacing: -2.5, lineHeight: 1.04, marginBottom: 20 }}>
             <span style={{ color: '#f1f5f9' }}>Moneta<br />Management<br /></span>
             <span style={{ background: 'linear-gradient(90deg,#10b981,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Console</span>
@@ -214,7 +227,7 @@ export default function Admin() {
             ))}
           </div>
         </div>
-        <p style={{ position: 'relative', zIndex: 1, fontSize: 11, color: '#1e293b', fontWeight: 500 }}>© 2025 Moneta Securities · Internal Use Only</p>
+        <p style={{ position: 'relative', zIndex: 2, fontSize: 11, color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>© 2025 Moneta Securities · Internal Use Only</p>
       </div>
       <div style={{ flex: 1, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 72px' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>

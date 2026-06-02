@@ -391,15 +391,21 @@ export default function KYC() {
                           catch { setBvnError('Verification failed. Try again.'); return }
                           if (!res.ok) { setBvnError(String(json.message ?? json.error ?? 'Wrong OTP.')); return }
                           const d = (json.data ?? json) as Record<string, unknown>
-                          const name    = String(d.first_name ?? d.full_name ?? '').trim()
+                          const firstName = String(d.first_name ?? d.full_name ?? '').trim()
+                          const middleName = String(d.middle_name ?? '').trim()
                           const surname = String(d.surname ?? d.last_name ?? '').trim()
                           const rawDob  = String(d.DateOfBirth ?? d.date_of_birth ?? d.dob ?? '')
-                          const rawPhone = String(d.phone_number ?? d.phoneNumber ?? d.mobile_number ?? d.mobileNumber ?? d.phone ?? d.mobile ?? '').trim()
-                          const rawAddr  = String(d.residential_address ?? d.residentialAddress ?? d.address ?? d.home_address ?? d.homeAddress ?? '').trim()
-                          if (name) setFullName(surname ? `${name} ${surname}` : name)
+                          // BVN profile scope does not return phone — must be entered manually
+                          const street = String(d.address ?? d.residential_address ?? d.residentialAddress ?? d.home_address ?? '').trim()
+                          const city   = String(d.city ?? '').trim()
+                          const state  = String(d.state_of_origin ?? d.stateOfOrigin ?? '').trim()
+                          const rawAddr = [street, city, state].filter(Boolean).join(', ')
+                          const rawNin  = String(d.nin ?? '').trim()
+                          const fullNameParts = [firstName, middleName, surname].filter(Boolean)
+                          if (fullNameParts.length) setFullName(fullNameParts.join(' '))
                           if (rawDob) { const p = new Date(rawDob); setDob(isNaN(p.getTime()) ? rawDob : p.toISOString().split('T')[0]) }
-                          if (rawPhone) setPhone(rawPhone)
                           if (rawAddr) setAddress(rawAddr)
+                          if (rawNin) { setIdType('National ID (NIN)'); setIdNumber(rawNin) }
                           setBvnDone(true)
                         } catch (e: unknown) {
                           setBvnError((e as Error).message ?? 'Network error.')
@@ -422,7 +428,7 @@ export default function KYC() {
             {showPersonalDetails && (
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
-                <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" />
+                <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" hint="Not provided by BVN — please enter your number" />
                 <Field
                   label="Date of Birth"
                   value={dob}

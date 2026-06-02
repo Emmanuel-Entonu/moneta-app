@@ -42,7 +42,7 @@ export default function CacsRequest() {
 
       const { error: dbErr } = await supabase
         .from('profiles')
-        .update({ cacs_status: 'pending', cacs_doc_url: urlData.publicUrl })
+        .update({ cacs_status: 'pending', cacs_doc_url: urlData.publicUrl, cacs_rejection_reason: null })
         .eq('id', user.id)
 
       if (dbErr) throw new Error(dbErr.message)

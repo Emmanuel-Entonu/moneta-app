@@ -24,11 +24,21 @@ interface UserRow {
   kyc_status: string | null
   cacs_status: string | null
   cacs_doc_url: string | null
+  cacs_rejection_reason: string | null
   pac_account_id: string | null
   created_at: string | null
 }
 
 type CacsFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'not_submitted'
+
+const REJECT_REASONS = [
+  'Wrong document uploaded',
+  'Document not filled properly',
+  'BVN not verified',
+  'Signature missing',
+  'Document is illegible or blurry',
+  'Information mismatch with BVN records',
+]
 
 // ── Status palette ────────────────────────────────────────────────────────────
 // Defined once; never inline per-usage
@@ -76,33 +86,6 @@ function StatusBadge({ status }: { status: string | null }) {
   )
 }
 
-function RowMenu({ userId, cacsStatus, onReject }: { userId: string; cacsStatus: string | null; onReject: (id: string) => void }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-  if (cacsStatus === 'rejected') return null
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(!open)} style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #d1d5db', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-      </button>
-      {open && (
-        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, zIndex: 50, minWidth: 160, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-          <button onClick={() => { onReject(userId); setOpen(false) }} style={{ width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Reject application
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function Admin() {
   const [username, setUsername] = useState('')
@@ -120,6 +103,8 @@ export default function Admin() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [kycUser, setKycUser] = useState<UserRow | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<{ id: string; name: string | null } | null>(null)
+  const [rejectReason, setRejectReason] = useState<string>('')
 
   useEffect(() => { if (sessionStorage.getItem(SESSION_KEY) === '1') setAuthed(true) }, [])
   useEffect(() => { if (authed) loadUsers() }, [authed])
@@ -148,7 +133,7 @@ export default function Admin() {
     setLoadError(null)
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email, phone, bvn, id_type, id_number, kyc_status, cacs_status, cacs_doc_url, pac_account_id, created_at')
+      .select('id, full_name, email, phone, bvn, id_type, id_number, kyc_status, cacs_status, cacs_doc_url, cacs_rejection_reason, pac_account_id, created_at')
       .order('created_at', { ascending: false })
     setLoading(false)
     if (error) { setLoadError(error.message); return }
@@ -157,16 +142,20 @@ export default function Admin() {
       phone: p.phone ?? null, bvn: p.bvn ?? null,
       id_type: p.id_type ?? null, id_number: p.id_number ?? null,
       kyc_status: p.kyc_status ?? null, cacs_status: p.cacs_status ?? null,
-      cacs_doc_url: p.cacs_doc_url ?? null, pac_account_id: p.pac_account_id ?? null,
+      cacs_doc_url: p.cacs_doc_url ?? null, cacs_rejection_reason: p.cacs_rejection_reason ?? null,
+      pac_account_id: p.pac_account_id ?? null,
       created_at: p.created_at ?? null,
     })))
   }
 
-  async function setStatus(userId: string, status: 'approved' | 'rejected') {
+  async function setStatus(userId: string, status: 'approved' | 'rejected', reason: string | null = null) {
     setActing(userId)
+    const update: Record<string, string | null> = { cacs_status: status }
+    if (status === 'rejected') update.cacs_rejection_reason = reason
+    if (status === 'approved') update.cacs_rejection_reason = null
     const { data, error } = await supabase
       .from('profiles')
-      .update({ cacs_status: status })
+      .update(update)
       .eq('id', userId)
       .select('id')
     setActing(null)
@@ -174,7 +163,7 @@ export default function Admin() {
       setToast({ msg: error?.message ?? 'Permission denied — add UPDATE policy for anon in Supabase', ok: false })
     } else {
       setToast({ msg: `Application ${status}`, ok: true })
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, cacs_status: status } : u))
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, cacs_status: status, cacs_rejection_reason: reason } : u))
     }
   }
 
@@ -567,17 +556,18 @@ export default function Admin() {
                       {/* Actions */}
                       <td style={{ padding: '0 16px', height: 44 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {u.cacs_status === 'approved' ? (
+                          {u.cacs_status === 'approved' || u.cacs_status === 'rejected' ? (
                             <span style={{ fontSize: 11, color: '#d1d5db' }}>—</span>
                           ) : (
                             <>
-                              {u.cacs_status !== 'approved' && (
-                                <button onClick={() => setStatus(u.id, 'approved')} disabled={acting === u.id}
-                                  style={{ height: 28, padding: '0 10px', borderRadius: 4, background: acting === u.id ? '#f9fafb' : '#059669', color: acting === u.id ? '#9ca3af' : '#fff', fontWeight: 600, fontSize: 12, border: `1px solid ${acting === u.id ? '#e5e7eb' : '#047857'}`, cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
-                                  {acting === u.id ? '…' : 'Approve'}
-                                </button>
-                              )}
-                              <RowMenu userId={u.id} cacsStatus={u.cacs_status} onReject={(id) => setStatus(id, 'rejected')} />
+                              <button onClick={() => setStatus(u.id, 'approved')} disabled={acting === u.id}
+                                style={{ height: 28, padding: '0 10px', borderRadius: 4, background: acting === u.id ? '#f9fafb' : '#059669', color: acting === u.id ? '#9ca3af' : '#fff', fontWeight: 600, fontSize: 12, border: `1px solid ${acting === u.id ? '#e5e7eb' : '#047857'}`, cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                                {acting === u.id ? '…' : 'Approve'}
+                              </button>
+                              <button onClick={() => { setRejectTarget({ id: u.id, name: u.full_name }); setRejectReason('') }} disabled={acting === u.id}
+                                style={{ height: 28, padding: '0 10px', borderRadius: 4, background: '#fff', color: '#dc2626', fontWeight: 600, fontSize: 12, border: '1px solid #fca5a5', cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                                Reject
+                              </button>
                             </>
                           )}
                         </div>
@@ -600,6 +590,39 @@ export default function Admin() {
           )}
         </div>
       </main>
+
+      {/* Rejection reason modal */}
+      {rejectTarget && (
+        <div onClick={() => setRejectTarget(null)} style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, width: '100%', maxWidth: 440, boxShadow: '0 24px 64px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            <div style={{ padding: '18px 20px', borderBottom: '1px solid #f3f4f6' }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>Reject Application</p>
+              <p style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{rejectTarget.name ?? 'Unknown user'} — select a reason</p>
+            </div>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {REJECT_REASONS.map((r) => (
+                <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${rejectReason === r ? '#fca5a5' : '#e5e7eb'}`, background: rejectReason === r ? '#fef2f2' : '#fff', cursor: 'pointer', transition: 'all 0.12s' }}>
+                  <input type="radio" name="rejectReason" value={r} checked={rejectReason === r} onChange={() => setRejectReason(r)} style={{ accentColor: '#dc2626', width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: rejectReason === r ? 600 : 400, color: rejectReason === r ? '#dc2626' : '#374151' }}>{r}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ padding: '12px 20px 20px', display: 'flex', gap: 10 }}>
+              <button onClick={() => setRejectTarget(null)} style={{ flex: 1, height: 38, borderRadius: 6, border: '1px solid #e5e7eb', background: '#fff', fontSize: 13, fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>Cancel</button>
+              <button
+                disabled={!rejectReason || acting === rejectTarget.id}
+                onClick={async () => {
+                  const { id } = rejectTarget
+                  setRejectTarget(null)
+                  await setStatus(id, 'rejected', rejectReason)
+                }}
+                style={{ flex: 2, height: 38, borderRadius: 6, background: !rejectReason ? '#f9fafb' : '#dc2626', color: !rejectReason ? '#9ca3af' : '#fff', fontSize: 13, fontWeight: 700, border: 'none', cursor: !rejectReason ? 'not-allowed' : 'pointer' }}>
+                Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KYC Document Modal */}
       {kycUser && (

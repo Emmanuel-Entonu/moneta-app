@@ -242,7 +242,7 @@ function MiniDonut({ positions }: { positions: { symbol: string; marketValue: nu
 
 export default function Portfolio() {
   const { positions, account, loadingPortfolio, loadPositions, cancelOrder, pacOrders, loadingOrders, loadOrders, orderFills, loadingFillsId, loadFills } = usePortfolioStore()
-  const { pacAccountId, loadProfile, kycStatus, cacsStatus } = useAuthStore()
+  const { pacAccountId, loadProfile, kycStatus, cacsStatus, cacsRejectionReason } = useAuthStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'holdings' | 'allocation' | 'orders'>('holdings')
   const [showFund, setShowFund]         = useState(false)
@@ -401,12 +401,22 @@ export default function Portfolio() {
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               </div>
             </div>
-            <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', textAlign: 'center', marginBottom: 8, letterSpacing: -0.4 }}>Activate Your Trading Account</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', textAlign: 'center', marginBottom: 8, letterSpacing: -0.4 }}>
+              {cacsStatus === 'rejected' ? 'CACS Application Rejected' : 'Activate Your Trading Account'}
+            </h3>
             <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 1.6, marginBottom: 8, fontWeight: 500 }}>
               {cacsStatus === 'pending'
                 ? 'Your CACS form is under review. You\'ll be able to trade once your NGX/CSCS account is approved (1–3 business days).'
+                : cacsStatus === 'rejected'
+                ? 'Your CACS application was reviewed and could not be approved. Please correct the issue and re-upload your form.'
                 : 'One last step before you can trade. Submit the CACS form to register your NGX/CSCS trading account — it\'s a regulatory requirement and takes just a few minutes.'}
             </p>
+            {cacsStatus === 'rejected' && cacsRejectionReason && (
+              <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Reason for rejection</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{cacsRejectionReason}</p>
+              </div>
+            )}
             {cacsStatus === 'pending' && (
               <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a', fontSize: 12, color: '#92400e', fontWeight: 600, textAlign: 'center' }}>
                 Status: Under Review — we'll notify you when it's approved
@@ -414,13 +424,13 @@ export default function Portfolio() {
             )}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setDismissCacsPopup(true)} style={{ flex: 1, padding: '13px', borderRadius: 14, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#64748b', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                Maybe Later
+                {cacsStatus === 'rejected' ? 'Dismiss' : 'Maybe Later'}
               </button>
               <button
                 onClick={() => { setDismissCacsPopup(true); navigate(cacsStatus === 'pending' ? '/cacs-status' : '/cacs') }}
                 style={{ flex: 2, padding: '13px', borderRadius: 14, background: cacsStatus === 'pending' ? 'linear-gradient(135deg,#1d4ed8,#1e40af)' : 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: cacsStatus === 'pending' ? '0 4px 16px rgba(29,78,216,0.32)' : '0 4px 16px rgba(5,150,105,0.32)', border: 'none' }}
               >
-                {cacsStatus === 'pending' ? 'Track Status' : 'Submit CACS Form'}
+                {cacsStatus === 'pending' ? 'Track Status' : cacsStatus === 'rejected' ? 'Re-upload Form' : 'Submit CACS Form'}
               </button>
             </div>
           </div>
@@ -641,7 +651,7 @@ export default function Portfolio() {
                 NGX/CSCS Trading Account
               </p>
               <p style={{ fontSize: 11, color: cacsStatus === 'approved' ? '#34d399' : cacsStatus === 'pending' ? '#fbbf24' : '#f87171', fontWeight: 600 }}>
-                {cacsStatus === 'approved' ? 'Active — Trading enabled' : cacsStatus === 'pending' ? 'Under Review — 1–3 business days' : 'Not submitted — Tap to activate'}
+                {cacsStatus === 'approved' ? 'Active — Trading enabled' : cacsStatus === 'pending' ? 'Under Review — 1–3 business days' : cacsStatus === 'rejected' ? 'Rejected — Tap to re-upload' : 'Not submitted — Tap to activate'}
               </p>
             </div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>

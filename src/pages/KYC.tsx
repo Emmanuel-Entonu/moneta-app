@@ -188,6 +188,8 @@ export default function KYC() {
         date_of_birth: dob || null,
         address: cleanAddress,
         bvn: cleanBvn,
+        id_type: idType || null,
+        id_number: cleanIdNum || null,
         kyc_status: 'submitted',
         kyc_doc_url: kycDocUrl,
       })

@@ -17,6 +17,10 @@ interface UserRow {
   id: string
   full_name: string | null
   email: string | null
+  phone: string | null
+  bvn: string | null
+  id_type: string | null
+  id_number: string | null
   kyc_status: string | null
   cacs_status: string | null
   cacs_doc_url: string | null
@@ -144,12 +148,14 @@ export default function Admin() {
     setLoadError(null)
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, email, kyc_status, cacs_status, cacs_doc_url, pac_account_id, created_at')
+      .select('id, full_name, email, phone, bvn, id_type, id_number, kyc_status, cacs_status, cacs_doc_url, pac_account_id, created_at')
       .order('created_at', { ascending: false })
     setLoading(false)
     if (error) { setLoadError(error.message); return }
     setUsers((data ?? []).map((p) => ({
       id: p.id, full_name: p.full_name ?? null, email: p.email ?? null,
+      phone: p.phone ?? null, bvn: p.bvn ?? null,
+      id_type: p.id_type ?? null, id_number: p.id_number ?? null,
       kyc_status: p.kyc_status ?? null, cacs_status: p.cacs_status ?? null,
       cacs_doc_url: p.cacs_doc_url ?? null, pac_account_id: p.pac_account_id ?? null,
       created_at: p.created_at ?? null,
@@ -182,7 +188,7 @@ export default function Admin() {
       .hdr{background:#111827;padding:22px 28px;display:flex;align-items:center;justify-content:space-between}
       .logo{color:#10b981;font-size:20px;font-weight:900;letter-spacing:-0.5px}
       .badge{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#34d399;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:1.5px;text-transform:uppercase}
-      .grid{padding:20px 28px;border-bottom:1px solid #f1f5f9;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+      .grid{padding:20px 28px;border-bottom:1px solid #f1f5f9;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px 20px}
       .f label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px}
       .f span{font-size:13px;font-weight:600;color:#111827}
       .mono{font-family:monospace}
@@ -201,6 +207,10 @@ export default function Admin() {
         <div class="grid">
           <div class="f"><label>Full Name</label><span>${u.full_name ?? '—'}</span></div>
           <div class="f"><label>Email</label><span>${u.email ?? '—'}</span></div>
+          <div class="f"><label>Phone Number</label><span>${u.phone ?? '—'}</span></div>
+          <div class="f"><label>BVN</label><span class="mono">${u.bvn ? `${u.bvn.slice(0,3)}****${u.bvn.slice(-2)}` : '—'}</span></div>
+          <div class="f"><label>ID Type</label><span>${u.id_type ?? '—'}</span></div>
+          <div class="f"><label>ID Number</label><span class="mono">${u.id_number ?? '—'}</span></div>
           <div class="f"><label>PAC Account ID</label><span class="mono">${u.pac_account_id ?? '—'}</span></div>
           <div class="f"><label>CACS Status</label><span class="pill">${u.cacs_status ?? '—'}</span></div>
           <div class="f"><label>Member Since</label><span>${u.created_at ? new Date(u.created_at).toLocaleDateString('en-NG',{day:'numeric',month:'long',year:'numeric'}) : '—'}</span></div>
@@ -618,11 +628,15 @@ export default function Admin() {
             </div>
 
             {/* User info strip */}
-            <div style={{ padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'flex', gap: 28, flexWrap: 'wrap', flexShrink: 0 }}>
+            <div style={{ padding: '14px 20px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px 24px', flexShrink: 0 }}>
               {([
-                { label: 'Full Name',    value: kycUser.full_name ?? '—',        mono: false },
-                { label: 'Email',        value: kycUser.email ?? '—',            mono: false },
-                { label: 'PAC Account ID', value: kycUser.pac_account_id ?? '—', mono: true  },
+                { label: 'Full Name',     value: kycUser.full_name ?? '—',        mono: false },
+                { label: 'Email',         value: kycUser.email ?? '—',            mono: false },
+                { label: 'Phone Number',  value: kycUser.phone ?? '—',            mono: false },
+                { label: 'BVN',           value: kycUser.bvn ? `${kycUser.bvn.slice(0,3)}****${kycUser.bvn.slice(-2)}` : '—', mono: true },
+                { label: 'ID Type',       value: kycUser.id_type ?? '—',          mono: false },
+                { label: 'ID Number',     value: kycUser.id_number ?? '—',        mono: true  },
+                { label: 'PAC Account ID',value: kycUser.pac_account_id ?? '—',   mono: true  },
               ] as { label: string; value: string; mono: boolean }[]).map(({ label, value, mono }) => (
                 <div key={label}>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>{label}</p>

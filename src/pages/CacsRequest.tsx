@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
@@ -127,11 +128,13 @@ export default function CacsRequest() {
 
         {/* Download */}
         <div
-          onClick={() => {
-            const url = Capacitor.isNativePlatform()
-              ? 'https://moneta-app-ten.vercel.app/account-opening-form.pdf'
-              : '/account-opening-form.pdf'
-            window.open(url, Capacitor.isNativePlatform() ? '_system' : '_blank')
+          onClick={async () => {
+            const url = 'https://moneta-app-ten.vercel.app/account-opening-form.pdf'
+            if (Capacitor.isNativePlatform()) {
+              await Browser.open({ url })
+            } else {
+              window.open(url, '_blank')
+            }
           }}
           style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', background: 'rgba(29,78,216,0.15)', border: '1.5px solid rgba(59,130,246,0.35)', borderRadius: 18, textDecoration: 'none', cursor: 'pointer' }}
         >

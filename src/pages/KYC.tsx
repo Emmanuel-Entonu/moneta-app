@@ -145,8 +145,7 @@ export default function KYC() {
     return (
       (bvnDone || bvnSkipped) &&
       fullName.trim().length > 1 &&
-      address.trim().length > 4 &&
-      phone.replace(/\D/g, '').length >= 10 &&
+      address.trim().length > 2 &&
       isValidDob(dob)
     )
   }
@@ -166,7 +165,6 @@ export default function KYC() {
       const cleanBvn     = bvn.replace(/\D/g, '').slice(0, 11)
       const cleanIdNum   = idNumber.trim().replace(/[^a-zA-Z0-9\-\/]/g, '').slice(0, 50)
       if (!cleanName || cleanName.length < 2) throw new Error('Full name is too short')
-      if (cleanPhone.length < 10) throw new Error('Phone number is invalid')
       if (!isValidDob(dob)) throw new Error('Date of birth must be YYYY-MM-DD and age must be 18–100')
       let kycDocUrl: string | null = null
       if (docFile) {
@@ -428,7 +426,7 @@ export default function KYC() {
             {showPersonalDetails && (
               <div className="animate-in">
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
-                <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" hint="Not provided by BVN — please enter your number" />
+                <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="08012345678" type="tel" hint="Optional — not provided by BVN" />
                 <Field
                   label="Date of Birth"
                   value={dob}

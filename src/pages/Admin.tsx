@@ -215,14 +215,14 @@ export default function Admin() {
             <span style={{ color: '#f1f5f9' }}>Moneta<br />Management<br /></span>
             <span style={{ background: 'linear-gradient(90deg,#10b981,#34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Console</span>
           </h1>
-          <p style={{ fontSize: 15, color: '#475569', fontWeight: 500, lineHeight: 1.75, maxWidth: 380 }}>Review CACS submissions, approve NGX/CSCS trading accounts, and manage platform access.</p>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.75)', fontWeight: 500, lineHeight: 1.75, maxWidth: 380 }}>Review CACS submissions, approve NGX/CSCS trading accounts, and manage platform access.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 36 }}>
             {['CACS Form Review & Instant Approval', 'NGX / CSCS Account Lifecycle Management', 'Real-time User Status & KYC Tracking'].map((f) => (
               <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <span style={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>{f}</span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{f}</span>
               </div>
             ))}
           </div>

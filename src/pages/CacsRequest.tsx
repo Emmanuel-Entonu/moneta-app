@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
@@ -125,10 +126,13 @@ export default function CacsRequest() {
         </div>
 
         {/* Download */}
-        <a
-          href="/account-opening-form.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
+        <div
+          onClick={() => {
+            const url = Capacitor.isNativePlatform()
+              ? 'https://moneta-app-ten.vercel.app/account-opening-form.pdf'
+              : '/account-opening-form.pdf'
+            window.open(url, Capacitor.isNativePlatform() ? '_system' : '_blank')
+          }}
           style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', background: 'rgba(29,78,216,0.15)', border: '1.5px solid rgba(59,130,246,0.35)', borderRadius: 18, textDecoration: 'none', cursor: 'pointer' }}
         >
           <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -139,7 +143,7 @@ export default function CacsRequest() {
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Official NGX PDF · Fill out before uploading</p>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(96,165,250,0.6)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-        </a>
+        </div>
 
         {/* Upload */}
         <div style={{ background: '#0e1c2f', borderRadius: 20, padding: '20px', border: '1px solid rgba(255,255,255,0.07)' }}>

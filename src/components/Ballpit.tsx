@@ -22,7 +22,7 @@ import {
   Vector2,
   Vector3,
   WebGLRenderer,
-  WebGLRendererParameters,
+  type WebGLRendererParameters,
 } from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 

@@ -199,8 +199,8 @@ export default function Admin() {
         </div>
         {/* Subtle grid overlay */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none', zIndex: 1 }} />
-        {/* Dark gradient at bottom so text stays readable */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(3,11,23,0.85) 0%, rgba(3,11,23,0.3) 50%, rgba(3,11,23,0.4) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+        {/* Soft dark vignette — keep text readable without hiding balls */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(3,11,23,0.6) 0%, rgba(3,11,23,0.1) 40%, rgba(3,11,23,0.15) 100%)', pointerEvents: 'none', zIndex: 1 }} />
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#10b981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>

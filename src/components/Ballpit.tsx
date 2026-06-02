@@ -1,22 +1,20 @@
-import { gsap } from 'gsap'
-import { Observer } from 'gsap/Observer'
 import React, { useLayoutEffect, useRef } from 'react'
 import {
   ACESFilmicToneMapping,
   AmbientLight,
   Clock,
   Color,
+  DirectionalLight,
+  HemisphereLight,
   InstancedMesh,
   MathUtils,
-  MeshPhysicalMaterial,
+  MeshStandardMaterial,
   Object3D,
   PerspectiveCamera,
   Plane,
-  PMREMGenerator,
   PointLight,
   Raycaster,
   Scene,
-  ShaderChunk,
   SphereGeometry,
   SRGBColorSpace,
   Vector2,
@@ -24,667 +22,374 @@ import {
   WebGLRenderer,
   type WebGLRendererParameters,
 } from 'three'
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 
-gsap.registerPlugin(Observer)
+// ─── Renderer / scene scaffolding ────────────────────────────────────────────
 
-interface XConfig {
-  canvas?: HTMLCanvasElement
-  id?: string
+interface XCfg {
+  canvas: HTMLCanvasElement
   rendererOptions?: Partial<WebGLRendererParameters>
-  size?: 'parent' | { width: number; height: number }
 }
 
 interface SizeData {
-  width: number
-  height: number
-  wWidth: number
-  wHeight: number
-  ratio: number
-  pixelRatio: number
+  width: number; height: number; wWidth: number; wHeight: number
+  ratio: number; pixelRatio: number
 }
 
-class X {
-  #config: XConfig
-  #postprocessing: any
+class ThreeApp {
   #resizeObserver?: ResizeObserver
   #intersectionObserver?: IntersectionObserver
   #resizeTimer?: number
-  #animationFrameId: number = 0
-  #clock: Clock = new Clock()
-  #animationState = { elapsed: 0, delta: 0 }
-  #isAnimating: boolean = false
-  #isVisible: boolean = false
+  #frameId = 0
+  #clock = new Clock()
+  #elapsed = 0
+  #animating = false
+  #visible = false
 
-  canvas!: HTMLCanvasElement
-  camera!: PerspectiveCamera
-  cameraMinAspect?: number
+  canvas: HTMLCanvasElement
+  camera: PerspectiveCamera
+  cameraFov: number
   cameraMaxAspect?: number
-  cameraFov!: number
-  maxPixelRatio?: number
-  minPixelRatio?: number
-  scene!: Scene
-  renderer!: WebGLRenderer
+  scene: Scene
+  renderer: WebGLRenderer
   size: SizeData = { width: 0, height: 0, wWidth: 0, wHeight: 0, ratio: 0, pixelRatio: 0 }
+  isDisposed = false
 
-  render: () => void = this.#render.bind(this)
-  onBeforeRender: (state: { elapsed: number; delta: number }) => void = () => {}
-  onAfterRender: (state: { elapsed: number; delta: number }) => void = () => {}
-  onAfterResize: (size: SizeData) => void = () => {}
-  isDisposed: boolean = false
+  onBeforeRender: (s: { elapsed: number; delta: number }) => void = () => {}
+  onAfterResize: (s: SizeData) => void = () => {}
 
-  constructor(config: XConfig) {
-    this.#config = { ...config }
-    this.#initCamera()
-    this.#initScene()
-    this.#initRenderer()
+  constructor(cfg: XCfg) {
+    this.canvas = cfg.canvas
+    this.canvas.style.display = 'block'
+    this.camera = new PerspectiveCamera()
+    this.cameraFov = this.camera.fov
+    this.scene = new Scene()
+    this.renderer = new WebGLRenderer({
+      canvas: cfg.canvas,
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance',
+      ...(cfg.rendererOptions ?? {}),
+    })
+    this.renderer.outputColorSpace = SRGBColorSpace
+    this.renderer.toneMapping = ACESFilmicToneMapping
     this.resize()
     this.#initObservers()
   }
 
-  #initCamera() {
-    this.camera = new PerspectiveCamera()
-    this.cameraFov = this.camera.fov
-  }
-
-  #initScene() {
-    this.scene = new Scene()
-  }
-
-  #initRenderer() {
-    if (this.#config.canvas) {
-      this.canvas = this.#config.canvas
-    } else if (this.#config.id) {
-      const elem = document.getElementById(this.#config.id)
-      if (elem instanceof HTMLCanvasElement) {
-        this.canvas = elem
-      } else {
-        console.error('Three: Missing canvas or id parameter')
-      }
-    } else {
-      console.error('Three: Missing canvas or id parameter')
-    }
-    this.canvas!.style.display = 'block'
-    const rendererOptions: WebGLRendererParameters = {
-      canvas: this.canvas,
-      powerPreference: 'high-performance',
-      ...(this.#config.rendererOptions ?? {}),
-    }
-    this.renderer = new WebGLRenderer(rendererOptions)
-    this.renderer.outputColorSpace = SRGBColorSpace
-  }
-
   #initObservers() {
-    if (!(this.#config.size instanceof Object)) {
-      window.addEventListener('resize', this.#onResize.bind(this))
-      if (this.#config.size === 'parent' && this.canvas.parentNode) {
-        this.#resizeObserver = new ResizeObserver(this.#onResize.bind(this))
-        this.#resizeObserver.observe(this.canvas.parentNode as Element)
-      }
+    if (this.canvas.parentNode) {
+      this.#resizeObserver = new ResizeObserver(() => this.#debounce())
+      this.#resizeObserver.observe(this.canvas.parentNode as Element)
     }
-    this.#intersectionObserver = new IntersectionObserver(this.#onIntersection.bind(this), {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0,
-    })
+    this.#intersectionObserver = new IntersectionObserver(([e]) => {
+      this.#animating = e.isIntersecting
+      this.#animating ? this.#start() : this.#stop()
+    }, { threshold: 0 })
     this.#intersectionObserver.observe(this.canvas)
-    document.addEventListener('visibilitychange', this.#onVisibilityChange.bind(this))
+    document.addEventListener('visibilitychange', () => {
+      if (!this.#animating) return
+      document.hidden ? this.#stop() : this.#start()
+    })
   }
 
-  #onResize() {
+  #debounce() {
     if (this.#resizeTimer) clearTimeout(this.#resizeTimer)
-    this.#resizeTimer = window.setTimeout(this.resize.bind(this), 100)
+    this.#resizeTimer = window.setTimeout(() => this.resize(), 100)
   }
 
   resize() {
-    let w: number, h: number
-    if (this.#config.size instanceof Object) {
-      w = (this.#config.size as { width: number; height: number }).width
-      h = (this.#config.size as { width: number; height: number }).height
-    } else if (this.#config.size === 'parent' && this.canvas.parentNode) {
-      w = (this.canvas.parentNode as HTMLElement).offsetWidth
-      h = (this.canvas.parentNode as HTMLElement).offsetHeight
+    const p = this.canvas.parentNode as HTMLElement | null
+    let w = p ? p.offsetWidth : window.innerWidth
+    let h = p ? p.offsetHeight : window.innerHeight
+    if (!w || !h) { w = window.innerWidth; h = window.innerHeight }
+    this.size.width = w; this.size.height = h; this.size.ratio = w / h
+    this.camera.aspect = w / h
+    if (this.cameraMaxAspect && this.camera.aspect > this.cameraMaxAspect) {
+      const t = Math.tan(MathUtils.degToRad(this.cameraFov / 2)) / (this.camera.aspect / this.cameraMaxAspect)
+      this.camera.fov = 2 * MathUtils.radToDeg(Math.atan(t))
     } else {
-      w = window.innerWidth
-      h = window.innerHeight
+      this.camera.fov = this.cameraFov
     }
-    this.size.width = w
-    this.size.height = h
-    this.size.ratio = w / h
-    this.#updateCamera()
-    this.#updateRenderer()
+    this.camera.updateProjectionMatrix()
+    const fovR = (this.camera.fov * Math.PI) / 180
+    this.size.wHeight = 2 * Math.tan(fovR / 2) * this.camera.position.length()
+    this.size.wWidth = this.size.wHeight * this.camera.aspect
+    this.renderer.setSize(w, h)
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.onAfterResize(this.size)
   }
 
-  #updateCamera() {
-    this.camera.aspect = this.size.width / this.size.height
-    if (this.camera.isPerspectiveCamera && this.cameraFov) {
-      if (this.cameraMinAspect && this.camera.aspect < this.cameraMinAspect) {
-        this.#adjustFov(this.cameraMinAspect)
-      } else if (this.cameraMaxAspect && this.camera.aspect > this.cameraMaxAspect) {
-        this.#adjustFov(this.cameraMaxAspect)
-      } else {
-        this.camera.fov = this.cameraFov
-      }
+  #start() {
+    if (this.#visible) return
+    this.#visible = true; this.#clock.start()
+    const loop = () => {
+      this.#frameId = requestAnimationFrame(loop)
+      const delta = this.#clock.getDelta()
+      this.#elapsed += delta
+      this.onBeforeRender({ elapsed: this.#elapsed, delta })
+      this.renderer.render(this.scene, this.camera)
     }
-    this.camera.updateProjectionMatrix()
-    this.updateWorldSize()
+    loop()
   }
 
-  #adjustFov(aspect: number) {
-    const tanFov = Math.tan(MathUtils.degToRad(this.cameraFov / 2))
-    const newTan = tanFov / (this.camera.aspect / aspect)
-    this.camera.fov = 2 * MathUtils.radToDeg(Math.atan(newTan))
-  }
-
-  updateWorldSize() {
-    if (this.camera.isPerspectiveCamera) {
-      const fovRad = (this.camera.fov * Math.PI) / 180
-      this.size.wHeight = 2 * Math.tan(fovRad / 2) * this.camera.position.length()
-      this.size.wWidth = this.size.wHeight * this.camera.aspect
-    } else if ((this.camera as any).isOrthographicCamera) {
-      const cam = this.camera as any
-      this.size.wHeight = cam.top - cam.bottom
-      this.size.wWidth = cam.right - cam.left
-    }
-  }
-
-  #updateRenderer() {
-    this.renderer.setSize(this.size.width, this.size.height)
-    this.#postprocessing?.setSize(this.size.width, this.size.height)
-    let pr = window.devicePixelRatio
-    if (this.maxPixelRatio && pr > this.maxPixelRatio) pr = this.maxPixelRatio
-    else if (this.minPixelRatio && pr < this.minPixelRatio) pr = this.minPixelRatio
-    this.renderer.setPixelRatio(pr)
-    this.size.pixelRatio = pr
-  }
-
-  get postprocessing() { return this.#postprocessing }
-  set postprocessing(value: any) {
-    this.#postprocessing = value
-    this.render = value.render.bind(value)
-  }
-
-  #onIntersection(entries: IntersectionObserverEntry[]) {
-    this.#isAnimating = entries[0].isIntersecting
-    this.#isAnimating ? this.#startAnimation() : this.#stopAnimation()
-  }
-
-  #onVisibilityChange() {
-    if (this.#isAnimating) document.hidden ? this.#stopAnimation() : this.#startAnimation()
-  }
-
-  #startAnimation() {
-    if (this.#isVisible) return
-    const animateFrame = () => {
-      this.#animationFrameId = requestAnimationFrame(animateFrame)
-      this.#animationState.delta = this.#clock.getDelta()
-      this.#animationState.elapsed += this.#animationState.delta
-      this.onBeforeRender(this.#animationState)
-      this.render()
-      this.onAfterRender(this.#animationState)
-    }
-    this.#isVisible = true
-    this.#clock.start()
-    animateFrame()
-  }
-
-  #stopAnimation() {
-    if (this.#isVisible) {
-      cancelAnimationFrame(this.#animationFrameId)
-      this.#isVisible = false
-      this.#clock.stop()
-    }
-  }
-
-  #render() { this.renderer.render(this.scene, this.camera) }
-
-  clear() {
-    this.scene.traverse(obj => {
-      if ((obj as any).isMesh && typeof (obj as any).material === 'object' && (obj as any).material !== null) {
-        Object.keys((obj as any).material).forEach(key => {
-          const matProp = (obj as any).material[key]
-          if (matProp && typeof matProp === 'object' && typeof matProp.dispose === 'function') matProp.dispose()
-        })
-        ;(obj as any).material.dispose()
-        ;(obj as any).geometry.dispose()
-      }
-    })
-    this.scene.clear()
+  #stop() {
+    if (!this.#visible) return
+    cancelAnimationFrame(this.#frameId); this.#visible = false; this.#clock.stop()
   }
 
   dispose() {
-    window.removeEventListener('resize', this.#onResize.bind(this))
-    this.#resizeObserver?.disconnect()
-    this.#intersectionObserver?.disconnect()
-    document.removeEventListener('visibilitychange', this.#onVisibilityChange.bind(this))
-    this.#stopAnimation()
-    this.clear()
-    this.#postprocessing?.dispose()
-    this.renderer.dispose()
-    this.renderer.forceContextLoss()
+    this.#stop(); this.#resizeObserver?.disconnect(); this.#intersectionObserver?.disconnect()
+    this.scene.clear(); this.renderer.dispose(); this.renderer.forceContextLoss()
     this.isDisposed = true
   }
 }
 
-interface WConfig {
+// ─── Ball physics ─────────────────────────────────────────────────────────────
+
+interface PhyCfg {
   count: number; maxX: number; maxY: number; maxZ: number
   maxSize: number; minSize: number; size0: number
   gravity: number; friction: number; wallBounce: number; maxVelocity: number
-  controlSphere0?: boolean; followCursor?: boolean
+  controlSphere0?: boolean
 }
 
-class W {
-  config: WConfig
-  positionData: Float32Array
-  velocityData: Float32Array
-  sizeData: Float32Array
-  center: Vector3 = new Vector3()
+class Physics {
+  cfg: PhyCfg
+  pos: Float32Array
+  vel: Float32Array
+  sizes: Float32Array
+  center = new Vector3()
 
-  constructor(config: WConfig) {
-    this.config = config
-    this.positionData = new Float32Array(3 * config.count).fill(0)
-    this.velocityData = new Float32Array(3 * config.count).fill(0)
-    this.sizeData = new Float32Array(config.count).fill(1)
-    this.center = new Vector3()
-    this.#initializePositions()
-    this.setSizes()
+  constructor(cfg: PhyCfg) {
+    this.cfg = cfg
+    this.pos   = new Float32Array(3 * cfg.count)
+    this.vel   = new Float32Array(3 * cfg.count)
+    this.sizes = new Float32Array(cfg.count)
+    for (let i = 1; i < cfg.count; i++) {
+      const b = 3 * i
+      this.pos[b]     = MathUtils.randFloatSpread(2 * cfg.maxX)
+      this.pos[b + 1] = MathUtils.randFloatSpread(2 * cfg.maxY)
+      this.pos[b + 2] = MathUtils.randFloatSpread(2 * cfg.maxZ)
+    }
+    this.sizes[0] = cfg.size0
+    for (let i = 1; i < cfg.count; i++)
+      this.sizes[i] = MathUtils.randFloat(cfg.minSize, cfg.maxSize)
   }
 
-  #initializePositions() {
-    const { config, positionData } = this
-    this.center.toArray(positionData, 0)
-    for (let i = 1; i < config.count; i++) {
-      const idx = 3 * i
-      positionData[idx]     = MathUtils.randFloatSpread(2 * config.maxX)
-      positionData[idx + 1] = MathUtils.randFloatSpread(2 * config.maxY)
-      positionData[idx + 2] = MathUtils.randFloatSpread(2 * config.maxZ)
+  update({ delta }: { delta: number }) {
+    const { cfg: c, pos, vel, sizes, center } = this
+    const start = c.controlSphere0 ? 1 : 0
+    if (c.controlSphere0) {
+      const p0 = new Vector3().fromArray(pos, 0).lerp(center, 0.1)
+      p0.toArray(pos, 0); vel[0] = vel[1] = vel[2] = 0
     }
-  }
-
-  setSizes() {
-    const { config, sizeData } = this
-    sizeData[0] = config.size0
-    for (let i = 1; i < config.count; i++) sizeData[i] = MathUtils.randFloat(config.minSize, config.maxSize)
-  }
-
-  update(deltaInfo: { delta: number }) {
-    const { config, center, positionData, sizeData, velocityData } = this
-    let startIdx = 0
-    if (config.controlSphere0) {
-      startIdx = 1
-      const firstVec = new Vector3().fromArray(positionData, 0)
-      firstVec.lerp(center, 0.1).toArray(positionData, 0)
-      new Vector3(0, 0, 0).toArray(velocityData, 0)
+    for (let i = start; i < c.count; i++) {
+      const b = 3 * i
+      const p = new Vector3().fromArray(pos, b)
+      const v = new Vector3().fromArray(vel, b)
+      v.y -= delta * c.gravity * sizes[i]
+      v.multiplyScalar(c.friction).clampLength(0, c.maxVelocity)
+      p.add(v); p.toArray(pos, b); v.toArray(vel, b)
     }
-    for (let idx = startIdx; idx < config.count; idx++) {
-      const base = 3 * idx
-      const pos = new Vector3().fromArray(positionData, base)
-      const vel = new Vector3().fromArray(velocityData, base)
-      vel.y -= deltaInfo.delta * config.gravity * sizeData[idx]
-      vel.multiplyScalar(config.friction)
-      vel.clampLength(0, config.maxVelocity)
-      pos.add(vel)
-      pos.toArray(positionData, base); vel.toArray(velocityData, base)
-    }
-    for (let idx = startIdx; idx < config.count; idx++) {
-      const base = 3 * idx
-      const pos = new Vector3().fromArray(positionData, base)
-      const vel = new Vector3().fromArray(velocityData, base)
-      const radius = sizeData[idx]
-      for (let jdx = idx + 1; jdx < config.count; jdx++) {
-        const otherBase = 3 * jdx
-        const otherPos = new Vector3().fromArray(positionData, otherBase)
-        const otherVel = new Vector3().fromArray(velocityData, otherBase)
-        const diff = new Vector3().copy(otherPos).sub(pos)
-        const dist = diff.length()
-        const sumRadius = radius + sizeData[jdx]
-        if (dist < sumRadius) {
-          const overlap = sumRadius - dist
-          const correction = diff.normalize().multiplyScalar(0.5 * overlap)
-          const velCorrection = correction.clone().multiplyScalar(Math.max(vel.length(), 1))
-          pos.sub(correction); vel.sub(velCorrection)
-          pos.toArray(positionData, base); vel.toArray(velocityData, base)
-          otherPos.add(correction); otherVel.add(correction.clone().multiplyScalar(Math.max(otherVel.length(), 1)))
-          otherPos.toArray(positionData, otherBase); otherVel.toArray(velocityData, otherBase)
+    for (let i = start; i < c.count; i++) {
+      const b = 3 * i
+      const p = new Vector3().fromArray(pos, b)
+      const v = new Vector3().fromArray(vel, b)
+      const r = sizes[i]
+      for (let j = i + 1; j < c.count; j++) {
+        const ob = 3 * j
+        const op = new Vector3().fromArray(pos, ob)
+        const ov = new Vector3().fromArray(vel, ob)
+        const diff = new Vector3().copy(op).sub(p)
+        const dist = diff.length(), sr = r + sizes[j]
+        if (dist < sr) {
+          const corr = diff.normalize().multiplyScalar(0.5 * (sr - dist))
+          p.sub(corr); v.sub(corr.clone().multiplyScalar(Math.max(v.length(), 1)))
+          p.toArray(pos, b); v.toArray(vel, b)
+          op.add(corr); ov.add(corr.clone().multiplyScalar(Math.max(ov.length(), 1)))
+          op.toArray(pos, ob); ov.toArray(vel, ob)
         }
       }
-      if (config.controlSphere0) {
-        const diff = new Vector3().copy(new Vector3().fromArray(positionData, 0)).sub(pos)
-        const d = diff.length(), sumRadius0 = radius + sizeData[0]
-        if (d < sumRadius0) {
-          const correction = diff.normalize().multiplyScalar(sumRadius0 - d)
-          const velCorrection = correction.clone().multiplyScalar(Math.max(vel.length(), 2))
-          pos.sub(correction); vel.sub(velCorrection)
+      if (c.controlSphere0) {
+        const diff = new Vector3().copy(new Vector3().fromArray(pos, 0)).sub(p)
+        const d = diff.length(), sr0 = r + sizes[0]
+        if (d < sr0) {
+          const corr = diff.normalize().multiplyScalar(sr0 - d)
+          p.sub(corr); v.sub(corr.clone().multiplyScalar(Math.max(v.length(), 2)))
         }
       }
-      if (Math.abs(pos.x) + radius > config.maxX) { pos.x = Math.sign(pos.x) * (config.maxX - radius); vel.x = -vel.x * config.wallBounce }
-      if (config.gravity === 0) {
-        if (Math.abs(pos.y) + radius > config.maxY) { pos.y = Math.sign(pos.y) * (config.maxY - radius); vel.y = -vel.y * config.wallBounce }
-      } else if (pos.y - radius < -config.maxY) { pos.y = -config.maxY + radius; vel.y = -vel.y * config.wallBounce }
-      const maxBoundary = Math.max(config.maxZ, config.maxSize)
-      if (Math.abs(pos.z) + radius > maxBoundary) { pos.z = Math.sign(pos.z) * (config.maxZ - radius); vel.z = -vel.z * config.wallBounce }
-      pos.toArray(positionData, base); vel.toArray(velocityData, base)
+      if (Math.abs(p.x) + r > c.maxX) { p.x = Math.sign(p.x) * (c.maxX - r); v.x = -v.x * c.wallBounce }
+      if (c.gravity === 0) {
+        if (Math.abs(p.y) + r > c.maxY) { p.y = Math.sign(p.y) * (c.maxY - r); v.y = -v.y * c.wallBounce }
+      } else if (p.y - r < -c.maxY) { p.y = -c.maxY + r; v.y = -v.y * c.wallBounce }
+      const mb = Math.max(c.maxZ, c.maxSize)
+      if (Math.abs(p.z) + r > mb) { p.z = Math.sign(p.z) * (c.maxZ - r); v.z = -v.z * c.wallBounce }
+      p.toArray(pos, b); v.toArray(vel, b)
     }
   }
 }
 
-class Y extends MeshPhysicalMaterial {
-  uniforms: { [key: string]: { value: any } } = {
-    thicknessDistortion: { value: 0.1 },
-    thicknessAmbient: { value: 0 },
-    thicknessAttenuation: { value: 0.1 },
-    thicknessPower: { value: 2 },
-    thicknessScale: { value: 10 },
-  }
+// ─── Instanced balls ──────────────────────────────────────────────────────────
 
-  constructor(params: any) {
-    super(params)
-    this.defines = { USE_UV: '' }
-    this.onBeforeCompile = shader => {
-      Object.assign(shader.uniforms, this.uniforms)
-      shader.fragmentShader =
-        `
-        uniform float thicknessPower;
-        uniform float thicknessScale;
-        uniform float thicknessDistortion;
-        uniform float thicknessAmbient;
-        uniform float thicknessAttenuation;
-        ` + shader.fragmentShader
-      shader.fragmentShader = shader.fragmentShader.replace(
-        'void main() {',
-        `
-        void RE_Direct_Scattering(const in IncidentLight directLight, const in vec2 uv, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, inout ReflectedLight reflectedLight) {
-          vec3 scatteringHalf = normalize(directLight.direction + (geometryNormal * thicknessDistortion));
-          float scatteringDot = pow(saturate(dot(geometryViewDir, -scatteringHalf)), thicknessPower) * thicknessScale;
-          #ifdef USE_COLOR
-            vec3 scatteringIllu = (scatteringDot + thicknessAmbient) * vColor;
-          #else
-            vec3 scatteringIllu = (scatteringDot + thicknessAmbient) * diffuse;
-          #endif
-          reflectedLight.directDiffuse += scatteringIllu * thicknessAttenuation * directLight.color;
-        }
-
-        void main() {
-        `
-      )
-      const lightsChunk = ShaderChunk.lights_fragment_begin.replaceAll(
-        'RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );',
-        `
-          RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
-          RE_Direct_Scattering(directLight, vUv, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, reflectedLight);
-        `
-      )
-      shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_begin>', lightsChunk)
-      if (this.onBeforeCompile2) this.onBeforeCompile2(shader)
-    }
-  }
-  onBeforeCompile2?: (shader: any) => void
-}
-
-const XConfig = {
-  count: 200,
-  colors: [0, 0, 0],
-  ambientColor: 0xffffff,
-  ambientIntensity: 1,
-  lightIntensity: 200,
-  materialParams: { metalness: 0.5, roughness: 0.5, clearcoat: 1, clearcoatRoughness: 0.15 },
-  minSize: 0.5, maxSize: 1, size0: 1,
+const defaultCfg = {
+  count: 80,
+  colors: [0x00d084, 0x6366f1, 0x34d399, 0x818cf8] as number[],
+  minSize: 0.5, maxSize: 1.0, size0: 0,
   gravity: 0.5, friction: 0.9975, wallBounce: 0.95, maxVelocity: 0.15,
   maxX: 5, maxY: 5, maxZ: 2,
-  controlSphere0: false, followCursor: true,
+  controlSphere0: false, followCursor: false,
 }
 
-const U = new Object3D()
+const dummy = new Object3D()
 
-let globalPointerActive = false
-const pointerPosition = new Vector2()
+class Balls extends InstancedMesh {
+  cfg: typeof defaultCfg
+  physics: Physics
 
-interface PointerData {
-  position: Vector2; nPosition: Vector2; hover: boolean; touching: boolean
-  onEnter: (data: PointerData) => void; onMove: (data: PointerData) => void
-  onClick: (data: PointerData) => void; onLeave: (data: PointerData) => void
-  dispose?: () => void
-}
-
-const pointerMap = new Map<HTMLElement, PointerData>()
-
-function createPointerData(options: Partial<PointerData> & { domElement: HTMLElement }): PointerData {
-  const defaultData: PointerData = {
-    position: new Vector2(), nPosition: new Vector2(), hover: false, touching: false,
-    onEnter: () => {}, onMove: () => {}, onClick: () => {}, onLeave: () => {},
-    ...options,
+  constructor(params: Partial<typeof defaultCfg> = {}) {
+    const cfg = { ...defaultCfg, ...params }
+    super(new SphereGeometry(1, 24, 24), new MeshStandardMaterial({ roughness: 0.2, metalness: 0.05 }), cfg.count)
+    this.cfg = cfg
+    this.physics = new Physics(cfg)
+    this.#applyColors(cfg.colors)
   }
-  if (!pointerMap.has(options.domElement)) {
-    pointerMap.set(options.domElement, defaultData)
-    if (!globalPointerActive) {
-      document.body.addEventListener('pointermove', onPointerMove as EventListener)
-      document.body.addEventListener('pointerleave', onPointerLeave as EventListener)
-      document.body.addEventListener('click', onPointerClick as EventListener)
-      document.body.addEventListener('touchstart', onTouchStart as EventListener, { passive: false })
-      document.body.addEventListener('touchmove', onTouchMove as EventListener, { passive: false })
-      document.body.addEventListener('touchend', onTouchEnd as EventListener, { passive: false })
-      document.body.addEventListener('touchcancel', onTouchEnd as EventListener, { passive: false })
-      globalPointerActive = true
-    }
-  }
-  defaultData.dispose = () => {
-    pointerMap.delete(options.domElement)
-    if (pointerMap.size === 0) {
-      document.body.removeEventListener('pointermove', onPointerMove as EventListener)
-      document.body.removeEventListener('pointerleave', onPointerLeave as EventListener)
-      document.body.removeEventListener('click', onPointerClick as EventListener)
-      document.body.removeEventListener('touchstart', onTouchStart as EventListener)
-      document.body.removeEventListener('touchmove', onTouchMove as EventListener)
-      document.body.removeEventListener('touchend', onTouchEnd as EventListener)
-      document.body.removeEventListener('touchcancel', onTouchEnd as EventListener)
-      globalPointerActive = false
-    }
-  }
-  return defaultData
-}
 
-function onPointerMove(e: PointerEvent) { pointerPosition.set(e.clientX, e.clientY); processPointerInteraction() }
-function processPointerInteraction() {
-  for (const [elem, data] of pointerMap) {
-    const rect = elem.getBoundingClientRect()
-    if (isInside(rect)) {
-      updatePointerData(data, rect)
-      if (!data.hover) { data.hover = true; data.onEnter(data) }
-      data.onMove(data)
-    } else if (data.hover && !data.touching) { data.hover = false; data.onLeave(data) }
-  }
-}
-function onTouchStart(e: TouchEvent) {
-  if (e.touches.length > 0) {
-    e.preventDefault(); pointerPosition.set(e.touches[0].clientX, e.touches[0].clientY)
-    for (const [elem, data] of pointerMap) {
-      const rect = elem.getBoundingClientRect()
-      if (isInside(rect)) {
-        data.touching = true; updatePointerData(data, rect)
-        if (!data.hover) { data.hover = true; data.onEnter(data) }
-        data.onMove(data)
+  #applyColors(colors: number[]) {
+    if (colors.length < 2) return
+    const cols = colors.map(c => new Color(c))
+    for (let i = 0; i < this.count; i++) {
+      const t = i / this.count
+      const s = t * (cols.length - 1), idx = Math.floor(s), a = s - idx
+      const out = new Color()
+      if (idx >= cols.length - 1) { out.copy(cols[idx]) }
+      else {
+        out.r = cols[idx].r + a * (cols[idx + 1].r - cols[idx].r)
+        out.g = cols[idx].g + a * (cols[idx + 1].g - cols[idx].g)
+        out.b = cols[idx].b + a * (cols[idx + 1].b - cols[idx].b)
       }
+      this.setColorAt(i, out)
     }
-  }
-}
-function onTouchMove(e: TouchEvent) {
-  if (e.touches.length > 0) {
-    e.preventDefault(); pointerPosition.set(e.touches[0].clientX, e.touches[0].clientY)
-    for (const [elem, data] of pointerMap) {
-      const rect = elem.getBoundingClientRect(); updatePointerData(data, rect)
-      if (isInside(rect)) {
-        if (!data.hover) { data.hover = true; data.touching = true; data.onEnter(data) }
-        data.onMove(data)
-      } else if (data.hover && data.touching) { data.onMove(data) }
-    }
-  }
-}
-function onTouchEnd() {
-  for (const [, data] of pointerMap) { if (data.touching) { data.touching = false; if (data.hover) { data.hover = false; data.onLeave(data) } } }
-}
-function onPointerClick(e: PointerEvent) {
-  pointerPosition.set(e.clientX, e.clientY)
-  for (const [elem, data] of pointerMap) { const rect = elem.getBoundingClientRect(); updatePointerData(data, rect); if (isInside(rect)) data.onClick(data) }
-}
-function onPointerLeave() { for (const data of pointerMap.values()) { if (data.hover) { data.hover = false; data.onLeave(data) } } }
-function updatePointerData(data: PointerData, rect: DOMRect) {
-  data.position.set(pointerPosition.x - rect.left, pointerPosition.y - rect.top)
-  data.nPosition.set((data.position.x / rect.width) * 2 - 1, (-data.position.y / rect.height) * 2 + 1)
-}
-function isInside(rect: DOMRect) {
-  return pointerPosition.x >= rect.left && pointerPosition.x <= rect.left + rect.width &&
-    pointerPosition.y >= rect.top && pointerPosition.y <= rect.top + rect.height
-}
-
-class Z extends InstancedMesh {
-  config: typeof XConfig
-  physics: W
-  ambientLight: AmbientLight | undefined
-  light: PointLight | undefined
-
-  constructor(renderer: WebGLRenderer, params: Partial<typeof XConfig> = {}) {
-    const config = { ...XConfig, ...params }
-    const roomEnv = new RoomEnvironment()
-    const pmrem = new PMREMGenerator(renderer)
-    const envTexture = pmrem.fromScene(roomEnv).texture
-    const geometry = new SphereGeometry()
-    const material = new Y({ envMap: envTexture, ...config.materialParams })
-    material.envMapRotation.x = -Math.PI / 2
-    super(geometry, material, config.count)
-    this.config = config
-    this.physics = new W(config)
-    this.ambientLight = new AmbientLight(config.ambientColor, config.ambientIntensity)
-    this.add(this.ambientLight)
-    this.light = new PointLight(config.colors[0], config.lightIntensity)
-    this.add(this.light)
-    this.setColors(config.colors)
+    if (this.instanceColor) this.instanceColor.needsUpdate = true
   }
 
-  setColors(colors: number[]) {
-    if (Array.isArray(colors) && colors.length > 1) {
-      const colorObjects = colors.map(c => new Color(c))
-      const getAt = (ratio: number, out = new Color()) => {
-        const scaled = Math.max(0, Math.min(1, ratio)) * (colors.length - 1)
-        const idx = Math.floor(scaled)
-        const start = colorObjects[idx]
-        if (idx >= colors.length - 1) return start.clone()
-        const a = scaled - idx, end = colorObjects[idx + 1]
-        out.r = start.r + a * (end.r - start.r)
-        out.g = start.g + a * (end.g - start.g)
-        out.b = start.b + a * (end.b - start.b)
-        return out
-      }
-      for (let idx = 0; idx < this.count; idx++) {
-        this.setColorAt(idx, getAt(idx / this.count))
-        if (idx === 0) this.light!.color.copy(getAt(0))
-      }
-      if (this.instanceColor) this.instanceColor.needsUpdate = true
-    }
-  }
-
-  update(deltaInfo: { delta: number }) {
-    this.physics.update(deltaInfo)
-    for (let idx = 0; idx < this.count; idx++) {
-      U.position.fromArray(this.physics.positionData, 3 * idx)
-      U.scale.setScalar(idx === 0 && this.config.followCursor === false ? 0 : this.physics.sizeData[idx])
-      U.updateMatrix()
-      this.setMatrixAt(idx, U.matrix)
-      if (idx === 0) this.light!.position.copy(U.position)
+  tick(d: { delta: number }) {
+    this.physics.update(d)
+    for (let i = 0; i < this.count; i++) {
+      dummy.position.fromArray(this.physics.pos, 3 * i)
+      dummy.scale.setScalar(i === 0 && !this.cfg.followCursor ? 0 : this.physics.sizes[i])
+      dummy.updateMatrix(); this.setMatrixAt(i, dummy.matrix)
     }
     this.instanceMatrix.needsUpdate = true
   }
 }
 
-interface CreateBallpitReturn {
-  three: X; spheres: Z
-  setCount: (count: number) => void
-  togglePause: () => void
-  dispose: () => void
+// ─── Pointer tracking ─────────────────────────────────────────────────────────
+
+const cursorPos = new Vector2()
+let globalPtrActive = false
+const ptrMap = new Map<HTMLElement, { nPos: Vector2; onMove: () => void; onLeave: () => void; dispose: () => void }>()
+
+function trackPointer(el: HTMLElement, onMove: () => void, onLeave: () => void) {
+  const nPos = new Vector2()
+  const data = { nPos, onMove, onLeave, dispose: () => {} }
+  ptrMap.set(el, data)
+
+  const onPM = (e: PointerEvent) => {
+    cursorPos.set(e.clientX, e.clientY)
+    const rect = el.getBoundingClientRect()
+    const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom
+    nPos.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1)
+    inside ? onMove() : onLeave()
+  }
+  const onPL = () => onLeave()
+
+  if (!globalPtrActive) {
+    document.body.addEventListener('pointermove', onPM as EventListener)
+    document.body.addEventListener('pointerleave', onPL)
+    globalPtrActive = true
+  }
+
+  data.dispose = () => {
+    ptrMap.delete(el)
+    if (ptrMap.size === 0) {
+      document.body.removeEventListener('pointermove', onPM as EventListener)
+      document.body.removeEventListener('pointerleave', onPL)
+      globalPtrActive = false
+    }
+  }
+  return data
 }
 
-function createBallpit(canvas: HTMLCanvasElement, config: any = {}): CreateBallpitReturn {
-  const threeInstance = new X({ canvas, size: 'parent', rendererOptions: { antialias: true, alpha: true } })
-  let spheres: Z
-  threeInstance.renderer.toneMapping = ACESFilmicToneMapping
-  threeInstance.camera.position.set(0, 0, 20)
-  threeInstance.camera.lookAt(0, 0, 0)
-  threeInstance.cameraMaxAspect = 1.5
-  threeInstance.resize()
-  initialize(config)
+// ─── Factory ──────────────────────────────────────────────────────────────────
+
+function createBallpit(canvas: HTMLCanvasElement, params: Partial<typeof defaultCfg> = {}) {
+  const cfg = { ...defaultCfg, ...params }
+  const app = new ThreeApp({ canvas })
+  app.camera.position.set(0, 0, 20)
+  app.camera.lookAt(0, 0, 0)
+  app.cameraMaxAspect = 1.5
+  app.resize()
+
+  const balls = new Balls(cfg)
+  app.scene.add(
+    new AmbientLight(0xffffff, 1.4),
+    new HemisphereLight(0xffffff, 0x222244, 0.9),
+    Object.assign(new DirectionalLight(0xffffff, 2), { position: new Vector3(5, 10, 7) }),
+    Object.assign(new PointLight(0xffffff, 80), { position: new Vector3(-5, 5, 5) }),
+    balls,
+  )
+
   const raycaster = new Raycaster()
   const plane = new Plane(new Vector3(0, 0, 1), 0)
-  const intersectionPoint = new Vector3()
-  let isPaused = false
+  const hit = new Vector3()
 
-  canvas.style.touchAction = 'none'
-  canvas.style.userSelect = 'none'
-  ;(canvas.style as any).webkitUserSelect = 'none'
-
-  const pointerData = createPointerData({
-    domElement: canvas,
-    onMove() {
-      raycaster.setFromCamera(pointerData.nPosition, threeInstance.camera)
-      threeInstance.camera.getWorldDirection(plane.normal)
-      raycaster.ray.intersectPlane(plane, intersectionPoint)
-      spheres.physics.center.copy(intersectionPoint)
-      spheres.config.controlSphere0 = true
+  const ptr = trackPointer(canvas,
+    () => {
+      raycaster.setFromCamera(ptr.nPos, app.camera)
+      app.camera.getWorldDirection(plane.normal)
+      raycaster.ray.intersectPlane(plane, hit)
+      balls.physics.center.copy(hit)
+      balls.cfg.controlSphere0 = true
     },
-    onLeave() { spheres.config.controlSphere0 = false },
-  })
+    () => { balls.cfg.controlSphere0 = false }
+  )
 
-  function initialize(cfg: any) {
-    if (spheres) { threeInstance.clear(); threeInstance.scene.remove(spheres) }
-    spheres = new Z(threeInstance.renderer, cfg)
-    threeInstance.scene.add(spheres)
+  app.onBeforeRender = d => balls.tick(d)
+  app.onAfterResize = s => {
+    balls.cfg.maxX = s.wWidth / 2; balls.cfg.maxY = s.wHeight / 2
+    balls.physics.cfg.maxX = s.wWidth / 2; balls.physics.cfg.maxY = s.wHeight / 2
   }
 
-  threeInstance.onBeforeRender = deltaInfo => { if (!isPaused) spheres.update(deltaInfo) }
-  threeInstance.onAfterResize = size => {
-    spheres.config.maxX = size.wWidth / 2
-    spheres.config.maxY = size.wHeight / 2
-  }
-
-  return {
-    three: threeInstance,
-    get spheres() { return spheres },
-    setCount(count: number) { initialize({ ...spheres.config, count }) },
-    togglePause() { isPaused = !isPaused },
-    dispose() { pointerData.dispose?.(); threeInstance.dispose() },
-  }
+  return { app, dispose() { ptr.dispose(); app.dispose() } }
 }
+
+// ─── React component ──────────────────────────────────────────────────────────
 
 interface BallpitProps {
   className?: string
+  count?: number
+  gravity?: number
+  friction?: number
+  wallBounce?: number
   followCursor?: boolean
+  colors?: number[]
   [key: string]: any
 }
 
-const Ballpit: React.FC<BallpitProps> = ({ className = '', followCursor = true, ...props }) => {
+const Ballpit: React.FC<BallpitProps> = ({ className = '', followCursor = false, ...props }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const spheresInstanceRef = useRef<CreateBallpitReturn | null>(null)
+  const ref = useRef<ReturnType<typeof createBallpit> | null>(null)
 
-  // useLayoutEffect: fires after DOM layout is committed so offsetWidth/offsetHeight are non-zero.
-  // RAF fallback: re-runs resize one frame later as a safety net for the IntersectionObserver.
   useLayoutEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    spheresInstanceRef.current = createBallpit(canvas, { followCursor, ...props })
-    const rafId = requestAnimationFrame(() => spheresInstanceRef.current?.three.resize())
-    return () => {
-      cancelAnimationFrame(rafId)
-      spheresInstanceRef.current?.dispose()
-    }
+    ref.current = createBallpit(canvas, { followCursor, ...props })
+    const rafId = requestAnimationFrame(() => ref.current?.app.resize())
+    return () => { cancelAnimationFrame(rafId); ref.current?.dispose() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return (
-    <canvas
-      className={className}
-      ref={canvasRef}
-      style={{ display: 'block', width: '100%', height: '100%' }}
-    />
-  )
+  return <canvas ref={canvasRef} className={className} style={{ display: 'block', width: '100%', height: '100%' }} />
 }
 
 export default Ballpit

@@ -619,13 +619,13 @@ export default function KYC() {
 }
 
 const primaryBtn = (disabled: boolean): React.CSSProperties => ({
-  flex: 2, padding: '14px', borderRadius: 'var(--radius)',
+  flex: 2, padding: '15px', borderRadius: 'var(--radius)',
   background: disabled ? '#f1f5f9' : 'linear-gradient(135deg,#059669,#047857)',
   color: disabled ? '#94a3b8' : '#fff',
-  fontWeight: 800, fontSize: 15, cursor: disabled ? 'not-allowed' : 'pointer',
+  fontWeight: 700, fontSize: 15, cursor: disabled ? 'not-allowed' : 'pointer',
   border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-  boxShadow: disabled ? 'none' : '0 4px 16px rgba(5,150,105,0.3)',
-  transition: 'all 0.2s',
+  boxShadow: disabled ? 'none' : '0 2px 10px rgba(5,150,105,0.25)',
+  transition: 'opacity 0.15s',
 })
 
 const secondaryBtn: React.CSSProperties = {

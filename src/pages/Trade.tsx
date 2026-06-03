@@ -573,7 +573,7 @@ export default function Trade() {
         <button
           onClick={() => kycStatus !== 'verified' ? setShowKycGate(true) : cacsStatus !== 'approved' ? setShowCacsGate(true) : setShowConfirm(true)}
           disabled={!qty || qty <= 0 || orderLoading || sellQtyInvalid || sellNoHolding}
-          style={{ padding: '16px', borderRadius: 16, fontWeight: 900, fontSize: 17, letterSpacing: 0.2, cursor: (!qty || qty <= 0 || orderLoading) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', background: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.08)' : side === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)', color: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.25)' : '#fff', boxShadow: (!qty || qty <= 0 || orderLoading) ? 'none' : side === 'BUY' ? '0 6px 24px rgba(5,150,105,0.38)' : '0 6px 24px rgba(220,38,38,0.32)' }}
+          style={{ padding: '15px', borderRadius: 16, fontWeight: 700, fontSize: 15, cursor: (!qty || qty <= 0 || orderLoading) ? 'not-allowed' : 'pointer', transition: 'opacity 0.15s', background: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.08)' : side === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)', color: (!qty || qty <= 0 || orderLoading) ? 'rgba(255,255,255,0.25)' : '#fff', boxShadow: (!qty || qty <= 0 || orderLoading) ? 'none' : side === 'BUY' ? '0 2px 10px rgba(5,150,105,0.28)' : '0 2px 10px rgba(220,38,38,0.28)', border: 'none' }}
         >
           {orderLoading ? 'Placing Order…' : `Place ${side} Order`}
         </button>
@@ -596,7 +596,7 @@ export default function Trade() {
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowKycGate(false)} style={{ flex: 1, padding: '14px', borderRadius: 16, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Maybe Later</button>
-              <button onClick={() => navigate('/kyc')} style={{ flex: 2, padding: '14px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(5,150,105,0.32)', border: 'none' }}>Complete KYC</button>
+              <button onClick={() => navigate('/kyc')} style={{ flex: 2, padding: '14px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 2px 10px rgba(5,150,105,0.25)', border: 'none' }}>Complete KYC</button>
             </div>
           </div>
         </div>
@@ -623,7 +623,7 @@ export default function Trade() {
               <button onClick={() => setShowCacsGate(false)} style={{ flex: 1, padding: '14px', borderRadius: 16, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                 {cacsStatus === 'pending' ? 'Got It' : 'Maybe Later'}
               </button>
-              <button onClick={() => { setShowCacsGate(false); navigate(cacsStatus === 'pending' ? '/cacs-status' : '/cacs') }} style={{ flex: 2, padding: '14px', borderRadius: 16, background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(29,78,216,0.32)', border: 'none' }}>
+              <button onClick={() => { setShowCacsGate(false); navigate(cacsStatus === 'pending' ? '/cacs-status' : '/cacs') }} style={{ flex: 2, padding: '14px', borderRadius: 16, background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 2px 10px rgba(29,78,216,0.25)', border: 'none' }}>
                 {cacsStatus === 'pending' ? 'Track Status' : 'Submit CACS Form'}
               </button>
             </div>
@@ -647,7 +647,7 @@ export default function Trade() {
           <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', background: '#fff', borderRadius: '28px 28px 0 0', padding: '8px 20px 44px', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)', animation: 'slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1)' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ width: 40, height: 4, background: '#e2e8f0', borderRadius: 2, margin: '14px auto 22px' }} />
             <div style={{ textAlign: 'center', marginBottom: 22 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 24px', borderRadius: 20, fontSize: 14, fontWeight: 900, letterSpacing: 0.5, background: side === 'BUY' ? '#d1fae5' : '#fee2e2', color: side === 'BUY' ? '#065f46' : '#991b1b' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 24px', borderRadius: 20, fontSize: 13, fontWeight: 700, letterSpacing: 0.3, background: side === 'BUY' ? '#d1fae5' : '#fee2e2', color: side === 'BUY' ? '#065f46' : '#991b1b' }}>
                 <svg width="10" height="10" viewBox="0 0 8 8" fill={side === 'BUY' ? '#065f46' : '#991b1b'}>{side === 'BUY' ? <polygon points="4,0 8,8 0,8" /> : <polygon points="0,0 8,0 4,8" />}</svg>
                 {side} ORDER · {stock.symbol}
               </span>
@@ -776,7 +776,7 @@ export default function Trade() {
                   await placeOrder({ accountId: pacAccountId, symbol: stock.symbol, side, quantity: qty, orderType, limitPrice: orderType === 'LIMIT' ? effectivePrice : undefined, estimatedTotal: orderTotal })
                   setShowConfirm(false)
                 }}
-                style={{ flex: 2, padding: '14px', background: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#94a3b8' : '#fff', fontWeight: 900, fontSize: 15, cursor: (!pacAccountId || validating) ? 'not-allowed' : 'pointer', boxShadow: side === 'BUY' ? '0 4px 16px rgba(5,150,105,0.32)' : '0 4px 16px rgba(220,38,38,0.25)' }}
+                style={{ flex: 2, padding: '14px', background: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#f1f5f9' : side === 'BUY' ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)', borderRadius: 16, color: (!pacAccountId || monetaLoading || orderLoading || validating || (side === 'BUY' && paySource === 'wallet' && walletBalance < orderTotal)) ? '#94a3b8' : '#fff', fontWeight: 700, fontSize: 15, cursor: (!pacAccountId || validating) ? 'not-allowed' : 'pointer', boxShadow: side === 'BUY' ? '0 2px 10px rgba(5,150,105,0.25)' : '0 2px 10px rgba(220,38,38,0.22)', border: 'none' }}
               >
                 {monetaLoading ? 'Redirecting…' : validating ? 'Checking…' : orderLoading ? 'Placing Order…' : `Confirm ${side}`}
               </button>

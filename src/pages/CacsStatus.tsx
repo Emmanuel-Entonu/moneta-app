@@ -140,17 +140,17 @@ export default function CacsStatus() {
 
         {/* Action buttons */}
         {cacsStatus === 'approved' && (
-          <button onClick={() => navigate('/market')} style={{ width: '100%', padding: '16px', borderRadius: 18, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 900, fontSize: 16, cursor: 'pointer', boxShadow: '0 6px 24px rgba(5,150,105,0.38)', border: 'none' }}>
+          <button onClick={() => navigate('/market')} style={{ width: '100%', padding: '15px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 2px 10px rgba(5,150,105,0.25)', border: 'none' }}>
             Start Trading
           </button>
         )}
         {(cacsStatus === 'rejected' || cacsStatus === 'not_submitted') && (
-          <button onClick={() => navigate('/cacs')} style={{ width: '100%', padding: '16px', borderRadius: 18, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 900, fontSize: 16, cursor: 'pointer', boxShadow: '0 6px 24px rgba(5,150,105,0.38)', border: 'none' }}>
+          <button onClick={() => navigate('/cacs')} style={{ width: '100%', padding: '15px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 2px 10px rgba(5,150,105,0.25)', border: 'none' }}>
             {cacsStatus === 'rejected' ? 'Resubmit Form' : 'Submit Form'}
           </button>
         )}
         {cacsStatus === 'pending' && (
-          <button onClick={() => navigate('/portfolio')} style={{ width: '100%', padding: '16px', borderRadius: 18, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontWeight: 700, fontSize: 15, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)' }}>
+          <button onClick={() => navigate('/portfolio')} style={{ width: '100%', padding: '15px', borderRadius: 16, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: 15, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)' }}>
             Back to Portfolio
           </button>
         )}

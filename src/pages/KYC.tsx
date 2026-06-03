@@ -9,6 +9,7 @@ type Step = 1 | 2 | 3
 
 
 const ID_TYPES = [
+  'National ID (NIN)',
   'International Passport',
   "Driver's Licence",
   "Voter's Card",
@@ -115,7 +116,7 @@ export default function KYC() {
   const [address, setAddress] = useState('')
 
   // Step 2
-  const [idType, setIdType] = useState('National ID (NIN)')
+  const [idType, setIdType] = useState('International Passport')
   const [idNumber, setIdNumber] = useState('')
 
   const [bvnDone, setBvnDone]           = useState(false)
@@ -434,11 +435,6 @@ export default function KYC() {
             {showPersonalDetails && (
               <div className="animate-in">
                 <BvnField label="Full Name" value={fullName} />
-                {idNumber ? (
-                  <BvnField label="NIN (National Identity Number)" value={idNumber} />
-                ) : (
-                  <Field label="NIN (National Identity Number)" value={idNumber} onChange={setIdNumber} placeholder="Enter your 11-digit NIN" hint="Not provided by BVN — please enter manually" />
-                )}
                 <BvnField label="Date of Birth" value={dob ? new Date(dob).toLocaleDateString('en-GB') : ''} emptyText="Not provided by BVN" />
                 <BvnField label="State / LGA of Origin" value={address} emptyText="Not provided by BVN" />
               </div>

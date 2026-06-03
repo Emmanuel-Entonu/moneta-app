@@ -52,15 +52,13 @@ function OrderReceipt({ receipt, pacAccountId, onNewTrade, onViewPortfolio }: {
 
   useEffect(() => {
     if (liveBalance === null) return
-    // For buys: balance should decrease. For sells: stays same until T+3 (mark updated anyway)
-    if (receipt.side === 'SELL') { setBalStatus('updated'); return }
     if (Math.abs(liveBalance - receipt.balanceBefore) > 1) setBalStatus('updated')
   }, [liveBalance])
 
   const isBuy = receipt.side === 'BUY'
   const accentColor = isBuy ? '#34d399' : '#f87171'
   const accentBg    = isBuy ? 'rgba(5,150,105,0.45)' : 'rgba(220,38,38,0.45)'
-  const displayBalance = liveBalance ?? (receipt.balanceBefore - (isBuy ? receipt.total : 0))
+  const displayBalance = liveBalance ?? (isBuy ? receipt.balanceBefore - receipt.total : receipt.balanceBefore + receipt.total)
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#070e1a', zIndex: 200, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top,0px)', paddingBottom: 'env(safe-area-inset-bottom,0px)', animation: 'fadeIn 0.25s ease both' }}>

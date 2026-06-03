@@ -567,12 +567,18 @@ export default function Admin() {
                             <span style={{ fontSize: 11, color: '#d1d5db' }}>—</span>
                           ) : (
                             <>
-                              <button onClick={() => setStatus(u.id, 'approved')} disabled={acting === u.id}
-                                style={{ height: 28, padding: '0 10px', borderRadius: 4, background: acting === u.id ? '#f9fafb' : '#059669', color: acting === u.id ? '#9ca3af' : '#fff', fontWeight: 600, fontSize: 12, border: `1px solid ${acting === u.id ? '#e5e7eb' : '#047857'}`, cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                              <button
+                                onClick={() => setStatus(u.id, 'approved')}
+                                disabled={acting === u.id || !u.cacs_status || u.cacs_status === 'not_submitted'}
+                                title={!u.cacs_status || u.cacs_status === 'not_submitted' ? 'No CACS form submitted' : undefined}
+                                style={{ height: 28, padding: '0 10px', borderRadius: 4, background: (!u.cacs_status || u.cacs_status === 'not_submitted' || acting === u.id) ? '#f9fafb' : '#059669', color: (!u.cacs_status || u.cacs_status === 'not_submitted' || acting === u.id) ? '#9ca3af' : '#fff', fontWeight: 600, fontSize: 12, border: `1px solid ${(!u.cacs_status || u.cacs_status === 'not_submitted' || acting === u.id) ? '#e5e7eb' : '#047857'}`, cursor: (!u.cacs_status || u.cacs_status === 'not_submitted' || acting === u.id) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
                                 {acting === u.id ? '…' : 'Approve'}
                               </button>
-                              <button onClick={() => { setRejectTarget({ id: u.id, name: u.full_name }); setRejectReason('') }} disabled={acting === u.id}
-                                style={{ height: 28, padding: '0 10px', borderRadius: 4, background: '#fff', color: '#dc2626', fontWeight: 600, fontSize: 12, border: '1px solid #fca5a5', cursor: acting === u.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                              <button
+                                onClick={() => { setRejectTarget({ id: u.id, name: u.full_name }); setRejectReason('') }}
+                                disabled={acting === u.id || !u.cacs_status || u.cacs_status === 'not_submitted'}
+                                title={!u.cacs_status || u.cacs_status === 'not_submitted' ? 'No CACS form submitted' : undefined}
+                                style={{ height: 28, padding: '0 10px', borderRadius: 4, background: '#fff', color: (!u.cacs_status || u.cacs_status === 'not_submitted' || acting === u.id) ? '#d1d5db' : '#dc2626', fontWeight: 600, fontSize: 12, border: `1px solid ${(!u.cacs_status || u.cacs_status === 'not_submitted' || acting === u.id) ? '#e5e7eb' : '#fca5a5'}`, cursor: (!u.cacs_status || u.cacs_status === 'not_submitted' || acting === u.id) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
                                 Reject
                               </button>
                             </>
@@ -689,9 +695,17 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* PDF iframe */}
+            {/* PDF iframe or not-submitted placeholder */}
             <div style={{ flex: 1, minHeight: 0 }}>
-              <iframe src={kycUser.cacs_doc_url ?? ''} title="CACS Document" style={{ width: '100%', height: '100%', border: 'none', display: 'block', minHeight: 480 }} />
+              {kycUser.cacs_doc_url ? (
+                <iframe src={kycUser.cacs_doc_url} title="CACS Document" style={{ width: '100%', height: '100%', border: 'none', display: 'block', minHeight: 480 }} />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 320, gap: 12, color: '#9ca3af' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#6b7280' }}>No CACS form submitted</p>
+                  <p style={{ fontSize: 12, color: '#9ca3af' }}>This user has not yet submitted their CSCS account form.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

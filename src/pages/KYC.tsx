@@ -59,6 +59,18 @@ function StepIndicator({ current }: { current: Step }) {
 }
 
 
+function BvnField({ label, value, emptyText = '' }: { label: string; value: string; emptyText?: string }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>{label}</p>
+      <div style={{ padding: '13px 16px', borderRadius: 14, background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.08)', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, color: value ? '#111' : 'rgba(0,0,0,0.3)' }}>
+        <span style={{ flex: 1 }}>{value || emptyText}</span>
+        {value && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+      </div>
+    </div>
+  )
+}
+
 function Field({
   label, value, onChange, placeholder, type = 'text', hint, min, max,
 }: {
@@ -421,35 +433,10 @@ export default function KYC() {
             {/* Personal details — shown after BVN confirmed or skipped */}
             {showPersonalDetails && (
               <div className="animate-in">
-                <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="As it appears on your bank account" />
-                <div style={{ marginBottom: 16 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(0,0,0,0.5)', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 6 }}>NIN (National Identity Number)</p>
-                  <div style={{ padding: '13px 16px', borderRadius: 14, background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.08)', fontSize: 15, fontWeight: 600, color: idNumber ? '#111' : 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {idNumber ? (
-                      <>
-                        <span>{idNumber}</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      </>
-                    ) : (
-                      <span>Not provided by BVN</span>
-                    )}
-                  </div>
-                </div>
-                <Field
-                  label="Date of Birth"
-                  value={dob}
-                  onChange={setDob}
-                  type="date"
-                  min={`${new Date().getFullYear() - 100}-01-01`}
-                  max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                />
-                <Field
-                  label="Residential Address"
-                  value={address}
-                  onChange={setAddress}
-                  placeholder="No. 12, Broad Street, Lagos Island"
-                  hint="Must be a verifiable Nigerian address"
-                />
+                <BvnField label="Full Name" value={fullName} />
+                <BvnField label="NIN (National Identity Number)" value={idNumber} emptyText="Not provided by BVN" />
+                <BvnField label="Date of Birth" value={dob ? new Date(dob).toLocaleDateString('en-GB') : ''} emptyText="Not provided by BVN" />
+                <BvnField label="State / LGA of Origin" value={address} emptyText="Not provided by BVN" />
               </div>
             )}
 

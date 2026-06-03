@@ -116,10 +116,28 @@ function OrderReceipt({ receipt, pacAccountId, onNewTrade, onViewPortfolio }: {
           ))}
         </div>
 
+        {/* T+3 settlement banner — sell only */}
+        {!isBuy && (
+          <div style={{ width: '100%', marginBottom: 12, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(251,191,36,0.25)', background: 'rgba(251,191,36,0.07)' }}>
+            <div style={{ padding: '12px 16px', background: 'rgba(251,191,36,0.12)', borderBottom: '1px solid rgba(251,191,36,0.18)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <p style={{ fontSize: 13, fontWeight: 800, color: '#fbbf24' }}>T+3 Settlement</p>
+            </div>
+            <div style={{ padding: '12px 16px' }}>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: 500, lineHeight: 1.6, marginBottom: 8 }}>
+                Your sell proceeds of <strong style={{ color: '#fff' }}>{fmt(receipt.total)}</strong> will be credited to your cash balance in <strong style={{ color: '#fbbf24' }}>3 business days</strong> after today's trade date.
+              </p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>This is a regulatory requirement under NGX settlement rules.</p>
+            </div>
+          </div>
+        )}
+
         {/* Cash balance */}
-        <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 18px', marginBottom: !isBuy ? 12 : 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ width: '100%', background: '#0e1c2f', borderRadius: 16, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 5 }}>Cash Balance</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 5 }}>
+              Cash Balance{!isBuy ? <span style={{ marginLeft: 6, fontSize: 10, color: 'rgba(251,191,36,0.7)', fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>· updates in T+3</span> : null}
+            </p>
             {balStatus === 'polling' ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 12, height: 12, border: '2px solid #34d399', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -135,13 +153,6 @@ function OrderReceipt({ receipt, pacAccountId, onNewTrade, onViewPortfolio }: {
             <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399', background: 'rgba(5,150,105,0.15)', border: '1px solid rgba(5,150,105,0.3)', padding: '5px 11px', borderRadius: 20 }}>Updated</span>
           )}
         </div>
-
-        {!isBuy && (
-          <div style={{ width: '100%', padding: '11px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 10, alignItems: 'center' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 500, lineHeight: 1.5 }}>Proceeds settle <strong style={{ color: 'rgba(255,255,255,0.55)' }}>T+3 business days</strong> per NGX rules.</span>
-          </div>
-        )}
       </div>
 
       {/* Actions */}

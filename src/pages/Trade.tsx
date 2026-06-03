@@ -58,8 +58,6 @@ function OrderReceipt({ receipt, pacAccountId, onNewTrade, onViewPortfolio }: {
   }, [liveBalance])
 
   const isBuy = receipt.side === 'BUY'
-  const accentColor = isBuy ? '#34d399' : '#f87171'
-  const accentBg    = isBuy ? 'rgba(5,150,105,0.45)' : 'rgba(220,38,38,0.45)'
   const displayBalance = liveBalance ?? (receipt.balanceBefore - (isBuy ? receipt.total : 0))
 
   return (

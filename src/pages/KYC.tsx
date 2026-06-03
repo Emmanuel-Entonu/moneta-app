@@ -384,7 +384,8 @@ export default function KYC() {
                           try { json = await res.json() as Record<string, unknown> }
                           catch { setBvnError('Verification failed. Try again.'); return }
                           if (!res.ok) { setBvnError(String(json.message ?? json.error ?? 'Wrong OTP.')); return }
-                          const d = (json.data ?? json) as Record<string, unknown>
+                          const rawData = json.data ?? json
+                          const d = (Array.isArray(rawData) ? rawData[0] : rawData) as Record<string, unknown>
                           const firstName = String(d.first_name ?? d.full_name ?? '').trim()
                           const middleName = String(d.middle_name ?? '').trim()
                           const surname = String(d.surname ?? d.last_name ?? '').trim()

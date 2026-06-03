@@ -104,7 +104,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         lastDetails = details
         if (details.status >= 200 && details.status < 300 && details.json?.status && hasBvnDetails(details.json)) {
-          return res.status(details.status).json(details.json)
+          // Strip face_image — large base64 blob, not needed by frontend
+          const payload = details.json as Record<string, unknown>
+          const data = payload.data as Record<string, unknown> | undefined
+          if (data && typeof data === 'object' && !Array.isArray(data)) delete data.face_image
+          console.log('[nibss] details fields:', data ? Object.keys(data).join(', ') : 'none')
+          return res.status(details.status).json(payload)
         }
         console.warn(
           '[nibss] details not ready',

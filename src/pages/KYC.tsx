@@ -434,7 +434,11 @@ export default function KYC() {
             {showPersonalDetails && (
               <div className="animate-in">
                 <BvnField label="Full Name" value={fullName} />
-                <BvnField label="NIN (National Identity Number)" value={idNumber} emptyText="Not provided by BVN" />
+                {idNumber ? (
+                  <BvnField label="NIN (National Identity Number)" value={idNumber} />
+                ) : (
+                  <Field label="NIN (National Identity Number)" value={idNumber} onChange={setIdNumber} placeholder="Enter your 11-digit NIN" hint="Not provided by BVN — please enter manually" />
+                )}
                 <BvnField label="Date of Birth" value={dob ? new Date(dob).toLocaleDateString('en-GB') : ''} emptyText="Not provided by BVN" />
                 <BvnField label="State / LGA of Origin" value={address} emptyText="Not provided by BVN" />
               </div>

@@ -150,7 +150,7 @@ export default function CacsStatus() {
           </button>
         )}
         {cacsStatus === 'pending' && (
-          <button onClick={() => navigate('/portfolio')} style={{ width: '100%', padding: '15px', borderRadius: 16, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: 15, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)' }}>
+          <button onClick={() => navigate('/portfolio')} style={{ width: '100%', padding: '15px', borderRadius: 16, background: '#162338', color: '#94a3b8', fontWeight: 600, fontSize: 15, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.08)' }}>
             Back to Portfolio
           </button>
         )}

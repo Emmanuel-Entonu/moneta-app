@@ -538,7 +538,7 @@ export default function Portfolio() {
               </span>
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>Unrealized P&L</span>
             </div>
-            <button onClick={() => setShowFund(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 20, marginBottom: 14, background: 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(4px)', transition: 'background 0.15s' }}>
+            <button onClick={() => setShowFund(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 20, marginBottom: 14, background: '#1e3a5f', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.15s' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
               Fund Account
             </button>
@@ -665,7 +665,7 @@ export default function Portfolio() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 10px' }}>
           <div style={{ display: 'flex', gap: 4 }}>
             {(['holdings', 'allocation', 'orders'] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', background: tab === t ? 'linear-gradient(135deg,#059669,#047857)' : 'rgba(255,255,255,0.06)', color: tab === t ? '#fff' : 'rgba(255,255,255,0.4)', border: '1px solid', borderColor: tab === t ? 'transparent' : 'rgba(255,255,255,0.09)', boxShadow: tab === t ? '0 2px 10px rgba(5,150,105,0.22)' : 'none', textTransform: 'capitalize' }}>
+              <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', background: tab === t ? 'linear-gradient(135deg,#059669,#047857)' : '#162338', color: tab === t ? '#fff' : 'rgba(255,255,255,0.55)', border: '1px solid', borderColor: tab === t ? 'transparent' : 'rgba(255,255,255,0.08)', boxShadow: tab === t ? '0 2px 10px rgba(5,150,105,0.22)' : 'none', textTransform: 'capitalize' }}>
                 {t}
               </button>
             ))}
@@ -743,10 +743,10 @@ export default function Portfolio() {
                     ))}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => navigate(`/trade/${pos.symbol}`)} style={{ flex: 1, padding: '9px 0', borderRadius: 10, background: 'rgba(5,150,105,0.15)', border: '1px solid rgba(5,150,105,0.3)', color: '#34d399', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    <button onClick={() => navigate(`/trade/${pos.symbol}`)} style={{ flex: 1, padding: '9px 0', borderRadius: 10, background: '#064e3b', border: 'none', color: '#6ee7b7', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                       Buy More
                     </button>
-                    <button onClick={() => navigate(`/trade/${pos.symbol}?side=sell`)} style={{ flex: 1, padding: '9px 0', borderRadius: 10, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.28)', color: '#f87171', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    <button onClick={() => navigate(`/trade/${pos.symbol}?side=sell`)} style={{ flex: 1, padding: '9px 0', borderRadius: 10, background: '#450a0a', border: 'none', color: '#fca5a5', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                       Sell
                     </button>
                   </div>
@@ -912,7 +912,7 @@ export default function Portfolio() {
                           }
                         }}
                         disabled={cancellingId === o.id}
-                        style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 11, fontWeight: 700, cursor: cancellingId === o.id ? 'wait' : 'pointer' }}
+                        style={{ padding: '5px 14px', borderRadius: 20, border: 'none', background: '#450a0a', color: '#fca5a5', fontSize: 11, fontWeight: 700, cursor: cancellingId === o.id ? 'wait' : 'pointer' }}
                       >
                         {cancellingId === o.id ? 'Cancelling…' : 'Cancel Order'}
                       </button>
@@ -973,7 +973,7 @@ export default function Portfolio() {
                           }
                         }}
                         disabled={cancellingId === o.id}
-                        style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 11, fontWeight: 700, cursor: cancellingId === o.id ? 'wait' : 'pointer' }}
+                        style={{ padding: '5px 14px', borderRadius: 20, border: 'none', background: '#450a0a', color: '#fca5a5', fontSize: 11, fontWeight: 700, cursor: cancellingId === o.id ? 'wait' : 'pointer' }}
                       >
                         {cancellingId === o.id ? 'Cancelling…' : 'Cancel Order'}
                       </button>

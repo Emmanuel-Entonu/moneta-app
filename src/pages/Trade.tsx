@@ -155,7 +155,7 @@ function OrderReceipt({ receipt, pacAccountId, onNewTrade, onViewPortfolio }: {
 
       {/* Actions */}
       <div style={{ padding: '12px 20px 32px', display: 'flex', gap: 10 }}>
-        <button onClick={onNewTrade} style={{ flex: 1, padding: '15px', borderRadius: 16, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+        <button onClick={onNewTrade} style={{ flex: 1, padding: '15px', borderRadius: 16, background: '#162338', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
           New Trade
         </button>
         <button onClick={onViewPortfolio} style={{ flex: 2, padding: '15px', borderRadius: 16, background: 'linear-gradient(135deg,#059669,#047857)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 20px rgba(5,150,105,0.35)', border: 'none' }}>
@@ -316,7 +316,7 @@ function PriceChart({ symbol, price, open, high, low, isUp }: { symbol: string; 
       {/* Period selector */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 4, padding: '8px 20px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         {periods.map((p) => (
-          <button key={p} onClick={() => setPeriod(p)} style={{ padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: period === p ? (isUp ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)') : 'rgba(255,255,255,0.06)', color: period === p ? '#fff' : 'rgba(255,255,255,0.38)', boxShadow: period === p ? `0 2px 10px ${isUp ? 'rgba(5,150,105,0.30)' : 'rgba(220,38,38,0.25)'}` : 'none', transition: 'all 0.15s' }}>
+          <button key={p} onClick={() => setPeriod(p)} style={{ padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', background: period === p ? (isUp ? 'linear-gradient(135deg,#059669,#047857)' : 'linear-gradient(135deg,#dc2626,#b91c1c)') : '#162338', color: period === p ? '#fff' : 'rgba(255,255,255,0.5)', boxShadow: period === p ? `0 2px 10px ${isUp ? 'rgba(5,150,105,0.30)' : 'rgba(220,38,38,0.25)'}` : 'none', transition: 'all 0.15s' }}>
             {p}
           </button>
         ))}
@@ -475,9 +475,9 @@ export default function Trade() {
       <div style={{ margin: '12px 12px 0', background: '#0e1c2f', borderRadius: 20, padding: '20px 16px', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* Buy/Sell toggle */}
-        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 5, gap: 5 }}>
+        <div style={{ display: 'flex', background: '#0a1628', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 5, gap: 5 }}>
           {(['BUY', 'SELL'] as Side[]).map((s) => (
-            <button key={s} onClick={() => setSide(s)} style={{ flex: 1, padding: '12px', borderRadius: 12, fontWeight: 900, fontSize: 15, letterSpacing: 0.5, cursor: 'pointer', transition: 'all 0.18s', background: side === s ? (s === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)') : 'transparent', color: side === s ? '#fff' : 'rgba(255,255,255,0.38)', boxShadow: side === s ? (s === 'BUY' ? '0 4px 14px rgba(5,150,105,0.32)' : '0 4px 14px rgba(220,38,38,0.28)') : 'none' }}>
+            <button key={s} onClick={() => setSide(s)} style={{ flex: 1, padding: '12px', borderRadius: 12, fontWeight: 700, fontSize: 15, letterSpacing: 0.3, cursor: 'pointer', transition: 'all 0.18s', background: side === s ? (s === 'BUY' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #dc2626, #b91c1c)') : '#162338', color: side === s ? '#fff' : 'rgba(255,255,255,0.45)', boxShadow: side === s ? (s === 'BUY' ? '0 2px 10px rgba(5,150,105,0.28)' : '0 2px 10px rgba(220,38,38,0.25)') : 'none', border: 'none' }}>
               {s}
             </button>
           ))}
@@ -486,7 +486,7 @@ export default function Trade() {
         {/* Order type */}
         <div style={{ display: 'flex', gap: 8 }}>
           {(['MARKET', 'LIMIT'] as OrderType[]).map((t) => (
-            <button key={t} onClick={() => setOrderType(t)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid', borderColor: orderType === t ? '#059669' : 'rgba(255,255,255,0.1)', background: orderType === t ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.04)', color: orderType === t ? '#34d399' : 'rgba(255,255,255,0.38)', fontWeight: 700, fontSize: 12, letterSpacing: 0.3, cursor: 'pointer', transition: 'all 0.15s' }}>
+            <button key={t} onClick={() => setOrderType(t)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1.5px solid', borderColor: orderType === t ? '#059669' : 'rgba(255,255,255,0.1)', background: orderType === t ? '#064e3b' : '#0e1c2f', color: orderType === t ? '#6ee7b7' : 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: 12, letterSpacing: 0.3, cursor: 'pointer', transition: 'all 0.15s' }}>
               {t} ORDER
             </button>
           ))}
@@ -497,7 +497,7 @@ export default function Trade() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <label style={labelStyle}>Quantity (Units)</label>
             {side === 'SELL' && maxSellQty > 0 && (
-              <button onClick={() => setQuantity(String(maxSellQty))} style={{ fontSize: 11, fontWeight: 700, color: '#f87171', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', padding: '3px 10px', borderRadius: 20, cursor: 'pointer' }}>
+              <button onClick={() => setQuantity(String(maxSellQty))} style={{ fontSize: 11, fontWeight: 700, color: '#fca5a5', background: '#450a0a', border: 'none', padding: '4px 10px', borderRadius: 20, cursor: 'pointer' }}>
                 Sell All ({maxSellQty.toLocaleString()})
               </button>
             )}

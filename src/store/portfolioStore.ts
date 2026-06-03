@@ -170,19 +170,8 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
           orderId: result.id ?? result.orderId ?? null,
         },
       })
+      // Refresh account balance immediately after a successful order
       if (success) {
-        // For sells: PAC cleared balance won't update until T+3 settlement.
-        // Optimistically credit the proceeds locally so cash is visible immediately.
-        if (order.side === 'SELL') {
-          const proceeds = order.estimatedTotal ?? 0
-          if (proceeds > 0) {
-            const currentAccount = get().account
-            if (currentAccount) {
-              set({ account: { ...currentAccount, balance: currentAccount.balance + proceeds } })
-            }
-            useAuthStore.getState().creditWallet(proceeds).catch(() => {})
-          }
-        }
         get().loadAccount(order.accountId).catch(() => {})
       }
       // Log to Supabase — wrapped separately so a logging failure never overwrites the order result
